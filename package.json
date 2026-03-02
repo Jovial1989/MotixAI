@@ -13,6 +13,7 @@
     "dev:backend": "yarn workspace @hammerai/backend dev",
     "dev:web": "yarn workspace @hammerai/web dev",
     "dev:mobile": "yarn workspace @hammerai/mobile start",
+    "dev:mobile:ios": "yarn workspace @hammerai/mobile ios",
     "build:backend": "yarn workspace @hammerai/backend build",
     "build:web": "yarn workspace @hammerai/web build",
     "build": "yarn build:backend && yarn build:web",
