@@ -1,20 +1,35 @@
 'use client';
 
-import { useTheme } from 'next-themes';
-import { Moon, Sun } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { Search } from 'lucide-react';
+import Link from 'next/link';
 
-export function Header() {
-  const { theme, setTheme } = useTheme();
+interface HeaderProps {
+  title?: string;
+}
+
+export function Header({ title }: HeaderProps) {
+  const user = useAuthStore((s) => s.user);
 
   return (
-    <header className="flex h-16 items-center justify-end border-b bg-white px-6 dark:bg-gray-900">
-      <button
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-        aria-label="Toggle theme"
-      >
-        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
+    <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-6">
+      {title ? (
+        <h1 className="text-lg font-semibold text-neutral-900">{title}</h1>
+      ) : (
+        <div />
+      )}
+      <div className="flex items-center gap-4">
+        <Link
+          href="/dashboard/search"
+          className="flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-500 hover:bg-neutral-100 transition-colors"
+        >
+          <Search size={14} />
+          <span>New guide search…</span>
+        </Link>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-motix-100 text-sm font-semibold text-motix-600">
+          {user?.name?.[0]?.toUpperCase() ?? 'U'}
+        </div>
+      </div>
     </header>
   );
 }

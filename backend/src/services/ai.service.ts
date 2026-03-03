@@ -1,5 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { prisma } from '../config/database';
 import { AppError } from '../utils/AppError';
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
@@ -54,20 +53,5 @@ export class AiService {
       completion,
       usage: response.usage,
     };
-  }
-
-  async saveSession(userId: string, messages: Message[], reply: string, model = DEFAULT_MODEL) {
-    const allMessages = [...messages, { role: 'assistant' as const, content: reply }];
-    return prisma.aiSession.create({
-      data: { userId, model, messages: allMessages as any },
-    });
-  }
-
-  async getHistory(userId: string) {
-    return prisma.aiSession.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
   }
 }

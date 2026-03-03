@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Metadata } from 'next';
 import { DashboardShell } from '@/components/layout/DashboardShell';
-import { apiClient } from '@/lib/apiClient';
+import apiClient from '@/lib/apiClient';
 import { Send, Loader2 } from 'lucide-react';
 
 interface Message {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-export const apiClient = axios.create({
+const apiClient = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -21,3 +21,5 @@ apiClient.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+export default apiClient;

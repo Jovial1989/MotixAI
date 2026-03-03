@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { apiClient } from '../lib/apiClient';
+import apiClient from '../lib/apiClient';
 
 interface User {
   id: string;

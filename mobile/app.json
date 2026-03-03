@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "HammerAI",
-    "slug": "hammerai",
+    "name": "MotixAI",
+    "slug": "motixai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

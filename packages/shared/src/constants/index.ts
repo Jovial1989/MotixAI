@@ -1,4 +1,4 @@
-export const APP_NAME = 'HammerAI';
+export const APP_NAME = 'MotixAI';
 export const APP_VERSION = '1.0.0';
 
 export const API_VERSION = 'v1';
@@ -13,6 +13,7 @@ export const DEFAULT_MODEL = AI_MODELS.CLAUDE_SONNET;
 
 export const ROLES = {
   USER: 'user',
+  ENTERPRISE_ADMIN: 'enterprise_admin',
   ADMIN: 'admin',
 } as const;
 
@@ -26,4 +27,17 @@ export const HTTP_STATUS = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   INTERNAL: 500,
+} as const;
+
+export const GUIDE_STATUS = {
+  PENDING: 'pending',
+  GENERATING: 'generating',
+  READY: 'ready',
+  FAILED: 'failed',
+} as const;
+
+export const DIFFICULTY = {
+  EASY: 'easy',
+  MEDIUM: 'medium',
+  HARD: 'hard',
 } as const;

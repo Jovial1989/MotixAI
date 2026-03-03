@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { apiClient } from '@/lib/apiClient';
+import apiClient from '@/lib/apiClient';
 
 interface User {
   id: string;
@@ -13,6 +13,7 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   login: (email: string, password: string) => Promise<void>;
+  setAuth: (user: User, token: string) => void;
   logout: () => void;
 }
 
@@ -27,8 +28,12 @@ export const useAuthStore = create<AuthState>()(
         set({ user: data.data.user, accessToken: data.data.accessToken });
       },
 
-      logout: () => set({ user: null, accessToken: null }),
+      setAuth: (user, accessToken) => set({ user, accessToken }),
+
+      logout: () => {
+        set({ user: null, accessToken: null });
+      },
     }),
-    { name: 'hammerai-auth' }
+    { name: 'motixai-auth' }
   )
 );

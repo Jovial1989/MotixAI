@@ -11,6 +11,5 @@ router.use(authenticate);
 
 router.post('/chat', validate(chatSchema), controller.chat);
 router.post('/complete', validate(completeSchema), controller.complete);
-router.get('/history', controller.history);
 
 export default router;

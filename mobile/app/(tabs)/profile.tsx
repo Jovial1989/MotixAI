@@ -1,80 +1,97 @@
-import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import { User, Mail, Shield, LogOut } from 'lucide-react-native';
+
+const C = {
+  orange: '#f97316',
+  white: '#ffffff',
+  gray50: '#f9fafb',
+  gray200: '#e5e7eb',
+  gray500: '#6b7280',
+  gray900: '#111827',
+  red: '#ef4444',
+};
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
-  const isDark = useColorScheme() === 'dark';
-
-  const handleLogout = () => {
-    logout();
-    router.replace('/login');
-  };
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
-      <View style={[styles.card, isDark && styles.cardDark]}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Avatar */}
+      <View style={styles.avatarWrap}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? '?'}</Text>
+          <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? 'U'}</Text>
         </View>
-        <Text style={[styles.name, isDark && styles.textLight]}>{user?.name}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
-        <Text style={styles.role}>{user?.role}</Text>
+        <Text style={styles.name}>{user?.name}</Text>
+        <View style={styles.roleBadge}>
+          <Text style={styles.roleText}>{user?.role === 'user' ? 'Free plan' : user?.role?.replace('_', ' ')}</Text>
+        </View>
       </View>
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Sign Out</Text>
+
+      {/* Info */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <User size={16} color={C.gray500} />
+          <View>
+            <Text style={styles.rowLabel}>Full name</Text>
+            <Text style={styles.rowValue}>{user?.name}</Text>
+          </View>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.row}>
+          <Mail size={16} color={C.gray500} />
+          <View>
+            <Text style={styles.rowLabel}>Email</Text>
+            <Text style={styles.rowValue}>{user?.email}</Text>
+          </View>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.row}>
+          <Shield size={16} color={C.gray500} />
+          <View>
+            <Text style={styles.rowLabel}>Account type</Text>
+            <Text style={styles.rowValue}>{user?.role === 'user' ? 'Free plan' : user?.role?.replace('_', ' ')}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutBtn} onPress={() => { logout(); router.replace('/login'); }}>
+        <LogOut size={18} color={C.red} />
+        <Text style={styles.logoutText}>Sign out</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#f3f4f6' },
-  containerDark: { backgroundColor: '#111827' },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  cardDark: { backgroundColor: '#1f2937' },
+  container: { flex: 1, backgroundColor: C.gray50 },
+  content: { padding: 24, paddingBottom: 40 },
+  avatarWrap: { alignItems: 'center', marginBottom: 28 },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#2563eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: '#ffedd5', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
   },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  name: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  textLight: { color: '#f9fafb' },
-  email: { marginTop: 4, color: '#6b7280', fontSize: 14 },
-  role: {
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: '#dbeafe',
-    borderRadius: 100,
-    color: '#1d4ed8',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+  avatarText: { fontSize: 28, fontWeight: '700', color: C.orange },
+  name: { fontSize: 20, fontWeight: '700', color: C.gray900, marginBottom: 6 },
+  roleBadge: {
+    backgroundColor: '#ffedd5', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 100,
   },
+  roleText: { color: C.orange, fontSize: 12, fontWeight: '600' },
+  card: {
+    backgroundColor: C.white, borderRadius: 16, padding: 4,
+    borderWidth: 1, borderColor: C.gray200, marginBottom: 20,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
+  rowLabel: { fontSize: 11, color: C.gray500, marginBottom: 2 },
+  rowValue: { fontSize: 14, fontWeight: '600', color: C.gray900 },
+  divider: { height: 1, backgroundColor: C.gray200 },
   logoutBtn: {
-    marginTop: 32,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#ef4444',
-    paddingVertical: 14,
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    borderWidth: 1.5, borderColor: C.red, borderRadius: 12, paddingVertical: 14,
   },
-  logoutText: { color: '#ef4444', fontWeight: '700', fontSize: 16 },
+  logoutText: { color: C.red, fontWeight: '700', fontSize: 16 },
 });

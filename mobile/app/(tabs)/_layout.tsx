@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, MessageSquare, User } from 'lucide-react-native';
+import { LayoutDashboard, Search, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
   return (
@@ -20,8 +20,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'AI Chat',
-          tabBarIcon: ({ color, size }) => <MessageSquare color={color} size={size} />,
+          title: 'Search',
+          tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
         }}
       />
       <Tabs.Screen

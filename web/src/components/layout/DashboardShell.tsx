@@ -1,13 +1,18 @@
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+interface DashboardShellProps {
+  children: React.ReactNode;
+  title?: string;
+}
+
+export function DashboardShell({ children, title }: DashboardShellProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
+    <div className="flex h-screen overflow-hidden bg-neutral-50">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <Header title={title} />
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">{children}</main>
       </div>
     </div>
   );
