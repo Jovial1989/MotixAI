@@ -38,7 +38,7 @@ export default function ChatScreen() {
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.data?.response ?? 'No response',
+        content: data.data?.content ?? 'No response',
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch {
