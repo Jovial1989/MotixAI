@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -28,7 +28,7 @@ app.use(
 // Parsing & compression
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(compression());
+app.use(compression() as unknown as RequestHandler);
 
 // Logging
 if (process.env.NODE_ENV !== 'test') {
