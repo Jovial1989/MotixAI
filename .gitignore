@@ -47,3 +47,4 @@ coverage/
 *.pem
 .cache/
 .vercel
+package-lock.json
