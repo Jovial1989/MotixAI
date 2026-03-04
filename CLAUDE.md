@@ -100,6 +100,30 @@ Pure TypeScript package compiled to `dist/`. Must be built (`yarn workspace @ham
 
 Exports: TypeScript types (`User`, `ApiResponse`, `PaginatedResponse`, `ChatMessage`, `AiSession`), constants (`AI_MODELS`, `ROLES`, `HTTP_STATUS`), and utilities (`isEmail`, `isStrongPassword`, `formatDate`, `truncate`).
 
+## MCP Integrations
+
+### Figma MCP
+
+The project has Figma MCP configured in `.mcp.json`. It uses the official `@figma/mcp` package via `npx`.
+
+**Setup:**
+
+1. Generate a Figma personal access token at **Figma → Settings → Security → Personal access tokens**. Ensure the token has `File content` (read) scope.
+2. Export the token before starting Claude Code:
+   ```bash
+   export FIGMA_ACCESS_TOKEN=your_token_here
+   ```
+   Or add it to your shell profile (`~/.bashrc`, `~/.zshrc`).
+3. Restart Claude Code — it will automatically pick up the Figma MCP server.
+
+**What it enables:**
+
+- Read Figma file content, components, and styles directly in Claude Code
+- Reference Figma designs when building UI in the `web/` and `mobile/` workspaces
+- Extract design tokens and component specs without leaving the editor
+
+**Local overrides:** If you need to store MCP config locally (e.g., hardcode a token for testing), create `.mcp.local.json` — it is git-ignored.
+
 ## Key Patterns
 
 - **AppError**: throw `new AppError(message, statusCode)` anywhere in backend services/controllers; the error handler picks it up automatically.
