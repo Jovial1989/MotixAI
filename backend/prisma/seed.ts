@@ -1,25 +1,52 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminPassword = await bcrypt.hash('Admin1234!', 12);
-
-  await prisma.user.upsert({
-    where: { email: 'admin@hammerai.com' },
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: 'acme-heavy' },
     update: {},
     create: {
-      name: 'Admin',
-      email: 'admin@hammerai.com',
-      password: adminPassword,
-      role: 'admin',
+      name: 'Acme Heavy Industries',
+      slug: 'acme-heavy',
     },
   });
 
-  console.log('Database seeded.');
+  const passwordHash = await bcrypt.hash('Admin123!@#', 10);
+
+  await prisma.user.upsert({
+    where: { email: 'admin@motixai.dev' },
+    update: {},
+    create: {
+      email: 'admin@motixai.dev',
+      fullName: 'Enterprise Admin',
+      role: Role.ENTERPRISE_ADMIN,
+      passwordHash,
+      tenantId: tenant.id,
+    },
+  });
+
+  const userHash = await bcrypt.hash('User123!@#', 10);
+
+  await prisma.user.upsert({
+    where: { email: 'user@motixai.dev' },
+    update: {},
+    create: {
+      email: 'user@motixai.dev',
+      fullName: 'Regular User',
+      role: Role.USER,
+      passwordHash: userHash,
+    },
+  });
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error(error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

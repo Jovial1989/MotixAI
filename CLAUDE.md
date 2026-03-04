@@ -8,10 +8,10 @@ Yarn workspaces monorepo with four packages:
 
 | Workspace | Package name | Port |
 |-----------|-------------|------|
-| `backend/` | `@hammerai/backend` | 4000 |
-| `web/` | `@hammerai/web` | 3000 |
-| `mobile/` | `@hammerai/mobile` | Expo |
-| `packages/shared/` | `@hammerai/shared` | – |
+| `backend/` | `@motixai/backend` | 4000 |
+| `web/` | `@motixai/web` | 3000 |
+| `mobile/` | `@motixai/mobile` | Expo |
+| `packages/shared/` | `@motixai/shared` | – |
 
 All commands can be run from the root or scoped to a workspace with `yarn workspace <name> <script>`.
 
@@ -37,14 +37,14 @@ yarn typecheck
 yarn test
 
 # Single workspace
-yarn workspace @hammerai/backend test
-yarn workspace @hammerai/web typecheck
+yarn workspace @motixai/backend test
+yarn workspace @motixai/web typecheck
 
 # Database (run from backend/)
-yarn workspace @hammerai/backend db:migrate   # prisma migrate dev
-yarn workspace @hammerai/backend db:generate  # regenerate Prisma client
-yarn workspace @hammerai/backend db:seed      # seed admin user
-yarn workspace @hammerai/backend db:studio    # Prisma Studio UI
+yarn workspace @motixai/backend db:migrate   # prisma migrate dev
+yarn workspace @motixai/backend db:generate  # regenerate Prisma client
+yarn workspace @motixai/backend db:seed      # seed admin user
+yarn workspace @motixai/backend db:studio    # Prisma Studio UI
 ```
 
 ## Environment Setup
@@ -61,49 +61,45 @@ Key backend env vars: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `PORT` (4000)
 
 ## Architecture
 
-### Backend (`@hammerai/backend`)
+### Backend (`@motixai/backend`)
 
-Layered Express API: `routes → controllers → services → Prisma`.
+NestJS API with Prisma ORM.
 
-- **Entry**: `src/index.ts` starts the server; `src/app.ts` configures Express (helmet, cors, rate-limit, morgan, routes, error handlers).
-- **Routes**: `src/routes/index.ts` mounts `/auth`, `/users`, `/ai` under `API_PREFIX`.
-- **Auth**: JWT with short-lived access tokens (15m) and refresh tokens (7d). The `authenticate` middleware validates Bearer tokens. `authorize(...roles)` guards role-based routes.
-- **Validation**: Zod schemas in `src/validators/` are applied via the `validate` middleware before reaching controllers.
-- **Error handling**: All async errors pass to `next(err)`. `AppError` (with a `statusCode`) is handled by `src/middleware/errorHandler.ts`; unmatched routes hit `notFoundHandler.ts`.
-- **Database**: Singleton Prisma client in `src/config/database.ts` (avoids connection leaks in dev). Schema has two models: `User` (uuid PK, role enum) and `AiSession` (stores messages as JSON, cascades on User delete).
-- **AI**: `src/services/ai.service.ts` is a placeholder — wire in `@anthropic-ai/sdk` there. The default model constant is `claude-sonnet-4-6`.
-- **Logging**: Winston (`src/config/logger.ts`) — JSON in production, pretty-print in dev, files at `logs/`.
+- **Entry**: `src/main.ts` bootstraps NestJS; `src/app.module.ts` wires modules.
+- **Auth**: JWT with short-lived access tokens (15m) and refresh tokens (7d). Guards protect routes.
+- **Validation**: Zod schemas in `src/api/*/schemas.ts`.
+- **Database**: Prisma client with PostgreSQL. Schema in `prisma/schema.prisma`.
+- **AI**: `src/ai/gemini.provider.ts` for text, `src/ai/gemini-image.provider.ts` for step images.
+- **Jobs**: BullMQ queues for async image generation per repair step.
 
-### Web (`@hammerai/web`)
+### Web (`@motixai/web`)
 
-Next.js 14 App Router with Tailwind CSS.
+Next.js 14 App Router with custom CSS.
 
-- **Routing**: File-based under `src/app/`. Route groups: `(auth)` for public auth pages, `dashboard/` for protected pages.
-- **Layout**: `src/app/layout.tsx` wraps everything in `ThemeProvider` (next-themes, class-based dark mode).
-- **Protected layout**: `DashboardShell` composes `Sidebar` + `Header` + main content area. `Sidebar` uses `usePathname` for active state.
-- **State**: Zustand store at `src/store/authStore.ts` (persisted to localStorage). Holds `user` and `accessToken`.
-- **API calls**: `src/lib/apiClient.ts` — Axios instance. Request interceptor injects the Bearer token from Zustand; response interceptor auto-logs out on 401.
-- **Forms**: react-hook-form + Zod via `@hookform/resolvers`.
+- **Routing**: File-based under `src/app/`. Auth pages under `src/app/auth/`, dashboard under `src/app/dashboard/`.
+- **API calls**: `src/lib/api.ts` — uses `@motixai/api-client`.
+- **Styles**: Custom CSS design system in `src/app/globals.css`.
 
-### Mobile (`@hammerai/mobile`)
+### Mobile (`@motixai/mobile`)
 
-React Native + Expo SDK 51, file-based routing via Expo Router.
+React Native + Expo SDK 54, file-based routing via Expo Router.
 
-- **Entry**: `mobile/app/_layout.tsx` (root Stack navigator). `mobile/app/index.tsx` redirects to `/(tabs)` or `/login` based on auth state.
-- **Tabs**: `app/(tabs)/` — Dashboard (`index`), AI Chat (`chat`), Profile (`profile`). Tab bar uses lucide-react-native icons.
-- **State**: Zustand at `src/store/authStore.ts`. Tokens persisted in `expo-secure-store` (not localStorage). Includes a `rehydrate()` action to restore session on app start.
-- **API client**: `src/lib/apiClient.ts` — Axios, base URL read from `expo-constants` (`app.json` → `extra.apiUrl`).
+- **Entry**: `app/_layout.tsx` (root Stack navigator). `app/index.tsx` is the dashboard.
+- **State**: Zustand at `src/store/authStore.ts`. Tokens persisted in `expo-secure-store`.
+- **API client**: `src/lib/api.ts` — uses `@motixai/api-client`. Base URL from `EXPO_PUBLIC_API_URL`.
+- **Android emulator**: use `http://10.0.2.2:4000` or local network IP for API URL.
+- **iOS simulator**: use `http://localhost:4000` or local network IP for API URL.
 
-### Shared (`@hammerai/shared`)
+### Shared (`@motixai/shared`)
 
-Pure TypeScript package compiled to `dist/`. Must be built (`yarn workspace @hammerai/shared build`) before `web` or `mobile` can consume it in CI. Both `web` and `mobile` reference it as `"@hammerai/shared": "*"` via workspaces.
+Pure TypeScript package compiled to `dist/`. Must be built before `web` or `mobile` can consume it in CI.
 
-Exports: TypeScript types (`User`, `ApiResponse`, `PaginatedResponse`, `ChatMessage`, `AiSession`), constants (`AI_MODELS`, `ROLES`, `HTTP_STATUS`), and utilities (`isEmail`, `isStrongPassword`, `formatDate`, `truncate`).
+### API Client (`@motixai/api-client`)
+
+Typed HTTP client wrapping the backend REST API. Used by both web and mobile.
 
 ## Key Patterns
 
-- **AppError**: throw `new AppError(message, statusCode)` anywhere in backend services/controllers; the error handler picks it up automatically.
-- **Route protection**: apply `authenticate` then `authorize('admin')` middleware on any route that needs RBAC.
-- **Adding a new API resource**: create `routes/foo.routes.ts`, `controllers/foo.controller.ts`, `services/foo.service.ts`, mount in `routes/index.ts`.
-- **Adding a new web page**: add a file under `web/src/app/`. Use `DashboardShell` as the layout wrapper for authenticated pages.
-- **Adding a new mobile screen**: add a file under `mobile/app/` (or `mobile/app/(tabs)/` for tab screens). Expo Router picks it up automatically.
+- **Adding a new API resource**: create module in `backend/src/domain/` and controller in `backend/src/api/`.
+- **Adding a new web page**: add a file under `web/src/app/`. Use dashboard layout classes for authenticated pages.
+- **Adding a new mobile screen**: add a file under `mobile/app/`. Expo Router picks it up automatically.

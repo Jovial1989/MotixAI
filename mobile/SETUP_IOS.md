@@ -54,7 +54,7 @@ Open the project in VS Code — it will prompt you to install recommended extens
 ### Debugging in VS Code
 
 1. Press `Cmd+Shift+P` → **"Expo: Start"** (from Expo Tools extension)
-2. Or use the built-in terminal: `yarn workspace @hammerai/mobile start`
+2. Or use the built-in terminal: `yarn workspace /mobile start`
 3. Press `i` in the terminal to open iOS Simulator
 
 ---
@@ -68,7 +68,7 @@ Open the project in VS Code — it will prompt you to install recommended extens
 yarn dev:mobile
 
 # Or specifically for iOS:
-yarn workspace @hammerai/mobile ios
+yarn workspace /mobile ios
 ```
 
 This will:
@@ -86,7 +86,7 @@ xcrun simctl list devices available
 open -a Simulator --args -CurrentDeviceUDID <DEVICE_UDID>
 
 # Then run:
-yarn workspace @hammerai/mobile start
+yarn workspace /mobile start
 # Press 'i' to connect to the running simulator
 ```
 
@@ -155,7 +155,7 @@ xcrun simctl erase all
 ### Metro bundler cache issues
 ```bash
 # Clear Metro cache:
-yarn workspace @hammerai/mobile start --clear
+yarn workspace /mobile start --clear
 ```
 
 ### Pods / native dependencies
@@ -167,5 +167,5 @@ cd mobile/ios && pod install && cd ..
 ### Port conflicts
 The backend runs on `:4000`, Metro bundler on `:8081`. If `:8081` is taken:
 ```bash
-yarn workspace @hammerai/mobile start --port 8082
+yarn workspace /mobile start --port 8082
 ```
