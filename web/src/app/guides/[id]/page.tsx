@@ -6,209 +6,274 @@ import { useParams } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 
-function StepImage({ step, token, guideId }: { step: RepairStep; token: string | null; guideId: string }) {
-  const [status, setStatus]   = useState(step.imageStatus ?? 'none');
-  const [url, setUrl]         = useState(step.imageUrl ?? null);
-  const [triggered, setTriggered] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+/* ── Image viewer ─────────────────────────────────────────────────────── */
+function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
+  const [status, setStatus] = useState(step.imageStatus ?? 'none');
+  const [url, setUrl]       = useState(step.imageUrl ?? null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [triggered, setTriggered]   = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Trigger generation on mount if not done
   useEffect(() => {
-    if (!token || triggered || status === 'ready') return;
+    if (triggered || status === 'ready') return;
     setTriggered(true);
-    webApi.generateStepImage(step.id, false).then((res) => {
-      setStatus(res.imageStatus);
-      if (res.imageUrl) setUrl(res.imageUrl);
+    webApi.generateStepImage(step.id, false).then((r) => {
+      setStatus(r.imageStatus); if (r.imageUrl) setUrl(r.imageUrl);
     }).catch(() => {});
-  }, [step.id, token, triggered, status]);
+  }, [step.id, triggered, status]);
 
-  // Poll while in progress
   useEffect(() => {
     if (status !== 'queued' && status !== 'generating') {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
+      if (timerRef.current) clearInterval(timerRef.current); return;
     }
-    intervalRef.current = setInterval(async () => {
+    timerRef.current = setInterval(async () => {
       try {
-        const guide = await webApi.getGuide(guideId);
-        const fresh = guide?.steps?.find((s: RepairStep) => s.id === step.id);
-        if (fresh) {
-          setStatus(fresh.imageStatus ?? 'none');
-          if (fresh.imageUrl) { setUrl(fresh.imageUrl); }
-        }
+        const g = await webApi.getGuide(guideId);
+        const f = g?.steps?.find((s: RepairStep) => s.id === step.id);
+        if (f) { setStatus(f.imageStatus ?? 'none'); if (f.imageUrl) setUrl(f.imageUrl); }
       } catch { /* ignore */ }
     }, 4000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [status, step.id, guideId]);
 
-  if (status === 'ready' && url) {
-    return (
-      <div className="step-img-wrap">
+  if (status === 'ready' && url) return (
+    <>
+      <button className="simg-preview" onClick={() => setFullscreen(true)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt={step.title} className="step-img" />
-      </div>
-    );
-  }
-  if (status === 'queued' || status === 'generating') {
-    return (
-      <div className="step-img-skeleton">
-        <div className="step-img-skeleton-inner">
-          <span className="gen-spinner gen-spinner--md" />
-          <span>Generating diagram…</span>
+        <img src={url} alt={step.title} className="simg-img" />
+        <span className="simg-expand">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 4.5V2h2.5M8.5 2H11v2.5M11 8.5V11H8.5M4.5 11H2V8.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Expand
+        </span>
+      </button>
+      {fullscreen && (
+        <div className="simg-modal" onClick={() => setFullscreen(false)}>
+          <button className="simg-modal-x">✕</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={step.title} className="simg-modal-img" onClick={e => e.stopPropagation()} />
         </div>
-      </div>
-    );
-  }
-  if (status === 'failed') {
-    return (
-      <div className="step-img-failed">
-        <span>⚠ Diagram unavailable</span>
-      </div>
-    );
-  }
+      )}
+    </>
+  );
+  if (status === 'queued' || status === 'generating') return (
+    <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>Generating illustration…</span></div>
+  );
+  if (status === 'failed') return (
+    <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>↺ Retry illustration</button>
+  );
   return null;
 }
 
-export default function GuideDetailPage() {
-  const params              = useParams<{ id: string }>();
-  const [guide, setGuide]   = useState<RepairGuide | null>(null);
-  const [error, setError]   = useState<string | null>(null);
-  const [token, setToken]   = useState<string | null>(null);
+/* ── Step card ────────────────────────────────────────────────────────── */
+function StepCard({ step, index, active, onActivate, guideId }: {
+  step: RepairStep; index: number; active: boolean; onActivate: () => void; guideId: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const isOpen = active || open;
 
-  useEffect(() => {
-    setToken(localStorage.getItem('motix_access_token'));
-  }, []);
+  return (
+    <div className={`sc${isOpen ? ' sc--open' : ''}${active ? ' sc--active' : ''}`}>
+      <button className="sc-hd" onClick={() => { setOpen(o => !o); onActivate(); }}>
+        <span className={`sc-num${active ? ' sc-num--on' : ''}`}>{index + 1}</span>
+        <span className="sc-ttl">{step.title}</span>
+        <svg className="sc-chv" width="16" height="16" viewBox="0 0 16 16" fill="none"
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="sc-bd">
+          <StepImage step={step} guideId={guideId} />
+          <p className="sc-inst">{step.instruction}</p>
+          {(step.torqueValue || step.warningNote) && (
+            <div className="sc-specs">
+              {step.torqueValue && (
+                <span className="sc-spec sc-spec--ok">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                  Torque: {step.torqueValue}
+                </span>
+              )}
+              {step.warningNote && (
+                <span className="sc-spec sc-spec--warn">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1L10.5 10H.5L5.5 1Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 4.5v2M5.5 8v.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                  {step.warningNote}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Guide detail page ────────────────────────────────────────────────── */
+export default function GuideDetailPage() {
+  const params = useParams<{ id: string }>();
+  const [guide, setGuide]         = useState<RepairGuide | null>(null);
+  const [error, setError]         = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [safetyOpen, setSafetyOpen] = useState(false);
+  const [toolsOpen, setToolsOpen]   = useState(false);
 
   useEffect(() => {
     if (!params.id) return;
-    webApi
-      .getGuide(params.id)
+    webApi.getGuide(params.id)
       .then(setGuide)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load guide'));
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load'));
   }, [params.id]);
+
+  const diffColor: Record<string, string> = {
+    Beginner: 'badge--green', Intermediate: 'badge--yellow', Advanced: 'badge--orange', Expert: 'badge--red',
+  };
 
   if (error) return (
     <div className="dash-root">
-      <div className="guide-error">{error}</div>
+      <header className="dash-nav"><span className="dash-logo">MotixAI</span><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
+      <div className="gd-center"><p className="gd-error-msg">⚠ {error}</p><Link href="/dashboard" className="auth-btn-primary" style={{display:'inline-flex',width:'auto',padding:'0 24px'}}>← Back</Link></div>
     </div>
   );
 
   if (!guide) return (
     <div className="dash-root">
-      <div className="guide-loading">
-        <span className="gen-spinner gen-spinner--lg" />
-        <p>Loading guide…</p>
-      </div>
+      <header className="dash-nav"><span className="dash-logo">MotixAI</span><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
+      <div className="gd-center"><span className="gen-spinner gen-spinner--lg" /><p style={{color:'var(--text-muted)',marginTop:12}}>Loading guide…</p></div>
     </div>
   );
 
-  const difficultyColor: Record<string, string> = {
-    Beginner: 'badge--green', Intermediate: 'badge--yellow',
-    Advanced: 'badge--orange', Expert: 'badge--red',
-  };
+  const steps = guide.steps ?? [];
+  const TOOLS_DEFAULT = 4;
+  const toolsVisible = toolsOpen ? guide.tools : guide.tools?.slice(0, TOOLS_DEFAULT);
+  const toolsExtra   = (guide.tools?.length ?? 0) - TOOLS_DEFAULT;
+  const pct = Math.round(((activeStep + 1) / Math.max(steps.length, 1)) * 100);
 
   return (
     <div className="dash-root">
+      {/* Nav */}
       <header className="dash-nav">
         <span className="dash-logo">MotixAI</span>
-        <Link href="/dashboard" className="dash-nav-back">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          All guides
-        </Link>
+        <div className="dash-nav-right">
+          <Link href="/dashboard" className="dash-nav-back">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            All guides
+          </Link>
+        </div>
       </header>
 
-      <div className="dash-body dash-body--narrow">
-        {/* Guide header */}
-        <div className="guide-header">
-          <div className="guide-header-badges">
-            <span className={`badge ${difficultyColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
-            {guide.timeEstimate && (
-              <span className="guide-header-time">
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.2"/>
-                  <path d="M6.5 4v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
-                {guide.timeEstimate}
-              </span>
-            )}
-            <span className="guide-header-steps">{guide.steps?.length ?? 0} steps</span>
-          </div>
-          <h1 className="guide-title">{guide.title}</h1>
-          <p className="guide-vehicle">{guide.vehicle.model} · {guide.part.name}</p>
-        </div>
+      {/* 2-column layout */}
+      <div className="gd-layout">
 
-        {/* Tools + Safety side-by-side */}
-        <div className="guide-info-row">
-        {guide.tools && guide.tools.length > 0 && (
-          <div className="guide-tools-card" style={{ marginBottom: 0 }}>
-            <h2 className="guide-section-title">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M10 2L13 5L6 12L2 13L3 9L10 2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-              </svg>
-              Tools required
-            </h2>
-            <div className="guide-tools-list">
-              {guide.tools.map((tool: string) => (
-                <span key={tool} className="guide-tool-chip">{tool}</span>
-              ))}
+        {/* ═══ LEFT — procedure ═══ */}
+        <main className="gd-main">
+          {/* Header (mobile only — hidden on desktop where right col shows it) */}
+          <div className="gd-mob-head">
+            <div className="gd-chip-row">
+              <span className={`badge ${diffColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
+              {guide.timeEstimate && (
+                <span className="gd-chip">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                  {guide.timeEstimate}
+                </span>
+              )}
             </div>
+            <h1 className="gd-mob-title">{guide.title}</h1>
+            <p className="gd-mob-sub">{guide.vehicle.model} · {guide.part.name}</p>
           </div>
-        )}
 
-        {guide.safetyNotes && guide.safetyNotes.length > 0 && (
-          <div className="guide-safety-card" style={{ marginBottom: 0 }}>
-            <h2 className="guide-section-title guide-section-title--safety">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M7.5 2L13 5v4c0 2.8-2.2 5-5.5 6C2.2 14 0 11.8 0 9V5L7.5 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-                <path d="M5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Safety notes
-            </h2>
-            <ul className="guide-safety-list">
-              {guide.safetyNotes.map((note: string) => (
-                <li key={note} className="guide-safety-item">{note}</li>
-              ))}
-            </ul>
+          <div className="gd-steps-hd">
+            <span className="gd-steps-label">PROCEDURE</span>
+            <span className="gd-steps-count">{steps.length} steps</span>
           </div>
-        )}
-        </div>{/* /guide-info-row */}
 
-        {/* Steps */}
-        <div className="guide-steps-header">
-          <h2 className="guide-section-title">Procedure</h2>
-        </div>
-        <div className="guide-steps">
-          {guide.steps?.map((step: RepairStep, idx: number) => (
-            <div key={step.id} className="guide-step">
-              <div className="guide-step-number">{idx + 1}</div>
-              <div className="guide-step-content">
-                <h3 className="guide-step-title">{step.title}</h3>
-                <p className="guide-step-instruction">{step.instruction}</p>
-                {step.torqueValue && (
-                  <div className="guide-step-torque">
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                      <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.2"/>
-                      <path d="M4.5 8.5c1-2 3-2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                    </svg>
-                    Torque: {step.torqueValue}
-                  </div>
+          <div className="gd-steps-list">
+            {steps.map((step, i) => (
+              <StepCard
+                key={step.id} step={step} index={i}
+                active={activeStep === i}
+                onActivate={() => setActiveStep(i)}
+                guideId={params.id}
+              />
+            ))}
+          </div>
+        </main>
+
+        {/* ═══ RIGHT — sticky sidebar ═══ */}
+        <aside className="gd-sidebar">
+
+          {/* Guide card */}
+          <div className="gd-sb-card">
+            <div className="gd-chip-row">
+              <span className={`badge ${diffColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
+              {guide.timeEstimate && (
+                <span className="gd-chip">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                  {guide.timeEstimate}
+                </span>
+              )}
+              <span className="gd-chip">{guide.vehicle.model}</span>
+            </div>
+            <h2 className="gd-sb-title">{guide.title}</h2>
+            <p className="gd-sb-sub">{guide.part.name} · {steps.length} steps</p>
+            <div className="gd-prog-track">
+              <div className="gd-prog-fill" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="gd-prog-label">Step {activeStep + 1} of {steps.length}</p>
+          </div>
+
+          {/* Tools */}
+          {guide.tools && guide.tools.length > 0 && (
+            <div className="gd-sb-card">
+              <p className="gd-sb-section">TOOLS REQUIRED</p>
+              <div className="gd-tools">
+                {toolsVisible?.map((t) => <span key={t} className="gd-tool">{t}</span>)}
+                {!toolsOpen && toolsExtra > 0 && (
+                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(true)}>+{toolsExtra} more</button>
                 )}
-                {step.warningNote && (
-                  <div className="guide-step-warning">
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                      <path d="M6.5 1L12.5 11.5H0.5L6.5 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-                      <path d="M6.5 5v3M6.5 9.5v.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                    </svg>
-                    {step.warningNote}
-                  </div>
+                {toolsOpen && (
+                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(false)}>Show less ↑</button>
                 )}
-                <StepImage step={step} token={token} guideId={params.id} />
               </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Safety */}
+          {guide.safetyNotes && guide.safetyNotes.length > 0 && (
+            <div className={`gd-safety${safetyOpen ? ' gd-safety--open' : ''}`}>
+              <button className="gd-safety-btn" onClick={() => setSafetyOpen(o => !o)}>
+                <span className="gd-safety-ico">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5L11.5 4.5V8c0 2.2-2 4.2-5 5C2 12.2.5 10.2.5 8V4.5L6.5 1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M4.5 7l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </span>
+                <span className="gd-safety-ttl">
+                  {safetyOpen ? 'Safety notes' : `${guide.safetyNotes.length} safety notes`}
+                </span>
+                <svg className="gd-safety-chv" width="14" height="14" viewBox="0 0 14 14" fill="none"
+                  style={{ transform: safetyOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
+                  <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {safetyOpen && (
+                <ul className="gd-safety-list">
+                  {guide.safetyNotes.map((n, i) => <li key={i} className="gd-safety-item">{n}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Step navigator */}
+          <div className="gd-sb-card gd-nav">
+            <button className="gd-nav-prev" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Prev
+            </button>
+            <span className="gd-nav-pos">{activeStep + 1} / {steps.length}</span>
+            <button className="gd-nav-next" disabled={activeStep >= steps.length - 1} onClick={() => setActiveStep(s => s + 1)}>
+              Next
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+
+        </aside>
       </div>
     </div>
   );
