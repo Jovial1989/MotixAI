@@ -18,7 +18,7 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
     if (triggered || status === 'ready') return;
     setTriggered(true);
     webApi.generateStepImage(step.id, false).then((r) => {
-      setStatus(r.imageStatus); if (r.imageUrl) setUrl(r.imageUrl);
+      setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
     }).catch(() => {});
   }, [step.id, triggered, status]);
 
@@ -30,7 +30,7 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
       try {
         const g = await webApi.getGuide(guideId);
         const f = g?.steps?.find((s: RepairStep) => s.id === step.id);
-        if (f) { setStatus(f.imageStatus ?? 'none'); if (f.imageUrl) setUrl(f.imageUrl); }
+        if (f) { setStatus((f.imageStatus ?? 'none') as typeof status); if (f.imageUrl) setUrl(f.imageUrl); }
       } catch { /* ignore */ }
     }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
