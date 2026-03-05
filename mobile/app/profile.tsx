@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { tokenStore } from '@/store/authStore';
+import { C, T, S, R, SHADOW, BTN_HEIGHT, SCREEN_H_PAD } from '@/theme';
 
 interface TokenClaims {
   sub: string;
@@ -15,16 +16,30 @@ function decodeJwt(token: string): TokenClaims | null {
     const payload = token.split('.')[1];
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(atob(base64)) as TokenClaims;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  USER: 'Standard account',
-  ENTERPRISE_ADMIN: 'Enterprise admin',
-  GUEST: 'Guest',
+function initials(email: string) { return email ? email[0].toUpperCase() : '?' }
+
+const ROLE_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  USER:             { label: 'Standard',        color: '#1e40af', bg: '#dbeafe', border: '#bfdbfe' },
+  ENTERPRISE_ADMIN: { label: 'Enterprise Admin', color: '#065f46', bg: '#d1fae5', border: '#a7f3d0' },
+  GUEST:            { label: 'Guest',            color: '#854d0e', bg: '#fef9c3', border: '#fde68a' },
 };
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={ir.row}>
+      <Text style={ir.label}>{label}</Text>
+      <Text style={ir.value}>{value}</Text>
+    </View>
+  );
+}
+const ir = StyleSheet.create({
+  row:   { paddingVertical: S.sm, borderBottomWidth: 1, borderBottomColor: C.border },
+  label: { ...T.label, marginBottom: 4 },
+  value: { ...T.body, color: C.text, fontWeight: '500' },
+});
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -42,88 +57,126 @@ export default function ProfileScreen() {
   }
 
   const isGuest = claims?.role === 'GUEST';
+  const roleMeta = ROLE_META[claims?.role ?? ''] ?? ROLE_META.GUEST;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Pressable style={styles.backRow} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
+    <SafeAreaView style={s.safe}>
+      {/* Header */}
+      <View style={s.header}>
+        <Pressable style={s.backRow} onPress={() => router.back()} hitSlop={8}>
+          <Text style={s.backArrow}>←</Text>
+          <Text style={s.backLabel}>Back</Text>
         </Pressable>
-        <Text style={styles.title}>Profile</Text>
+        <Text style={s.headerTitle}>Profile</Text>
+      </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{claims?.email ?? '—'}</Text>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-          <View style={styles.divider} />
-
-          <Text style={styles.label}>Account type</Text>
-          <View style={styles.roleRow}>
-            <Text style={[styles.roleBadge, isGuest && styles.roleBadgeGuest]}>
-              {ROLE_LABELS[claims?.role ?? ''] ?? '—'}
-            </Text>
+        {/* Avatar + email hero */}
+        <View style={s.heroCard}>
+          <View style={s.avatarCircle}>
+            <Text style={s.avatarText}>{initials(claims?.email ?? '')}</Text>
+          </View>
+          <Text style={s.heroEmail}>{claims?.email ?? '—'}</Text>
+          <View style={[s.roleBadge, { backgroundColor: roleMeta.bg, borderColor: roleMeta.border }]}>
+            <Text style={[s.roleBadgeText, { color: roleMeta.color }]}>{roleMeta.label}</Text>
           </View>
         </View>
 
+        {/* Account details */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Account</Text>
+          <InfoRow label="EMAIL" value={claims?.email ?? '—'} />
+          <InfoRow label="ACCOUNT TYPE" value={roleMeta.label} />
+          {claims?.tenantId && (
+            <InfoRow label="ORGANISATION ID" value={claims.tenantId} />
+          )}
+        </View>
+
+        {/* Guest upsell */}
         {isGuest && (
-          <View style={styles.guestCard}>
-            <Text style={styles.guestTitle}>You're on a guest session</Text>
-            <Text style={styles.guestSub}>
-              Create a free account to save guides, build history, and unlock all features.
+          <View style={s.upsellCard}>
+            <View style={s.upsellIconRow}>
+              <Text style={s.upsellIcon}>✨</Text>
+              <Text style={s.upsellTitle}>Unlock full access</Text>
+            </View>
+            <Text style={s.upsellBody}>
+              Create a free account to generate and save repair guides, build your history, and collaborate with your workshop team.
             </Text>
             <Link href="/signup" asChild>
-              <Pressable style={styles.signupBtn}>
-                <Text style={styles.signupBtnText}>Create account</Text>
+              <Pressable style={({ pressed }) => [s.upsellBtn, pressed && { opacity: 0.88 }]}>
+                <Text style={s.upsellBtnText}>Create free account</Text>
               </Pressable>
             </Link>
             <Link href="/login" asChild>
-              <Pressable style={styles.loginLink}>
-                <Text style={styles.loginLinkText}>Already have one? Sign in</Text>
+              <Pressable hitSlop={8} style={s.upsellSecondary}>
+                <Text style={s.upsellSecondaryText}>Already have an account? Sign in</Text>
               </Pressable>
             </Link>
           </View>
         )}
 
-        <View style={{ flex: 1 }} />
+        {/* App info */}
+        <View style={s.infoCard}>
+          <Text style={s.infoRow}>MotixAI · Repair Intelligence</Text>
+          <Text style={s.infoRow}>Version 1.0.0</Text>
+        </View>
 
-        <Pressable style={styles.logoutBtn} onPress={logout}>
-          <Text style={styles.logoutBtnText}>{isGuest ? 'Exit guest session' : 'Sign out'}</Text>
+        {/* Sign out */}
+        <Pressable
+          style={({ pressed }) => [s.logoutBtn, pressed && { opacity: 0.85 }]}
+          onPress={logout}
+        >
+          <Text style={s.logoutBtnText}>
+            {isGuest ? '✕  Exit guest session' : '→  Sign out'}
+          </Text>
         </Pressable>
-      </View>
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
-  container: { flex: 1, padding: 18, gap: 14 },
-  backRow: { marginBottom: -4 },
-  backText: { color: '#f97316', fontWeight: '600', fontSize: 15 },
-  title: { fontSize: 26, fontWeight: '700', color: '#111827', paddingTop: 4 },
-  card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, gap: 4 },
-  label: { fontSize: 11, color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.6 },
-  value: { fontSize: 16, color: '#111827', marginBottom: 4 },
-  divider: { height: 1, backgroundColor: '#f3f4f6', marginVertical: 8 },
-  roleRow: { marginTop: 2 },
-  roleBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#dbeafe',
-    color: '#1e40af',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontSize: 13,
-    fontWeight: '600',
-    overflow: 'hidden',
-  },
-  roleBadgeGuest: { backgroundColor: '#fef9c3', color: '#854d0e' },
-  guestCard: { backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa', borderRadius: 16, padding: 16, gap: 8 },
-  guestTitle: { fontWeight: '700', color: '#92400e', fontSize: 15 },
-  guestSub: { color: '#78350f', fontSize: 13, lineHeight: 19 },
-  signupBtn: { backgroundColor: '#f97316', borderRadius: 999, paddingVertical: 11, alignItems: 'center', marginTop: 4 },
-  signupBtnText: { color: '#fff', fontWeight: '700' },
-  loginLink: { alignItems: 'center', paddingVertical: 4 },
-  loginLinkText: { color: '#f97316', fontSize: 13, fontWeight: '600' },
-  logoutBtn: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 999, paddingVertical: 13, alignItems: 'center', marginBottom: 8, backgroundColor: '#fff' },
-  logoutBtnText: { color: '#374151', fontWeight: '600' },
+const s = StyleSheet.create({
+  safe:             { flex: 1, backgroundColor: C.bg },
+
+  // Header
+  header:           { flexDirection: 'row', alignItems: 'center', gap: S.sm, paddingHorizontal: SCREEN_H_PAD, paddingVertical: S.sm, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.bgCard },
+  backRow:          { flexDirection: 'row', alignItems: 'center', gap: S.xs },
+  backArrow:        { fontSize: 20, color: C.primary, fontWeight: '700' },
+  backLabel:        { ...T.smallBold, color: C.primary },
+  headerTitle:      { ...T.heading, marginLeft: S.xs },
+
+  scroll:           { paddingHorizontal: SCREEN_H_PAD, paddingBottom: S.xl, gap: S.md, paddingTop: S.md },
+
+  // Hero card
+  heroCard:         { backgroundColor: C.bgCard, borderRadius: R.xl, padding: S.lg, alignItems: 'center', gap: S.sm, ...SHADOW.sm, borderWidth: 1, borderColor: C.border },
+  avatarCircle:     { width: 72, height: 72, borderRadius: R.full, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.md },
+  avatarText:       { fontSize: 30, fontWeight: '800', color: '#fff' },
+  heroEmail:        { ...T.subhead, color: C.text },
+  roleBadge:        { borderRadius: R.full, paddingHorizontal: S.md, paddingVertical: S.xs, borderWidth: 1 },
+  roleBadgeText:    { fontSize: 12, fontWeight: '700' },
+
+  // Account card
+  card:             { backgroundColor: C.bgCard, borderRadius: R.lg, padding: S.md, ...SHADOW.xs, borderWidth: 1, borderColor: C.border },
+  cardTitle:        { ...T.smallBold, color: C.textSub, marginBottom: S.xs },
+
+  // Upsell card
+  upsellCard:       { backgroundColor: C.primaryLight, borderRadius: R.lg, padding: S.md, borderWidth: 1, borderColor: C.primaryBorder, gap: S.sm },
+  upsellIconRow:    { flexDirection: 'row', alignItems: 'center', gap: S.xs },
+  upsellIcon:       { fontSize: 18 },
+  upsellTitle:      { ...T.subhead, color: C.primaryDark },
+  upsellBody:       { ...T.small, color: C.primaryDark, lineHeight: 20 },
+  upsellBtn:        { height: BTN_HEIGHT - 4, backgroundColor: C.primary, borderRadius: R.full, alignItems: 'center', justifyContent: 'center', ...SHADOW.sm },
+  upsellBtnText:    { fontSize: 15, fontWeight: '700', color: '#fff' },
+  upsellSecondary:  { alignItems: 'center', paddingVertical: S.xs },
+  upsellSecondaryText: { ...T.smallBold, color: C.primary },
+
+  // App info
+  infoCard:         { backgroundColor: C.bgCard, borderRadius: R.lg, padding: S.md, borderWidth: 1, borderColor: C.border, gap: S.xs, alignItems: 'center' },
+  infoRow:          { ...T.caption, color: C.textMuted, fontWeight: '400', textTransform: undefined, letterSpacing: 0 },
+
+  // Logout
+  logoutBtn:        { height: BTN_HEIGHT, borderRadius: R.full, borderWidth: 1.5, borderColor: C.errorBorder, backgroundColor: C.errorLight, alignItems: 'center', justifyContent: 'center' },
+  logoutBtnText:    { fontSize: 15, fontWeight: '600', color: C.error },
 });

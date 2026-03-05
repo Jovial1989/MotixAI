@@ -11,6 +11,9 @@ export const tokenStore = {
   async accessToken() {
     return SecureStore.getItemAsync(ACCESS_KEY);
   },
+  async refreshToken() {
+    return SecureStore.getItemAsync(REFRESH_KEY);
+  },
   async clear() {
     await SecureStore.deleteItemAsync(ACCESS_KEY);
     await SecureStore.deleteItemAsync(REFRESH_KEY);

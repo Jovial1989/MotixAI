@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type AuthUser } from 'src/common/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/jwt-auth.guard';
@@ -35,5 +35,11 @@ export class GuidesController {
   @Get()
   history(@CurrentUser() user: AuthUser) {
     return this.guides.history(user.sub, user.tenantId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.guides.deleteGuide(id, user.sub, user.tenantId);
   }
 }

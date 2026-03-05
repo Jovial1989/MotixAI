@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { GeminiImageProvider } from 'src/ai/gemini-image.provider';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
@@ -44,13 +44,32 @@ Style: technical exploded-view or cross-section diagram, neutral background, lab
 }
 
 @Injectable()
-export class StepsService {
+export class StepsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StepsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly imageProvider: GeminiImageProvider,
   ) {}
+
+  async onApplicationBootstrap(): Promise<void> {
+    // Reset steps stuck in queued/generating from a previous server run
+    const reset = await this.prisma.repairStep.updateMany({
+      where: { imageStatus: { in: ['queued', 'generating'] } },
+      data: { imageStatus: 'none' },
+    });
+    if (reset.count > 0) {
+      this.logger.log(`Reset ${reset.count} stuck image job(s) to 'none' on startup`);
+      // Re-enqueue them
+      const steps = await this.prisma.repairStep.findMany({
+        where: { imageStatus: 'none', imagePrompt: { not: null } },
+        select: { id: true },
+      });
+      for (const step of steps) {
+        void this.generateStepImage(step.id, false);
+      }
+    }
+  }
 
   async generateStepImage(stepId: string, force = false): Promise<{ imageStatus: string; imageUrl: string | null }> {
     const step = await this.prisma.repairStep.findUnique({

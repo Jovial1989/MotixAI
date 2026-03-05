@@ -18,7 +18,7 @@ export class GeminiProvider implements AIProvider {
   async isConnected(): Promise<boolean> {
     if (!this.client) return false;
     try {
-      const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
       await model.generateContent('ping');
       return true;
     } catch {
@@ -32,7 +32,7 @@ export class GeminiProvider implements AIProvider {
     }
 
     try {
-      const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const prompt = `You are an expert automotive and heavy equipment repair technician.
 Generate a detailed repair guide for:

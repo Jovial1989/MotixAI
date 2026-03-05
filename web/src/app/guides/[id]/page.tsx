@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 
-function StepImage({ step, token }: { step: RepairStep; token: string | null }) {
+function StepImage({ step, token, guideId }: { step: RepairStep; token: string | null; guideId: string }) {
   const [status, setStatus]   = useState(step.imageStatus ?? 'none');
   const [url, setUrl]         = useState(step.imageUrl ?? null);
   const [triggered, setTriggered] = useState(false);
@@ -30,7 +30,7 @@ function StepImage({ step, token }: { step: RepairStep; token: string | null }) 
     }
     intervalRef.current = setInterval(async () => {
       try {
-        const guide = await webApi.getGuide(step.id.split('_')[0] ?? '');
+        const guide = await webApi.getGuide(guideId);
         const fresh = guide?.steps?.find((s: RepairStep) => s.id === step.id);
         if (fresh) {
           setStatus(fresh.imageStatus ?? 'none');
@@ -39,7 +39,7 @@ function StepImage({ step, token }: { step: RepairStep; token: string | null }) 
       } catch { /* ignore */ }
     }, 4000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [status, step.id]);
+  }, [status, step.id, guideId]);
 
   if (status === 'ready' && url) {
     return (
@@ -204,7 +204,7 @@ export default function GuideDetailPage() {
                     {step.warningNote}
                   </div>
                 )}
-                <StepImage step={step} token={token} />
+                <StepImage step={step} token={token} guideId={params.id} />
               </div>
             </div>
           ))}

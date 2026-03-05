@@ -10,6 +10,7 @@ export default function DashboardPage() {
   const [error, setError]       = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -22,10 +23,11 @@ export default function DashboardPage() {
 
   async function createGuide(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setSubmitting(true);
     setError(null);
     try {
-      const data    = new FormData(event.currentTarget);
+      const data    = new FormData(form);
       const created = await webApi.createGuide({
         vin:          String(data.get('vin') || ''),
         vehicleModel: String(data.get('vehicleModel') || ''),
@@ -33,11 +35,23 @@ export default function DashboardPage() {
         oemNumber:    String(data.get('oemNumber') || ''),
       });
       setGuides((prev) => [created, ...prev]);
-      event.currentTarget.reset();
+      form.reset();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create guide');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function deleteGuide(id: string) {
+    setDeleting(id);
+    try {
+      await webApi.deleteGuide(id);
+      setGuides((prev) => prev.filter((g) => g.id !== id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete guide');
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -146,8 +160,8 @@ export default function DashboardPage() {
             </div>
           ) : (
             guides.map((guide) => (
-              <Link key={guide.id} href={`/guides/${guide.id}`} className="guide-card">
-                <div className="guide-card-main">
+              <div key={guide.id} className="guide-card">
+                <Link href={`/guides/${guide.id}`} className="guide-card-main">
                   <div className="guide-card-meta">
                     <span className={`badge ${difficultyColor[guide.difficulty] ?? 'badge--yellow'}`}>
                       {guide.difficulty}
@@ -168,13 +182,29 @@ export default function DashboardPage() {
                     <span className="guide-card-dot">·</span>
                     {guide.steps?.length ?? 0} steps
                   </p>
+                </Link>
+                <div className="guide-card-actions">
+                  <button
+                    className="guide-card-delete"
+                    onClick={() => deleteGuide(guide.id)}
+                    disabled={deleting === guide.id}
+                    title="Delete guide"
+                  >
+                    {deleting === guide.id ? (
+                      <span className="gen-spinner" />
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                        <path d="M2 4h11M6 4V2.5h3V4M5 4v8a1 1 0 001 1h3a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </button>
+                  <Link href={`/guides/${guide.id}`} className="guide-card-arrow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
                 </div>
-                <div className="guide-card-arrow">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </Link>
+              </div>
             ))
           )}
         </section>

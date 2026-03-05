@@ -131,6 +131,14 @@ export class DomainGuidesService {
     return guide;
   }
 
+  async deleteGuide(guideId: string, userId: string, tenantId: string | null) {
+    const guide = await this.prisma.repairGuide.findFirst({
+      where: { id: guideId, ...(tenantId ? { tenantId } : { userId }) },
+    });
+    if (!guide) throw new NotFoundException('Guide not found');
+    await this.prisma.repairGuide.delete({ where: { id: guideId } });
+  }
+
   async history(userId: string, tenantId: string | null) {
     return this.prisma.repairGuide.findMany({
       where: tenantId ? { tenantId } : { userId },

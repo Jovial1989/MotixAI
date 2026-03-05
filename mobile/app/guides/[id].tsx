@@ -1,43 +1,135 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator, Animated, Image, Pressable,
+  SafeAreaView, ScrollView, StyleSheet, Text, View,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { authApi } from '@/lib/api';
+import { C, T, S, R, SHADOW, SCREEN_H_PAD } from '@/theme';
 
 const POLL_INTERVAL_MS = 4000;
 
-function hasInProgressImages(steps: RepairStep[]): boolean {
+function hasInProgress(steps: RepairStep[]) {
   return steps.some((s) => s.imageStatus === 'queued' || s.imageStatus === 'generating');
 }
 
+// ─── Step image ───────────────────────────────────────────────────────────────
 function StepImage({ step, onRetry }: { step: RepairStep; onRetry: () => void }) {
+  const pulse = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    if (step.imageStatus !== 'queued' && step.imageStatus !== 'generating') return;
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.4, duration: 900, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [step.imageStatus, pulse]);
+
   if (step.imageStatus === 'ready' && step.imageUrl) {
     return (
       <Image
         source={{ uri: step.imageUrl }}
-        style={styles.image}
+        style={img.image}
         resizeMode="cover"
       />
     );
   }
+
   if (step.imageStatus === 'queued' || step.imageStatus === 'generating') {
     return (
-      <View style={styles.imageSkeleton}>
-        <ActivityIndicator color="#f97316" />
-        <Text style={styles.skeletonText}>Generating illustration…</Text>
-      </View>
+      <Animated.View style={[img.skeleton, { opacity: pulse }]}>
+        <View style={img.skeletonInner}>
+          <ActivityIndicator color={C.primary} size="small" />
+          <Text style={img.skeletonText}>Generating illustration…</Text>
+        </View>
+      </Animated.View>
     );
   }
+
   if (step.imageStatus === 'failed') {
     return (
-      <Pressable style={styles.imageFailedBox} onPress={onRetry}>
-        <Text style={styles.imageFailedText}>Image failed — tap to retry</Text>
+      <Pressable style={img.failBox} onPress={onRetry}>
+        <Text style={img.failIcon}>⟳</Text>
+        <Text style={img.failText}>Tap to retry</Text>
       </Pressable>
     );
   }
+
   return null;
 }
 
+const img = StyleSheet.create({
+  image:       { width: '100%', height: 220, borderRadius: R.md, marginTop: S.sm },
+  skeleton:    { width: '100%', height: 140, borderRadius: R.md, backgroundColor: C.bg, marginTop: S.sm, overflow: 'hidden' },
+  skeletonInner:{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: S.xs },
+  skeletonText:{ ...T.caption, color: C.textMuted, fontWeight: '400', textTransform: undefined, letterSpacing: 0 },
+  failBox:     { width: '100%', height: 72, borderRadius: R.md, borderWidth: 1.5, borderColor: C.errorBorder, backgroundColor: C.errorLight, justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: S.sm },
+  failIcon:    { fontSize: 18, color: C.error },
+  failText:    { ...T.caption, color: C.error, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
+});
+
+// ─── Step card ────────────────────────────────────────────────────────────────
+function StepCard({ step, onRetry }: { step: RepairStep; onRetry: () => void }) {
+  return (
+    <View style={sc.card}>
+      {/* Step number pill + title */}
+      <View style={sc.titleRow}>
+        <View style={sc.pill}>
+          <Text style={sc.pillText}>{step.stepOrder}</Text>
+        </View>
+        <Text style={sc.title} numberOfLines={2}>{step.title}</Text>
+      </View>
+
+      {/* Illustration */}
+      <StepImage step={step} onRetry={onRetry} />
+
+      {/* Instruction */}
+      <Text style={sc.instruction}>{step.instruction}</Text>
+
+      {/* Specs row */}
+      {(step.torqueValue || step.warningNote) && (
+        <View style={sc.specRow}>
+          {step.torqueValue && (
+            <View style={sc.specChip}>
+              <Text style={sc.specIcon}>🔩</Text>
+              <Text style={sc.specLabel}>Torque</Text>
+              <Text style={sc.specValue}>{step.torqueValue}</Text>
+            </View>
+          )}
+          {step.warningNote && (
+            <View style={[sc.specChip, sc.warnChip]}>
+              <Text style={sc.specIcon}>⚠️</Text>
+              <Text style={[sc.specLabel, sc.warnText]}>{step.warningNote}</Text>
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const sc = StyleSheet.create({
+  card:        { backgroundColor: C.bgCard, borderRadius: R.lg, padding: S.md, marginBottom: S.sm, ...SHADOW.xs, borderWidth: 1, borderColor: C.border },
+  titleRow:    { flexDirection: 'row', alignItems: 'center', gap: S.sm },
+  pill:        { width: 32, height: 32, borderRadius: R.full, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  pillText:    { fontSize: 13, fontWeight: '800', color: '#fff' },
+  title:       { ...T.subhead, flex: 1 },
+  instruction: { ...T.body, marginTop: S.xs },
+  specRow:     { gap: S.xs, marginTop: S.xs },
+  specChip:    { flexDirection: 'row', alignItems: 'center', gap: S.xs, backgroundColor: C.successLight, borderRadius: R.sm, padding: S.sm, borderWidth: 1, borderColor: C.successBorder },
+  warnChip:    { backgroundColor: C.warningLight, borderColor: C.warningBorder },
+  specIcon:    { fontSize: 14 },
+  specLabel:   { ...T.caption, color: C.success, fontWeight: '600', textTransform: undefined, letterSpacing: 0 },
+  specValue:   { ...T.smallBold, color: C.success },
+  warnText:    { color: C.warning, flex: 1 },
+});
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function GuideDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -46,194 +138,197 @@ export default function GuideDetailScreen() {
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = useCallback(() => {
-    if (pollTimer.current) {
-      clearInterval(pollTimer.current);
-      pollTimer.current = null;
-    }
+    if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
   }, []);
 
   const fetchGuide = useCallback(async (): Promise<RepairGuide | null> => {
     try {
       const api = await authApi();
       return await api.getGuide(id!);
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }, [id]);
 
-  // Trigger image generation for all steps that have none
   const triggerImages = useCallback(async (g: RepairGuide) => {
     const noneSteps = g.steps.filter((s) => s.imageStatus === 'none');
     if (noneSteps.length === 0) return;
     const api = await authApi();
-    // Enqueue all in parallel — server caps concurrency at 2
     await Promise.allSettled(noneSteps.map((s) => api.generateStepImage(s.id)));
   }, []);
 
   const retryStep = useCallback(async (stepId: string) => {
     const api = await authApi();
     await api.generateStepImage(stepId, true);
-    // Refresh guide to show queued state
     const updated = await fetchGuide();
     if (updated) setGuide(updated);
   }, [fetchGuide]);
 
   useEffect(() => {
     if (!id) return;
-
     void (async () => {
       const g = await fetchGuide();
       if (!g) { setError(true); return; }
       setGuide(g);
-
-      // Auto-trigger generation for steps that haven't started
       await triggerImages(g);
-
-      // Refresh once after triggering so skeletons appear
       const triggered = await fetchGuide();
       if (triggered) setGuide(triggered);
-
-      // Poll while any step is in progress
-      if (hasInProgressImages(triggered?.steps ?? g.steps)) {
+      if (hasInProgress(triggered?.steps ?? g.steps)) {
         pollTimer.current = setInterval(async () => {
           const updated = await fetchGuide();
           if (!updated) return;
           setGuide(updated);
-          if (!hasInProgressImages(updated.steps)) stopPolling();
+          if (!hasInProgress(updated.steps)) stopPolling();
         }, POLL_INTERVAL_MS);
       }
     })();
-
     return stopPolling;
   }, [id, fetchGuide, triggerImages, stopPolling]);
 
+  // ── Error ──
   if (error) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>Couldn't load this guide.</Text>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>Go back</Text>
+      <SafeAreaView style={s.safe}>
+        <View style={s.centerState}>
+          <Text style={s.errorIcon}>⚠️</Text>
+          <Text style={s.errorTitle}>Couldn't load guide</Text>
+          <Pressable style={s.backBtn} onPress={() => router.back()}>
+            <Text style={s.backBtnText}>← Go back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
     );
   }
 
+  // ── Loading ──
   if (!guide) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#f97316" />
-          <Text style={styles.loadingText}>Loading guide…</Text>
+      <SafeAreaView style={s.safe}>
+        <View style={s.centerState}>
+          <ActivityIndicator size="large" color={C.primary} />
+          <Text style={s.loadingText}>Loading guide…</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  const readyCount = guide.steps.filter((s) => s.imageStatus === 'ready').length;
+  const allReady   = readyCount === guide.steps.length;
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Back */}
-        <Pressable style={styles.backRow} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
+    <SafeAreaView style={s.safe}>
+      {/* ── Sticky header ── */}
+      <View style={s.stickyHeader}>
+        <Pressable style={s.backRow} onPress={() => router.back()} hitSlop={8}>
+          <Text style={s.backArrow}>←</Text>
+          <Text style={s.backLabel}>Back</Text>
         </Pressable>
+        <View style={s.progressPill}>
+          {!allReady && <ActivityIndicator size="small" color={C.primary} style={{ marginRight: 4 }} />}
+          <Text style={s.progressText}>
+            {allReady ? `${guide.steps.length} steps ready` : `${readyCount}/${guide.steps.length} illustrations`}
+          </Text>
+        </View>
+      </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{guide.title}</Text>
-
-        {/* Meta badges */}
-        <View style={styles.badgeRow}>
-          <Text style={styles.badge}>⏱ {guide.timeEstimate}</Text>
-          <Text style={styles.badge}>📊 {guide.difficulty}</Text>
-          <Text style={styles.badge}>{guide.vehicle.model}</Text>
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Guide header ── */}
+        <View style={s.guideHeader}>
+          <View style={s.metaRow}>
+            <View style={[s.metaBadge, { backgroundColor: C.primaryLight, borderColor: C.primaryBorder }]}>
+              <Text style={[s.metaBadgeText, { color: C.primaryDark }]}>⏱ {guide.timeEstimate}</Text>
+            </View>
+            <View style={s.metaBadge}>
+              <Text style={s.metaBadgeText}>📊 {guide.difficulty}</Text>
+            </View>
+            <View style={s.metaBadge}>
+              <Text style={s.metaBadgeText}>{guide.vehicle.model}</Text>
+            </View>
+          </View>
+          <Text style={s.guideTitle}>{guide.title}</Text>
+          <Text style={s.guideSub}>{guide.part.name}</Text>
         </View>
 
-        {/* Tools */}
+        {/* ── Tools ── */}
         {guide.tools.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tools required</Text>
-            <View style={styles.tagRow}>
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>TOOLS REQUIRED</Text>
+            <View style={s.chipRow}>
               {guide.tools.map((tool, i) => (
-                <Text key={i} style={styles.toolTag}>{tool}</Text>
+                <View key={i} style={s.toolChip}>
+                  <Text style={s.toolChipText}>{tool}</Text>
+                </View>
               ))}
             </View>
           </View>
         )}
 
-        {/* Safety notes */}
+        {/* ── Safety ── */}
         {guide.safetyNotes.length > 0 && (
-          <View style={styles.safetyBox}>
-            <Text style={styles.safetyTitle}>⚠️  Safety notes</Text>
+          <View style={s.safetyCard}>
+            <Text style={s.safetyTitle}>⚠️  Safety notes</Text>
             {guide.safetyNotes.map((note, i) => (
-              <Text key={i} style={styles.safetyText}>• {note}</Text>
+              <View key={i} style={s.safetyRow}>
+                <View style={s.safetydot} />
+                <Text style={s.safetyNote}>{note}</Text>
+              </View>
             ))}
           </View>
         )}
 
-        {/* Steps */}
-        <Text style={styles.sectionTitle}>Steps ({guide.steps.length})</Text>
+        {/* ── Steps ── */}
+        <Text style={s.stepsHeader}>PROCEDURE — {guide.steps.length} STEPS</Text>
         {guide.steps.map((step: RepairStep) => (
-          <View key={step.id} style={styles.stepCard}>
-            <Text style={styles.stepNumber}>Step {step.stepOrder}</Text>
-            <Text style={styles.stepTitle}>{step.title}</Text>
-
-            {/* Image above description */}
-            <StepImage step={step} onRetry={() => void retryStep(step.id)} />
-
-            <Text style={styles.stepText}>{step.instruction}</Text>
-
-            {step.torqueValue ? (
-              <View style={styles.torqueRow}>
-                <Text style={styles.torqueLabel}>🔩 Torque</Text>
-                <Text style={styles.torqueValue}>{step.torqueValue}</Text>
-              </View>
-            ) : null}
-
-            {step.warningNote ? (
-              <View style={styles.warningBox}>
-                <Text style={styles.warningText}>⚠  {step.warningNote}</Text>
-              </View>
-            ) : null}
-          </View>
+          <StepCard key={step.id} step={step} onRetry={() => void retryStep(step.id)} />
         ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  container: { padding: 18, gap: 14, paddingBottom: 48 },
-  backRow: { marginBottom: 4 },
-  backText: { color: '#f97316', fontWeight: '600', fontSize: 15 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827', lineHeight: 30 },
-  badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  badge: { backgroundColor: '#e5e7eb', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, fontSize: 13, color: '#374151' },
-  section: { gap: 8 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  tagRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  toolTag: { backgroundColor: '#dbeafe', color: '#1e40af', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, fontSize: 13 },
-  safetyBox: { backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa', borderRadius: 14, padding: 14, gap: 6 },
-  safetyTitle: { fontWeight: '700', color: '#92400e', fontSize: 14 },
-  safetyText: { color: '#78350f', fontSize: 13, lineHeight: 20 },
-  stepCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 14, gap: 8 },
-  stepNumber: { fontSize: 11, color: '#f97316', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  stepTitle: { fontWeight: '700', fontSize: 16, color: '#111827' },
-  stepText: { color: '#374151', fontSize: 14, lineHeight: 21 },
-  torqueRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f0fdf4', borderRadius: 10, padding: 10 },
-  torqueLabel: { fontSize: 12, color: '#166534', fontWeight: '600' },
-  torqueValue: { fontSize: 14, fontWeight: '700', color: '#15803d' },
-  warningBox: { backgroundColor: '#fef3c7', borderRadius: 10, padding: 10 },
-  warningText: { color: '#92400e', fontSize: 13 },
-  image: { width: '100%', height: 220, borderRadius: 12 },
-  imageSkeleton: { width: '100%', height: 160, borderRadius: 12, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center', gap: 8 },
-  skeletonText: { fontSize: 12, color: '#9ca3af' },
-  imageFailedBox: { width: '100%', height: 60, borderRadius: 12, backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fecaca', justifyContent: 'center', alignItems: 'center' },
-  imageFailedText: { fontSize: 12, color: '#ef4444', fontWeight: '500' },
-  loadingText: { color: '#9ca3af', marginTop: 8 },
-  errorText: { fontSize: 16, color: '#6b7280' },
-  backBtn: { backgroundColor: '#f97316', borderRadius: 999, paddingHorizontal: 24, paddingVertical: 10 },
-  backBtnText: { color: '#fff', fontWeight: '700' },
+const s = StyleSheet.create({
+  safe:         { flex: 1, backgroundColor: C.bg },
+
+  // States
+  centerState:  { flex: 1, justifyContent: 'center', alignItems: 'center', gap: S.md },
+  errorIcon:    { fontSize: 36 },
+  errorTitle:   { ...T.heading, color: C.textSub },
+  backBtn:      { backgroundColor: C.primary, borderRadius: R.full, paddingHorizontal: S.lg, paddingVertical: S.sm + 2 },
+  backBtnText:  { fontSize: 14, fontWeight: '700', color: '#fff' },
+  loadingText:  { ...T.body, color: C.textMuted, marginTop: S.xs },
+
+  // Sticky header
+  stickyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SCREEN_H_PAD, paddingVertical: S.sm, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.bgCard, ...SHADOW.xs },
+  backRow:      { flexDirection: 'row', alignItems: 'center', gap: S.xs },
+  backArrow:    { fontSize: 20, color: C.primary, fontWeight: '700' },
+  backLabel:    { ...T.smallBold, color: C.primary },
+  progressPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: R.full, paddingHorizontal: S.sm, paddingVertical: S.xs, borderWidth: 1, borderColor: C.border },
+  progressText: { ...T.caption, color: C.textSub, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
+
+  // Guide header
+  scroll:       { paddingHorizontal: SCREEN_H_PAD, paddingBottom: S.xl },
+  guideHeader:  { paddingTop: S.lg, paddingBottom: S.md, gap: S.xs },
+  metaRow:      { flexDirection: 'row', gap: S.xs, flexWrap: 'wrap', marginBottom: S.xs },
+  metaBadge:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: R.full, paddingHorizontal: S.sm, paddingVertical: S.xs, borderWidth: 1, borderColor: C.border },
+  metaBadgeText:{ ...T.caption, color: C.textSub, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
+  guideTitle:   { ...T.title, lineHeight: 32 },
+  guideSub:     { ...T.body, color: C.textMuted },
+
+  // Sections
+  section:      { marginBottom: S.md },
+  sectionTitle: { ...T.label, marginBottom: S.sm },
+  chipRow:      { flexDirection: 'row', gap: S.xs, flexWrap: 'wrap' },
+  toolChip:     { backgroundColor: C.bgCard, borderRadius: R.full, paddingHorizontal: S.md, paddingVertical: S.xs + 2, borderWidth: 1, borderColor: C.border },
+  toolChipText: { ...T.small, color: C.text, fontWeight: '500' },
+
+  // Safety card
+  safetyCard:   { backgroundColor: C.warningLight, borderRadius: R.lg, padding: S.md, borderWidth: 1, borderColor: C.warningBorder, marginBottom: S.md, gap: S.xs },
+  safetyTitle:  { ...T.smallBold, color: C.warning },
+  safetyRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm },
+  safetydot:    { width: 5, height: 5, borderRadius: 99, backgroundColor: C.warning, marginTop: 7, flexShrink: 0 },
+  safetyNote:   { ...T.small, color: '#78350f', flex: 1, lineHeight: 20 },
+
+  // Steps header
+  stepsHeader:  { ...T.label, marginBottom: S.sm },
 });

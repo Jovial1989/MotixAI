@@ -1,4 +1,4 @@
-export type Role = 'USER' | 'ENTERPRISE_ADMIN';
+export type Role = 'USER' | 'ENTERPRISE_ADMIN' | 'GUEST';
 
 export interface AuthUser {
   id: string;
@@ -34,6 +34,10 @@ export interface RepairStep {
   instruction: string;
   torqueValue?: string | null;
   warningNote?: string | null;
+  imageStatus: 'none' | 'queued' | 'generating' | 'ready' | 'failed';
+  imageUrl?: string | null;
+  imagePrompt?: string | null;
+  imageError?: string | null;
 }
 
 export interface GeneratedImage {

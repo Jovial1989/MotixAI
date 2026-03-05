@@ -42,6 +42,9 @@ export class MotixApiClient {
       throw new Error(message);
     }
 
+    if (res.status === 204 || res.headers.get('content-length') === '0') {
+      return undefined as T;
+    }
     return (await res.json()) as T;
   }
 
@@ -104,6 +107,10 @@ export class MotixApiClient {
 
   getGuide(id: string) {
     return this.request<RepairGuide>(`/guides/${id}`);
+  }
+
+  deleteGuide(id: string) {
+    return this.request<void>(`/guides/${id}`, { method: 'DELETE' });
   }
 
   uploadManual(body: UploadManualInput) {
