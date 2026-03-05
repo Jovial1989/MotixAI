@@ -146,11 +146,18 @@ export default function DashboardScreen() {
             <Text style={s.headerLabel}>MOTIXAI</Text>
             <Text style={s.headerTitle}>Dashboard</Text>
           </View>
-          <Link href="/profile" asChild>
-            <Pressable style={s.avatar}>
-              <Text style={s.avatarText}>{initials(userEmail)}</Text>
-            </Pressable>
-          </Link>
+          <View style={s.headerRight}>
+            <Link href="/history" asChild>
+              <Pressable style={s.historyBtn}>
+                <Text style={s.historyBtnText}>History</Text>
+              </Pressable>
+            </Link>
+            <Link href="/profile" asChild>
+              <Pressable style={s.avatar}>
+                <Text style={s.avatarText}>{initials(userEmail)}</Text>
+              </Pressable>
+            </Link>
+          </View>
         </View>
 
         {/* ── Guest banner ── */}
@@ -251,6 +258,9 @@ const s = StyleSheet.create({
   header:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SCREEN_H_PAD, paddingTop: S.md, paddingBottom: S.sm },
   headerLabel:    { ...T.label, color: C.primary, marginBottom: 2 },
   headerTitle:    { ...T.title },
+  headerRight:    { flexDirection: 'row', alignItems: 'center', gap: S.sm },
+  historyBtn:     { height: 36, paddingHorizontal: S.md, borderRadius: R.full, borderWidth: 1.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bgCard },
+  historyBtnText: { ...T.smallBold, color: C.textSub },
   avatar:         { width: 42, height: 42, borderRadius: R.full, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.sm },
   avatarText:     { fontSize: 17, fontWeight: '700', color: '#fff' },
 

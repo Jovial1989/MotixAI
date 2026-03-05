@@ -1,141 +1,124 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Animated, Image, Pressable,
-  SafeAreaView, ScrollView, StyleSheet, Text, View,
+  ActivityIndicator, Pressable, SafeAreaView,
+  ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { authApi } from '@/lib/api';
+import { StepCard } from '@/components/StepCard';
+import { StepNavigator } from '@/components/StepNavigator';
+import { CollapsibleCard } from '@/components/CollapsibleCard';
+import { Chip } from '@/components/Chip';
 import { C, T, S, R, SHADOW, SCREEN_H_PAD } from '@/theme';
 
-const POLL_INTERVAL_MS = 4000;
+const POLL_MS = 4000;
 
 function hasInProgress(steps: RepairStep[]) {
   return steps.some((s) => s.imageStatus === 'queued' || s.imageStatus === 'generating');
 }
 
-// ─── Step image ───────────────────────────────────────────────────────────────
-function StepImage({ step, onRetry }: { step: RepairStep; onRetry: () => void }) {
-  const pulse = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    if (step.imageStatus !== 'queued' && step.imageStatus !== 'generating') return;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 900, useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [step.imageStatus, pulse]);
-
-  if (step.imageStatus === 'ready' && step.imageUrl) {
-    return (
-      <Image
-        source={{ uri: step.imageUrl }}
-        style={img.image}
-        resizeMode="cover"
-      />
-    );
-  }
-
-  if (step.imageStatus === 'queued' || step.imageStatus === 'generating') {
-    return (
-      <Animated.View style={[img.skeleton, { opacity: pulse }]}>
-        <View style={img.skeletonInner}>
-          <ActivityIndicator color={C.primary} size="small" />
-          <Text style={img.skeletonText}>Generating illustration…</Text>
-        </View>
-      </Animated.View>
-    );
-  }
-
-  if (step.imageStatus === 'failed') {
-    return (
-      <Pressable style={img.failBox} onPress={onRetry}>
-        <Text style={img.failIcon}>⟳</Text>
-        <Text style={img.failText}>Tap to retry</Text>
-      </Pressable>
-    );
-  }
-
-  return null;
-}
-
-const img = StyleSheet.create({
-  image:       { width: '100%', height: 220, borderRadius: R.md, marginTop: S.sm },
-  skeleton:    { width: '100%', height: 140, borderRadius: R.md, backgroundColor: C.bg, marginTop: S.sm, overflow: 'hidden' },
-  skeletonInner:{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: S.xs },
-  skeletonText:{ ...T.caption, color: C.textMuted, fontWeight: '400', textTransform: undefined, letterSpacing: 0 },
-  failBox:     { width: '100%', height: 72, borderRadius: R.md, borderWidth: 1.5, borderColor: C.errorBorder, backgroundColor: C.errorLight, justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: S.sm },
-  failIcon:    { fontSize: 18, color: C.error },
-  failText:    { ...T.caption, color: C.error, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
-});
-
-// ─── Step card ────────────────────────────────────────────────────────────────
-function StepCard({ step, onRetry }: { step: RepairStep; onRetry: () => void }) {
+// ─── Guide header ─────────────────────────────────────────────────────────────
+function GuideHeader({
+  guide, stepIndex, readyCount, allReady, onBack,
+}: {
+  guide: RepairGuide; stepIndex: number; readyCount: number;
+  allReady: boolean; onBack: () => void;
+}) {
+  const progress = guide.steps.length > 0 ? (stepIndex + 1) / guide.steps.length : 0;
   return (
-    <View style={sc.card}>
-      {/* Step number pill + title */}
-      <View style={sc.titleRow}>
-        <View style={sc.pill}>
-          <Text style={sc.pillText}>{step.stepOrder}</Text>
+    <View style={gh.wrap}>
+      <View style={gh.topRow}>
+        <Pressable style={gh.backBtn} onPress={onBack} hitSlop={8}>
+          <Text style={gh.backArrow}>←</Text>
+          <Text style={gh.backLabel}>Back</Text>
+        </Pressable>
+        <View style={gh.meta}>
+          <Text style={gh.vehicle} numberOfLines={1}>{guide.vehicle.model}</Text>
+          <Text style={gh.part} numberOfLines={1}>{guide.part.name}</Text>
         </View>
-        <Text style={sc.title} numberOfLines={2}>{step.title}</Text>
+        <View style={gh.right}>
+          <View style={gh.timeBadge}>
+            <Text style={gh.timeText}>⏱ {guide.timeEstimate}</Text>
+          </View>
+          {!allReady && (
+            <Text style={gh.imgProgress}>{readyCount}/{guide.steps.length} imgs</Text>
+          )}
+        </View>
       </View>
-
-      {/* Illustration */}
-      <StepImage step={step} onRetry={onRetry} />
-
-      {/* Instruction */}
-      <Text style={sc.instruction}>{step.instruction}</Text>
-
-      {/* Specs row */}
-      {(step.torqueValue || step.warningNote) && (
-        <View style={sc.specRow}>
-          {step.torqueValue && (
-            <View style={sc.specChip}>
-              <Text style={sc.specIcon}>🔩</Text>
-              <Text style={sc.specLabel}>Torque</Text>
-              <Text style={sc.specValue}>{step.torqueValue}</Text>
-            </View>
-          )}
-          {step.warningNote && (
-            <View style={[sc.specChip, sc.warnChip]}>
-              <Text style={sc.specIcon}>⚠️</Text>
-              <Text style={[sc.specLabel, sc.warnText]}>{step.warningNote}</Text>
-            </View>
-          )}
-        </View>
-      )}
+      <Text style={gh.title} numberOfLines={2}>{guide.title}</Text>
+      <View style={gh.progressTrack}>
+        <View style={[gh.progressFill, { width: `${progress * 100}%` as any }]} />
+      </View>
     </View>
   );
 }
 
-const sc = StyleSheet.create({
-  card:        { backgroundColor: C.bgCard, borderRadius: R.lg, padding: S.md, marginBottom: S.sm, ...SHADOW.xs, borderWidth: 1, borderColor: C.border },
-  titleRow:    { flexDirection: 'row', alignItems: 'center', gap: S.sm },
-  pill:        { width: 32, height: 32, borderRadius: R.full, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  pillText:    { fontSize: 13, fontWeight: '800', color: '#fff' },
-  title:       { ...T.subhead, flex: 1 },
-  instruction: { ...T.body, marginTop: S.xs },
-  specRow:     { gap: S.xs, marginTop: S.xs },
-  specChip:    { flexDirection: 'row', alignItems: 'center', gap: S.xs, backgroundColor: C.successLight, borderRadius: R.sm, padding: S.sm, borderWidth: 1, borderColor: C.successBorder },
-  warnChip:    { backgroundColor: C.warningLight, borderColor: C.warningBorder },
-  specIcon:    { fontSize: 14 },
-  specLabel:   { ...T.caption, color: C.success, fontWeight: '600', textTransform: undefined, letterSpacing: 0 },
-  specValue:   { ...T.smallBold, color: C.success },
-  warnText:    { color: C.warning, flex: 1 },
+const gh = StyleSheet.create({
+  wrap:          { backgroundColor: C.bgCard, borderBottomWidth: 1, borderBottomColor: C.border, ...SHADOW.xs },
+  topRow:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SCREEN_H_PAD, paddingTop: S.sm, paddingBottom: S.xs, gap: S.sm },
+  backBtn:       { flexDirection: 'row', alignItems: 'center', gap: S.xs },
+  backArrow:     { fontSize: 20, color: C.primary, fontWeight: '700' },
+  backLabel:     { ...T.smallBold, color: C.primary },
+  meta:          { flex: 1 },
+  vehicle:       { ...T.caption, color: C.textMuted, textTransform: undefined, letterSpacing: 0 },
+  part:          { ...T.smallBold, color: C.text },
+  right:         { alignItems: 'flex-end', gap: 2 },
+  timeBadge:     { backgroundColor: C.primaryLight, borderRadius: R.full, paddingHorizontal: S.sm, paddingVertical: 3, borderWidth: 1, borderColor: C.primaryBorder },
+  timeText:      { ...T.caption, color: C.primaryDark, fontWeight: '600', textTransform: undefined, letterSpacing: 0 },
+  imgProgress:   { ...T.caption, color: C.textMuted, textTransform: undefined, letterSpacing: 0 },
+  title:         { fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: C.text, paddingHorizontal: SCREEN_H_PAD, paddingBottom: S.sm, lineHeight: 28 },
+  progressTrack: { height: 3, backgroundColor: C.border },
+  progressFill:  { height: 3, backgroundColor: C.primary },
 });
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ─── Step timeline (horizontal) ───────────────────────────────────────────────
+function StepTimeline({ steps, activeIndex, onSelect }: {
+  steps: RepairStep[]; activeIndex: number; onSelect: (i: number) => void;
+}) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={sl.row}>
+      {steps.map((step, i) => {
+        const active = i === activeIndex;
+        const done   = i < activeIndex;
+        return (
+          <Pressable key={step.id} style={sl.item} onPress={() => onSelect(i)}>
+            <View style={[sl.dot, active && sl.dotActive, done && sl.dotDone]}>
+              {done
+                ? <Text style={sl.check}>✓</Text>
+                : <Text style={[sl.num, active && sl.numActive]}>{i + 1}</Text>
+              }
+            </View>
+            <Text style={[sl.label, active && sl.labelActive]} numberOfLines={2}>{step.title}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+const sl = StyleSheet.create({
+  row:        { paddingHorizontal: SCREEN_H_PAD, paddingVertical: S.sm, gap: S.xs },
+  item:       { alignItems: 'center', width: 72, gap: 4 },
+  dot:        { width: 28, height: 28, borderRadius: R.full, borderWidth: 2, borderColor: C.border, backgroundColor: C.bgCard, alignItems: 'center', justifyContent: 'center' },
+  dotActive:  { borderColor: C.primary, backgroundColor: C.primary },
+  dotDone:    { borderColor: C.success, backgroundColor: C.success },
+  check:      { fontSize: 12, color: '#fff', fontWeight: '700' },
+  num:        { fontSize: 11, fontWeight: '700', color: C.textMuted },
+  numActive:  { color: '#fff' },
+  label:      { ...T.caption, textAlign: 'center', color: C.textMuted, textTransform: undefined, letterSpacing: 0 },
+  labelActive:{ color: C.primary, fontWeight: '700' },
+});
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
 export default function GuideDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const [guide, setGuide] = useState<RepairGuide | null>(null);
-  const [error, setError] = useState(false);
+  const router  = useRouter();
+  const [guide, setGuide]         = useState<RepairGuide | null>(null);
+  const [error, setError]         = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   const stopPolling = useCallback(() => {
     if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
@@ -149,10 +132,10 @@ export default function GuideDetailScreen() {
   }, [id]);
 
   const triggerImages = useCallback(async (g: RepairGuide) => {
-    const noneSteps = g.steps.filter((s) => s.imageStatus === 'none');
-    if (noneSteps.length === 0) return;
+    const none = g.steps.filter((s) => s.imageStatus === 'none');
+    if (!none.length) return;
     const api = await authApi();
-    await Promise.allSettled(noneSteps.map((s) => api.generateStepImage(s.id)));
+    await Promise.allSettled(none.map((s) => api.generateStepImage(s.id)));
   }, []);
 
   const retryStep = useCallback(async (stepId: string) => {
@@ -177,19 +160,24 @@ export default function GuideDetailScreen() {
           if (!updated) return;
           setGuide(updated);
           if (!hasInProgress(updated.steps)) stopPolling();
-        }, POLL_INTERVAL_MS);
+        }, POLL_MS);
       }
     })();
     return stopPolling;
   }, [id, fetchGuide, triggerImages, stopPolling]);
 
-  // ── Error ──
+  const goToStep = useCallback((i: number) => {
+    if (!guide) return;
+    setStepIndex(Math.max(0, Math.min(i, guide.steps.length - 1)));
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [guide]);
+
   if (error) {
     return (
       <SafeAreaView style={s.safe}>
-        <View style={s.centerState}>
-          <Text style={s.errorIcon}>⚠️</Text>
-          <Text style={s.errorTitle}>Couldn't load guide</Text>
+        <View style={s.center}>
+          <Text style={s.stateIcon}>⚠️</Text>
+          <Text style={s.stateTitle}>Couldn't load guide</Text>
           <Pressable style={s.backBtn} onPress={() => router.back()}>
             <Text style={s.backBtnText}>← Go back</Text>
           </Pressable>
@@ -198,137 +186,105 @@ export default function GuideDetailScreen() {
     );
   }
 
-  // ── Loading ──
   if (!guide) {
     return (
       <SafeAreaView style={s.safe}>
-        <View style={s.centerState}>
+        <View style={s.center}>
           <ActivityIndicator size="large" color={C.primary} />
-          <Text style={s.loadingText}>Loading guide…</Text>
+          <Text style={s.stateTitle}>Loading guide…</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const readyCount = guide.steps.filter((s) => s.imageStatus === 'ready').length;
-  const allReady   = readyCount === guide.steps.length;
+  const steps      = guide.steps;
+  const step       = steps[stepIndex];
+  const readyCount = steps.filter((s) => s.imageStatus === 'ready').length;
+  const allReady   = readyCount === steps.length;
 
   return (
     <SafeAreaView style={s.safe}>
-      {/* ── Sticky header ── */}
-      <View style={s.stickyHeader}>
-        <Pressable style={s.backRow} onPress={() => router.back()} hitSlop={8}>
-          <Text style={s.backArrow}>←</Text>
-          <Text style={s.backLabel}>Back</Text>
-        </Pressable>
-        <View style={s.progressPill}>
-          {!allReady && <ActivityIndicator size="small" color={C.primary} style={{ marginRight: 4 }} />}
-          <Text style={s.progressText}>
-            {allReady ? `${guide.steps.length} steps ready` : `${readyCount}/${guide.steps.length} illustrations`}
-          </Text>
+      {/* Sticky top header */}
+      <GuideHeader
+        guide={guide} stepIndex={stepIndex}
+        readyCount={readyCount} allReady={allReady}
+        onBack={() => router.back()}
+      />
+
+      {/* Horizontal step timeline */}
+      {steps.length > 1 && (
+        <View style={s.timelineWrap}>
+          <StepTimeline steps={steps} activeIndex={stepIndex} onSelect={goToStep} />
         </View>
-      </View>
+      )}
 
-      <ScrollView
-        contentContainerStyle={s.scroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Guide header ── */}
-        <View style={s.guideHeader}>
-          <View style={s.metaRow}>
-            <View style={[s.metaBadge, { backgroundColor: C.primaryLight, borderColor: C.primaryBorder }]}>
-              <Text style={[s.metaBadgeText, { color: C.primaryDark }]}>⏱ {guide.timeEstimate}</Text>
-            </View>
-            <View style={s.metaBadge}>
-              <Text style={s.metaBadgeText}>📊 {guide.difficulty}</Text>
-            </View>
-            <View style={s.metaBadge}>
-              <Text style={s.metaBadgeText}>{guide.vehicle.model}</Text>
-            </View>
-          </View>
-          <Text style={s.guideTitle}>{guide.title}</Text>
-          <Text style={s.guideSub}>{guide.part.name}</Text>
-        </View>
-
-        {/* ── Tools ── */}
-        {guide.tools.length > 0 && (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>TOOLS REQUIRED</Text>
-            <View style={s.chipRow}>
-              {guide.tools.map((tool, i) => (
-                <View key={i} style={s.toolChip}>
-                  <Text style={s.toolChipText}>{tool}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ── Safety ── */}
+      {/* Scrollable body */}
+      <ScrollView ref={scrollRef} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        {/* Safety notes collapsible */}
         {guide.safetyNotes.length > 0 && (
-          <View style={s.safetyCard}>
-            <Text style={s.safetyTitle}>⚠️  Safety notes</Text>
+          <CollapsibleCard title="Safety notes" count={guide.safetyNotes.length} accent="warning">
             {guide.safetyNotes.map((note, i) => (
               <View key={i} style={s.safetyRow}>
-                <View style={s.safetydot} />
+                <View style={s.safetyDot} />
                 <Text style={s.safetyNote}>{note}</Text>
               </View>
             ))}
-          </View>
+          </CollapsibleCard>
         )}
 
-        {/* ── Steps ── */}
-        <Text style={s.stepsHeader}>PROCEDURE — {guide.steps.length} STEPS</Text>
-        {guide.steps.map((step: RepairStep) => (
-          <StepCard key={step.id} step={step} onRetry={() => void retryStep(step.id)} />
-        ))}
+        {/* Tools chip grid */}
+        {guide.tools.length > 0 && (
+          <CollapsibleCard title="Tools required" count={guide.tools.length}>
+            <View style={s.chipGrid}>
+              {guide.tools.map((tool, i) => <Chip key={i} label={tool} />)}
+            </View>
+          </CollapsibleCard>
+        )}
+
+        {/* Step section label */}
+        <View style={s.stepHeader}>
+          <Text style={s.stepLabel}>PROCEDURE — {steps.length} STEPS</Text>
+          {!allReady && (
+            <View style={s.imgPill}>
+              <ActivityIndicator size="small" color={C.primary} style={{ marginRight: 4 }} />
+              <Text style={s.imgPillText}>{readyCount}/{steps.length} illustrations</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Active step card */}
+        {step && (
+          <StepCard step={step} onRetry={() => void retryStep(step.id)} />
+        )}
       </ScrollView>
+
+      {/* Sticky bottom nav */}
+      {steps.length > 1 && (
+        <StepNavigator
+          stepIndex={stepIndex} total={steps.length}
+          onPrev={() => goToStep(stepIndex - 1)}
+          onNext={() => goToStep(stepIndex + 1)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: C.bg },
-
-  // States
-  centerState:  { flex: 1, justifyContent: 'center', alignItems: 'center', gap: S.md },
-  errorIcon:    { fontSize: 36 },
-  errorTitle:   { ...T.heading, color: C.textSub },
-  backBtn:      { backgroundColor: C.primary, borderRadius: R.full, paddingHorizontal: S.lg, paddingVertical: S.sm + 2 },
-  backBtnText:  { fontSize: 14, fontWeight: '700', color: '#fff' },
-  loadingText:  { ...T.body, color: C.textMuted, marginTop: S.xs },
-
-  // Sticky header
-  stickyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SCREEN_H_PAD, paddingVertical: S.sm, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.bgCard, ...SHADOW.xs },
-  backRow:      { flexDirection: 'row', alignItems: 'center', gap: S.xs },
-  backArrow:    { fontSize: 20, color: C.primary, fontWeight: '700' },
-  backLabel:    { ...T.smallBold, color: C.primary },
-  progressPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: R.full, paddingHorizontal: S.sm, paddingVertical: S.xs, borderWidth: 1, borderColor: C.border },
-  progressText: { ...T.caption, color: C.textSub, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
-
-  // Guide header
-  scroll:       { paddingHorizontal: SCREEN_H_PAD, paddingBottom: S.xl },
-  guideHeader:  { paddingTop: S.lg, paddingBottom: S.md, gap: S.xs },
-  metaRow:      { flexDirection: 'row', gap: S.xs, flexWrap: 'wrap', marginBottom: S.xs },
-  metaBadge:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: R.full, paddingHorizontal: S.sm, paddingVertical: S.xs, borderWidth: 1, borderColor: C.border },
-  metaBadgeText:{ ...T.caption, color: C.textSub, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
-  guideTitle:   { ...T.title, lineHeight: 32 },
-  guideSub:     { ...T.body, color: C.textMuted },
-
-  // Sections
-  section:      { marginBottom: S.md },
-  sectionTitle: { ...T.label, marginBottom: S.sm },
-  chipRow:      { flexDirection: 'row', gap: S.xs, flexWrap: 'wrap' },
-  toolChip:     { backgroundColor: C.bgCard, borderRadius: R.full, paddingHorizontal: S.md, paddingVertical: S.xs + 2, borderWidth: 1, borderColor: C.border },
-  toolChipText: { ...T.small, color: C.text, fontWeight: '500' },
-
-  // Safety card
-  safetyCard:   { backgroundColor: C.warningLight, borderRadius: R.lg, padding: S.md, borderWidth: 1, borderColor: C.warningBorder, marginBottom: S.md, gap: S.xs },
-  safetyTitle:  { ...T.smallBold, color: C.warning },
-  safetyRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm },
-  safetydot:    { width: 5, height: 5, borderRadius: 99, backgroundColor: C.warning, marginTop: 7, flexShrink: 0 },
-  safetyNote:   { ...T.small, color: '#78350f', flex: 1, lineHeight: 20 },
-
-  // Steps header
-  stepsHeader:  { ...T.label, marginBottom: S.sm },
+  safe:          { flex: 1, backgroundColor: C.bg },
+  center:        { flex: 1, justifyContent: 'center', alignItems: 'center', gap: S.md },
+  stateIcon:     { fontSize: 36 },
+  stateTitle:    { ...T.heading, color: C.textSub },
+  backBtn:       { backgroundColor: C.primary, borderRadius: R.full, paddingHorizontal: S.lg, paddingVertical: S.sm + 2 },
+  backBtnText:   { fontSize: 14, fontWeight: '700', color: '#fff' },
+  timelineWrap:  { backgroundColor: C.bgCard, borderBottomWidth: 1, borderBottomColor: C.border },
+  scroll:        { paddingHorizontal: SCREEN_H_PAD, paddingTop: S.md, paddingBottom: S.xl, gap: S.md },
+  safetyRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm, marginBottom: S.xs },
+  safetyDot:     { width: 5, height: 5, borderRadius: 99, backgroundColor: C.warning, marginTop: 7, flexShrink: 0 },
+  safetyNote:    { ...T.small, color: '#78350f', flex: 1, lineHeight: 20 },
+  chipGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: S.xs },
+  stepHeader:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  stepLabel:     { ...T.label },
+  imgPill:       { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bgCard, borderRadius: R.full, paddingHorizontal: S.sm, paddingVertical: 3, borderWidth: 1, borderColor: C.border },
+  imgPillText:   { ...T.caption, color: C.textSub, fontWeight: '500', textTransform: undefined, letterSpacing: 0 },
 });

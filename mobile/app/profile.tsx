@@ -116,6 +116,19 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Navigation */}
+        {!isGuest && (
+          <View style={s.navCard}>
+            <Link href="/history" asChild>
+              <Pressable style={({ pressed }) => [s.navRow, pressed && { backgroundColor: C.bgSubtle }]}>
+                <Text style={s.navIcon}>📋</Text>
+                <Text style={s.navLabel}>Guide History</Text>
+                <Text style={s.navChevron}>›</Text>
+              </Pressable>
+            </Link>
+          </View>
+        )}
+
         {/* App info */}
         <View style={s.infoCard}>
           <Text style={s.infoRow}>MotixAI · Repair Intelligence</Text>
@@ -171,6 +184,13 @@ const s = StyleSheet.create({
   upsellBtnText:    { fontSize: 15, fontWeight: '700', color: '#fff' },
   upsellSecondary:  { alignItems: 'center', paddingVertical: S.xs },
   upsellSecondaryText: { ...T.smallBold, color: C.primary },
+
+  // Nav card
+  navCard:          { backgroundColor: C.bgCard, borderRadius: R.lg, borderWidth: 1, borderColor: C.border, overflow: 'hidden', ...SHADOW.xs },
+  navRow:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.md, paddingVertical: S.sm + 4, gap: S.sm },
+  navIcon:          { fontSize: 18 },
+  navLabel:         { ...T.subhead, flex: 1 },
+  navChevron:       { fontSize: 20, color: C.textMuted },
 
   // App info
   infoCard:         { backgroundColor: C.bgCard, borderRadius: R.lg, padding: S.md, borderWidth: 1, borderColor: C.border, gap: S.xs, alignItems: 'center' },

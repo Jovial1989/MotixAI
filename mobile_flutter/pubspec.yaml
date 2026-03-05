@@ -1,0 +1,33 @@
+name: motixai_flutter
+description: MotixAI Flutter mobile client — workshop-grade repair guides on Android & iOS.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Networking
+  dio: ^5.4.3+1
+
+  # Routing
+  go_router: ^13.2.0
+
+  # Secure token storage
+  flutter_secure_storage: ^9.0.0
+
+  # Local guide cache
+  shared_preferences: ^2.2.3
+
+  # Image full-screen viewer
+  photo_view: ^0.14.0
+
+flutter:
+  uses-material-design: true
