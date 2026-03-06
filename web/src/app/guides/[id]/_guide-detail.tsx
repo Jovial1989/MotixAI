@@ -59,7 +59,13 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
     <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>Generating illustration…</span></div>
   );
   if (status === 'failed') return (
-    <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>↺ Retry illustration</button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="Failed illustration" className="simg-img" />
+      )}
+      <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>↺ Retry illustration</button>
+    </div>
   );
   return null;
 }

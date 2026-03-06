@@ -67,13 +67,17 @@ export async function handleSteps(
       force = Boolean(b?.force);
     } catch { /* ignore */ }
 
+    console.log(`[steps] generate-image stepId=${stepId} currentStatus=${step.imageStatus} force=${force}`);
+
     // Return cached if already ready and not forced
     if (step.imageStatus === "ready" && step.imageUrl && !force) {
+      console.log(`[steps] cache hit stepId=${stepId}`);
       return json({ imageStatus: "ready", imageUrl: step.imageUrl });
     }
 
     // Skip if in progress
     if ((step.imageStatus === "queued" || step.imageStatus === "generating") && !force) {
+      console.log(`[steps] in-progress stepId=${stepId} status=${step.imageStatus}`);
       return json({ imageStatus: step.imageStatus, imageUrl: step.imageUrl ?? null });
     }
 
@@ -92,23 +96,27 @@ export async function handleSteps(
 
     const now = new Date().toISOString();
 
-    // Mark as generating and attempt synchronous generation within Edge Function lifetime
     await sql`
       UPDATE "RepairStep"
       SET "imageStatus" = 'generating', "imagePrompt" = ${prompt}, "imageError" = null, "updatedAt" = ${now}
       WHERE id = ${stepId}
     `;
+    console.log(`[steps] marked generating stepId=${stepId}`);
 
     try {
+      console.log(`[steps] calling generateStepImage stepId=${stepId}`);
       const imageUrl = await generateStepImage(prompt);
+      console.log(`[steps] image ready stepId=${stepId} urlLen=${imageUrl.length}`);
       await sql`
         UPDATE "RepairStep"
         SET "imageStatus" = 'ready', "imageUrl" = ${imageUrl}, "imageError" = null, "updatedAt" = ${new Date().toISOString()}
         WHERE id = ${stepId}
       `;
+      console.log(`[steps] DB updated ready stepId=${stepId}`);
       return json({ imageStatus: "ready", imageUrl });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[steps] generation failed stepId=${stepId} error=${msg}`);
       const fallbackUrl =
         "https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed";
       await sql`

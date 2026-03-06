@@ -100,14 +100,17 @@ export async function generateStepImage(prompt: string): Promise<string> {
     return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${encodeURIComponent(prompt.slice(0, 50))}`;
   }
 
+  // gemini-2.0-flash-exp supports responseModalities IMAGE
   const model = (client.getGenerativeModel as Function)({
-    model: "gemini-2.5-flash-image",
+    model: "gemini-2.0-flash-exp",
   });
 
+  console.log("[image-gen] calling Gemini gemini-2.0-flash-exp");
   const result = await (model.generateContent as Function)({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
   });
+  console.log("[image-gen] Gemini response received");
 
   const candidates: unknown[] = (result.response.candidates as unknown[]) ?? [];
   for (const candidate of candidates) {
@@ -117,6 +120,7 @@ export async function generateStepImage(prompt: string): Promise<string> {
       const p = part as { inlineData?: { data?: string; mimeType?: string } };
       if (p.inlineData?.data) {
         const mime = p.inlineData.mimeType ?? "image/png";
+        console.log("[image-gen] got inline image data, mime=" + mime);
         return `data:${mime};base64,${p.inlineData.data}`;
       }
     }
