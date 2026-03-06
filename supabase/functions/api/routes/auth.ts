@@ -3,6 +3,7 @@ import * as jose from "npm:jose@5";
 import { errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
 import { issueTokens, signAccess, TokenPayload, verifyRefresh } from "../_lib/jwt.ts";
+import { seedExampleGuides } from "../_lib/seed-guides.ts";
 
 async function body(req: Request): Promise<Record<string, unknown>> {
   try {
@@ -39,6 +40,9 @@ export async function handleAuth(
       INSERT INTO "User" (id, email, "passwordHash", "fullName", role, "createdAt", "updatedAt")
       VALUES (${id}, ${email.toLowerCase()}, ${passwordHash}, ${""}, ${"USER"}, ${now}, ${now})
     `;
+
+    // Seed example guides so new users see content immediately
+    await seedExampleGuides(id).catch(() => {});
 
     const payload: TokenPayload = {
       sub: id,
