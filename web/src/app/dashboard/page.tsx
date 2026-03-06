@@ -66,7 +66,7 @@ export default function DashboardPage() {
     <div className="dash-root">
       {/* Top nav */}
       <header className="dash-nav">
-        <span className="dash-logo">MotixAI</span>
+        <Link href="/" className="dash-logo">MotixAI</Link>
         <div className="dash-nav-right">
           <Link href="/enterprise" className="dash-nav-link">Enterprise</Link>
           <button

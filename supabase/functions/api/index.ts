@@ -11,9 +11,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const url = new URL(req.url);
 
-  // Strip function prefix: /functions/v1/api → ""
-  const pathRaw = url.pathname.replace(/^\/functions\/v1\/api/, "") || "/";
-  const path = pathRaw || "/";
+  // Extract path after the function name "api", regardless of host prefix format.
+  // Handles both /functions/v1/api/... and /api/... URL shapes.
+  const pathMatch = url.pathname.match(/\/api(\/.*)?$/);
+  const path = pathMatch ? (pathMatch[1] || "/") : "/";
   const method = req.method;
 
   // Health

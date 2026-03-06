@@ -115,7 +115,7 @@ export default function LandingPage() {
       {/* ─── NAV ─────────────────────────────────────────── */}
       <header className="nav-wrap">
         <nav className="nav">
-          <span className="nav-logo">MotixAI</span>
+          <Link href="/" className="nav-logo">MotixAI</Link>
           <div className="nav-center">
             <a href="#how" className="nav-link">How it works</a>
             <a href="#features" className="nav-link">Features</a>
@@ -165,36 +165,6 @@ export default function LandingPage() {
           <p className="hero-disclaimer">No credit card required · Free plan available</p>
         </div>
 
-        {/* Product card mock */}
-        <div className="hero-card">
-          <div className="hero-card-topbar">
-            <span className="topbar-dot topbar-dot--red" />
-            <span className="topbar-dot topbar-dot--yellow" />
-            <span className="topbar-dot topbar-dot--green" />
-            <span className="topbar-title">Repair Guide · 2019 Ford F-150 · Oil Change</span>
-          </div>
-          <div className="hero-card-body">
-            {[
-              { n: 1, done: true,  title: 'Warm up engine for 2 minutes', detail: 'Ensures oil drains completely' },
-              { n: 2, done: true,  title: 'Position drain pan under oil plug', detail: '5qt capacity recommended' },
-              { n: 3, done: false, title: 'Remove drain plug — 14mm socket', detail: 'Torque to 25 ft-lb on reinstall', active: true },
-              { n: 4, done: false, title: 'Replace oil filter', detail: 'Motorcraft FL-500-S or equiv.' },
-              { n: 5, done: false, title: 'Refill with 5W-30 synthetic', detail: '6 qt capacity' },
-            ].map((step) => (
-              <div key={step.n} className={`mock-step${step.done ? ' mock-step--done' : ''}${'active' in step && step.active ? ' mock-step--active' : ''}`}>
-                <span className="mock-step-num">{step.done ? '✓' : step.n}</span>
-                <div>
-                  <p className="mock-step-title">{step.title}</p>
-                  <p className="mock-step-detail">{step.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="hero-card-footer">
-            <span className="card-footer-badge">3 / 5 steps complete</span>
-            <span className="card-footer-diag">⚙ Diagrams generating…</span>
-          </div>
-        </div>
       </section>
 
       {/* ─── LOGOS ───────────────────────────────────────── */}
@@ -302,7 +272,7 @@ export default function LandingPage() {
       {/* ─── FOOTER ──────────────────────────────────────── */}
       <footer className="footer">
         <div className="footer-inner">
-          <span className="nav-logo">MotixAI</span>
+          <Link href="/" className="nav-logo">MotixAI</Link>
           <p className="footer-copy">© 2026 MotixAI. All rights reserved.</p>
           <div className="footer-links">
             <a href="#" className="footer-link">Privacy</a>

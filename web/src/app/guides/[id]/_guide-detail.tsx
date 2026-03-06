@@ -130,14 +130,14 @@ export default function GuideDetailPage() {
 
   if (error) return (
     <div className="dash-root">
-      <header className="dash-nav"><span className="dash-logo">MotixAI</span><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
+      <header className="dash-nav"><Link href="/" className="dash-logo">MotixAI</Link><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
       <div className="gd-center"><p className="gd-error-msg">⚠ {error}</p><Link href="/dashboard" className="auth-btn-primary" style={{display:'inline-flex',width:'auto',padding:'0 24px'}}>← Back</Link></div>
     </div>
   );
 
   if (!guide) return (
     <div className="dash-root">
-      <header className="dash-nav"><span className="dash-logo">MotixAI</span><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
+      <header className="dash-nav"><Link href="/" className="dash-logo">MotixAI</Link><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
       <div className="gd-center"><span className="gen-spinner gen-spinner--lg" /><p style={{color:'var(--text-muted)',marginTop:12}}>Loading guide…</p></div>
     </div>
   );
@@ -152,7 +152,7 @@ export default function GuideDetailPage() {
     <div className="dash-root">
       {/* Nav */}
       <header className="dash-nav">
-        <span className="dash-logo">MotixAI</span>
+        <Link href="/" className="dash-logo">MotixAI</Link>
         <div className="dash-nav-right">
           <Link href="/dashboard" className="dash-nav-back">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>

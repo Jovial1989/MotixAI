@@ -63,7 +63,7 @@ export default function EnterprisePage() {
   return (
     <div className="dash-root">
       <header className="dash-nav">
-        <span className="dash-logo">MotixAI</span>
+        <Link href="/" className="dash-logo">MotixAI</Link>
         <div className="dash-nav-right">
           <Link href="/dashboard" className="dash-nav-link">Repair Guides</Link>
           <button
