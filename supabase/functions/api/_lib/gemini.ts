@@ -100,12 +100,12 @@ export async function generateStepImage(prompt: string): Promise<string> {
     return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${encodeURIComponent(prompt.slice(0, 50))}`;
   }
 
-  // gemini-2.0-flash-exp supports responseModalities IMAGE
+  // gemini-2.0-flash-exp-image-generation is the supported image generation model
   const model = (client.getGenerativeModel as Function)({
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-exp-image-generation",
   });
 
-  console.log("[image-gen] calling Gemini gemini-2.0-flash-exp");
+  console.log("[image-gen] calling Gemini gemini-2.0-flash-exp-image-generation");
   const result = await (model.generateContent as Function)({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
