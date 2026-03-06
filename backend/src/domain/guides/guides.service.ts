@@ -6,17 +6,22 @@ import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
 
 @Injectable()
 export class DomainGuidesService {
-  private readonly imageQueue = new Queue('guide-images', {
-    connection: {
-      host: process.env.REDIS_URL?.replace('redis://', '').split(':')[0] || 'localhost',
-      port: Number(process.env.REDIS_URL?.split(':').pop() || 6379),
-    },
-  });
+  private readonly imageQueue: Queue | null;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiProvider,
-  ) {}
+  ) {
+    const redisUrl = process.env.REDIS_URL;
+    this.imageQueue = redisUrl
+      ? new Queue('guide-images', {
+          connection: {
+            host: redisUrl.replace('redis://', '').split(':')[0],
+            port: Number(redisUrl.split(':').pop() || 6379),
+          },
+        })
+      : null;
+  }
 
   async createGuide(input: {
     userId: string;
@@ -95,17 +100,19 @@ export class DomainGuidesService {
     });
 
     // Fire-and-forget: enqueue image generation without blocking the response
-    this.prisma.job.create({
-      data: {
-        guideId: guide.id,
-        type: JobType.GUIDE_IMAGE_GENERATION,
-        payload: { guideId: guide.id },
-      },
-    }).then((job) =>
-      this.imageQueue.add('generate-guide-images', { jobId: job.id, guideId: guide.id }),
-    ).catch(() => {
-      // Redis not available — images will stay in PENDING state
-    });
+    if (this.imageQueue) {
+      this.prisma.job.create({
+        data: {
+          guideId: guide.id,
+          type: JobType.GUIDE_IMAGE_GENERATION,
+          payload: { guideId: guide.id },
+        },
+      }).then((job) =>
+        this.imageQueue!.add('generate-guide-images', { jobId: job.id, guideId: guide.id }),
+      ).catch(() => {
+        // Redis not available — images will stay in PENDING state
+      });
+    }
 
     return guide;
   }

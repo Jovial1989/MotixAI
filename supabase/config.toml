@@ -1,0 +1,25 @@
+[project]
+id = "hxzpbvgwujuisxheykcr"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[functions]
+# JWT verification disabled — all auth is handled manually inside Edge Functions
+verify_jwt = false

@@ -181,7 +181,7 @@ export default function LandingPage() {
               { n: 4, done: false, title: 'Replace oil filter', detail: 'Motorcraft FL-500-S or equiv.' },
               { n: 5, done: false, title: 'Refill with 5W-30 synthetic', detail: '6 qt capacity' },
             ].map((step) => (
-              <div key={step.n} className={`mock-step${step.done ? ' mock-step--done' : ''}${(step as any).active ? ' mock-step--active' : ''}`}>
+              <div key={step.n} className={`mock-step${step.done ? ' mock-step--done' : ''}${'active' in step && step.active ? ' mock-step--active' : ''}`}>
                 <span className="mock-step-num">{step.done ? '✓' : step.n}</span>
                 <div>
                   <p className="mock-step-title">{step.title}</p>

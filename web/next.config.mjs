@@ -4,7 +4,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'dummyimage.com' },
-      { protocol: 'https', hostname: '**.vercel.app' },
+      { protocol: 'https', hostname: 'placehold.co' },
     ],
     // Allow base64 data URLs (Gemini-generated images stored as data URIs)
     dangerouslyAllowSVG: false,
