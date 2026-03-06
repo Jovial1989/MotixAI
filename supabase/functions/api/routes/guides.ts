@@ -2,6 +2,7 @@ import { errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
 import { generateRepairGuide } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
+import { seedExampleGuides } from "../_lib/seed-guides.ts";
 
 async function body(req: Request): Promise<Record<string, unknown>> {
   try {
@@ -148,6 +149,28 @@ export async function handleGuides(
       WHERE ${where}
       ORDER BY g."createdAt" DESC
     `;
+
+    // Auto-seed example guides for users who have none yet
+    if (guides.length === 0 && user.role !== "GUEST") {
+      await seedExampleGuides(user.sub).catch(() => {});
+      const seeded = await sql`
+        SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
+               p.name as part_name, p."oemNumber" as part_oem,
+               (SELECT COUNT(*) FROM "RepairStep" s WHERE s."guideId" = g.id)::int as step_count
+        FROM "RepairGuide" g
+        JOIN "Vehicle" v ON v.id = g."vehicleId"
+        JOIN "Part" p ON p.id = g."partId"
+        WHERE ${where}
+        ORDER BY g."createdAt" DESC
+      `;
+      const result = seeded.map((g) => ({
+        ...g,
+        vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin },
+        part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
+        steps: Array(g.step_count ?? 0).fill(null),
+      }));
+      return json(result);
+    }
 
     const result = guides.map((g) => ({
       ...g,
