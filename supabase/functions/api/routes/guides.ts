@@ -140,7 +140,8 @@ export async function handleGuides(
 
     const guides = await sql`
       SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
-             p.name as part_name, p."oemNumber" as part_oem
+             p.name as part_name, p."oemNumber" as part_oem,
+             (SELECT COUNT(*) FROM "RepairStep" s WHERE s."guideId" = g.id)::int as step_count
       FROM "RepairGuide" g
       JOIN "Vehicle" v ON v.id = g."vehicleId"
       JOIN "Part" p ON p.id = g."partId"
@@ -152,6 +153,7 @@ export async function handleGuides(
       ...g,
       vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin },
       part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
+      steps: Array(g.step_count ?? 0).fill(null),
     }));
 
     return json(result);
