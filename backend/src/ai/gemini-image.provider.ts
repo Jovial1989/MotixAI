@@ -39,7 +39,7 @@ export class GeminiImageProvider implements AIImageProvider {
 
   private async tryGenerate(prompt: string): Promise<{ imageUrl: string }> {
     const model = this.client!.getGenerativeModel({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-2.0-flash-exp-image-generation',
     });
 
     const result = await (model.generateContent as Function)({

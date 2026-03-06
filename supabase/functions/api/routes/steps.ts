@@ -16,21 +16,31 @@ function buildPrompt(step: {
   partName: string;
 }): string {
   const toolsStr = step.tools.join(", ");
-  const torque = step.torqueValue ? `Torque: ${step.torqueValue}.` : "";
-  const warning = step.warningNote ? `Warning: ${step.warningNote}.` : "";
-  return `Technical service-manual illustration, white background, clean instructional diagram, engineering style.
-No people, no brand logos, no copyrighted marks. Minimal linework, clear arrows and labels.
-Show only the relevant component and tool interaction.
+  const torqueNote = step.torqueValue ? `Torque specification: ${step.torqueValue}` : "";
+  const warningNote = step.warningNote ? `Safety callout: ${step.warningNote}` : "";
+  return `Black-and-white technical service manual illustration. White background. OEM workshop manual style.
 
-Vehicle: ${step.vehicleModel}
-Component: ${step.partName}
-Step ${step.stepOrder}: ${step.title}
-Procedure: ${step.instruction}
-Tools required: ${toolsStr || "standard hand tools"}
-${torque}
-${warning}
+Subject: ${step.vehicleModel} — ${step.partName}
+Action depicted: ${step.title}
+Tools shown: ${toolsStr || "standard hand tools"}
+${torqueNote}
+${warningNote}
 
-Style: technical exploded-view or cross-section diagram, neutral background, labels in English, service manual aesthetic.`;
+Drawing requirements:
+- Show the ${step.partName} as a clean engineering line drawing
+- Include the relevant tool(s) positioned correctly relative to the component
+- Use numbered callout arrows (1, 2, 3) pointing to key parts — numbers only, no words
+- Directional arrows where the action involves movement, rotation, or applied force
+- Exploded-view or cross-section if needed to show internal parts clearly
+
+STRICT RULES — the finished image MUST NOT contain:
+- Sentences, paragraphs, or instruction text of any kind
+- Any words other than very short part names (2 words maximum per label)
+- Watermarks, photo frames, or decorative borders
+- Photorealistic rendering, gradients, or colour fills
+- AI generation artefacts or random characters
+
+Reference style: Haynes / Chilton automotive workshop manual line diagram.`;
 }
 
 export async function handleSteps(
