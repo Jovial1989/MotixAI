@@ -4,14 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Monorepo Structure
 
-Yarn workspaces monorepo with four packages:
+Yarn workspaces monorepo with the following packages:
 
 | Workspace | Package name | Port |
 |-----------|-------------|------|
 | `backend/` | `@motixai/backend` | 4000 |
 | `web/` | `@motixai/web` | 3000 |
-| `mobile/` | `@motixai/mobile` | Expo |
 | `packages/shared/` | `@motixai/shared` | – |
+| `packages/api-client/` | `@motixai/api-client` | – |
+
+**Mobile**: Flutter app at `mobile_flutter/`. Not a Yarn workspace — use Flutter CLI directly.
+**Legacy**: `mobile_rn_legacy/` contains the deprecated React Native/Expo app. Do not use.
 
 All commands can be run from the root or scoped to a workspace with `yarn workspace <name> <script>`.
 
@@ -24,7 +27,6 @@ yarn install
 # Run dev servers
 yarn dev:backend       # backend API (ts-node-dev, hot reload)
 yarn dev:web           # Next.js dev server
-yarn dev:mobile        # Expo dev server
 
 # Build
 yarn build             # builds backend + web
@@ -54,7 +56,6 @@ Each workspace has a `.env.example`. Copy to the appropriate file before running
 ```bash
 cp backend/.env.example backend/.env
 cp web/.env.example web/.env.local
-cp mobile/.env.example mobile/.env
 ```
 
 Key backend env vars: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `PORT` (4000), `API_PREFIX` (/api/v1).
@@ -80,19 +81,22 @@ Next.js 14 App Router with custom CSS.
 - **API calls**: `src/lib/api.ts` — uses `@motixai/api-client`.
 - **Styles**: Custom CSS design system in `src/app/globals.css`.
 
-### Mobile (`@motixai/mobile`)
+### Mobile (`mobile_flutter/`)
 
-React Native + Expo SDK 54, file-based routing via Expo Router.
+Flutter app (iOS + Android). Not part of Yarn workspaces — managed with Flutter CLI.
 
-- **Entry**: `app/_layout.tsx` (root Stack navigator). `app/index.tsx` is the dashboard.
-- **State**: Zustand at `src/store/authStore.ts`. Tokens persisted in `expo-secure-store`.
-- **API client**: `src/lib/api.ts` — uses `@motixai/api-client`. Base URL from `EXPO_PUBLIC_API_URL`.
-- **Android emulator**: use `http://10.0.2.2:4000` or local network IP for API URL.
-- **iOS simulator**: use `http://localhost:4000` or local network IP for API URL.
+- **Entry**: `lib/main.dart` → `lib/app/app.dart`
+- **Routing**: `lib/app/router.dart` using `go_router`
+- **State**: `flutter_riverpod`
+- **Auth**: `flutter_secure_storage` for token persistence
+- **API**: `dio` HTTP client. Base URL configured via environment.
+- **Run**: `flutter run` from `mobile_flutter/`
+- **Build iOS**: `flutter build ipa` from `mobile_flutter/`
+- **Build Android**: `flutter build apk` from `mobile_flutter/`
 
 ### Shared (`@motixai/shared`)
 
-Pure TypeScript package compiled to `dist/`. Must be built before `web` or `mobile` can consume it in CI.
+Pure TypeScript package compiled to `dist/`. Must be built before `web` can consume it in CI.
 
 ### API Client (`@motixai/api-client`)
 
@@ -102,4 +106,4 @@ Typed HTTP client wrapping the backend REST API. Used by both web and mobile.
 
 - **Adding a new API resource**: create module in `backend/src/domain/` and controller in `backend/src/api/`.
 - **Adding a new web page**: add a file under `web/src/app/`. Use dashboard layout classes for authenticated pages.
-- **Adding a new mobile screen**: add a file under `mobile/app/`. Expo Router picks it up automatically.
+- **Adding a new mobile screen**: add a file under `mobile_flutter/lib/`. Register in `lib/app/router.dart`.

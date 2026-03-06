@@ -7,14 +7,11 @@
     "packages/shared",
     "packages/api-client",
     "backend",
-    "web",
-    "mobile"
+    "web"
   ],
   "scripts": {
     "dev:backend": "yarn workspace @motixai/backend dev",
     "dev:web": "yarn workspace @motixai/web dev",
-    "dev:mobile": "yarn workspace @motixai/mobile start",
-    "dev:mobile:ios": "yarn workspace @motixai/mobile ios",
     "build:backend": "yarn workspace @motixai/backend build",
     "build:web": "yarn workspace @motixai/web build",
     "build:shared": "yarn workspace @motixai/shared build && yarn workspace @motixai/api-client build",
