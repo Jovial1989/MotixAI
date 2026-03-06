@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, createRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
@@ -71,24 +71,23 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
 }
 
 /* ── Step card ────────────────────────────────────────────────────────── */
-function StepCard({ step, index, active, onActivate, guideId }: {
+function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
   step: RepairStep; index: number; active: boolean; onActivate: () => void; guideId: string;
+  stepRef: React.RefObject<HTMLDivElement>;
 }) {
-  const [open, setOpen] = useState(false);
-  const isOpen = active || open;
-
+  // Single source of truth: a step is open only when it is the active step.
   return (
-    <div className={`sc${isOpen ? ' sc--open' : ''}${active ? ' sc--active' : ''}`}>
-      <button className="sc-hd" onClick={() => { setOpen(o => !o); onActivate(); }}>
+    <div ref={stepRef} className={`sc${active ? ' sc--open sc--active' : ''}`}>
+      <button className="sc-hd" onClick={onActivate}>
         <span className={`sc-num${active ? ' sc-num--on' : ''}`}>{index + 1}</span>
         <span className="sc-ttl">{step.title}</span>
         <svg className="sc-chv" width="16" height="16" viewBox="0 0 16 16" fill="none"
-          style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
+          style={{ transform: active ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
           <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>
 
-      {isOpen && (
+      {active && (
         <div className="sc-bd">
           <StepImage step={step} guideId={guideId} />
           <p className="sc-inst">{step.instruction}</p>
@@ -122,6 +121,7 @@ export default function GuideDetailPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [toolsOpen, setToolsOpen]   = useState(false);
+  const stepRefs = useRef<React.RefObject<HTMLDivElement>[]>([]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -129,6 +129,17 @@ export default function GuideDetailPage() {
       .then(setGuide)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load'));
   }, [params.id]);
+
+  // Scroll active step into view whenever it changes
+  useEffect(() => {
+    const ref = stepRefs.current[activeStep];
+    if (!ref?.current) return;
+    // Small delay so the card has time to expand before measuring
+    const t = setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [activeStep]);
 
   const diffColor: Record<string, string> = {
     Beginner: 'badge--green', Intermediate: 'badge--yellow', Advanced: 'badge--orange', Expert: 'badge--red',
@@ -149,6 +160,12 @@ export default function GuideDetailPage() {
   );
 
   const steps = guide.steps ?? [];
+
+  // Keep stepRefs array in sync with steps length
+  if (stepRefs.current.length !== steps.length) {
+    stepRefs.current = steps.map((_, i) => stepRefs.current[i] ?? createRef<HTMLDivElement>());
+  }
+
   const TOOLS_DEFAULT = 4;
   const toolsVisible = toolsOpen ? guide.tools : guide.tools?.slice(0, TOOLS_DEFAULT);
   const toolsExtra   = (guide.tools?.length ?? 0) - TOOLS_DEFAULT;
@@ -199,6 +216,7 @@ export default function GuideDetailPage() {
                 active={activeStep === i}
                 onActivate={() => setActiveStep(i)}
                 guideId={params.id}
+                stepRef={stepRefs.current[i]}
               />
             ))}
           </div>
