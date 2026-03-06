@@ -1,6 +1,0 @@
-{
-  "buildCommand": "yarn workspace @motixai/shared build && yarn workspace @motixai/api-client build && yarn workspace @motixai/web build",
-  "installCommand": "yarn install --frozen-lockfile",
-  "outputDirectory": "web/.next",
-  "framework": "nextjs"
-}
