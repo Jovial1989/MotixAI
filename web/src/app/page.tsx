@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AuthRedirect from './_auth-redirect';
 
 const features = [
   {
@@ -111,6 +112,7 @@ const stats = [
 export default function LandingPage() {
   return (
     <div className="page">
+      <AuthRedirect />
 
       {/* ─── NAV ─────────────────────────────────────────── */}
       <header className="nav-wrap">
