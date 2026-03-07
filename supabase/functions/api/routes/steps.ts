@@ -104,38 +104,73 @@ export async function handleSteps(
       partName: step.part_name,
     });
 
-    const now = new Date().toISOString();
-
+    // Mark as queued immediately and return — generation runs in background.
     await sql`
       UPDATE "RepairStep"
-      SET "imageStatus" = 'generating', "imagePrompt" = ${prompt}, "imageError" = null, "updatedAt" = ${now}
+      SET "imageStatus" = 'queued', "imagePrompt" = ${prompt}, "imageError" = null,
+          "imageAttempts" = 0, "updatedAt" = ${new Date().toISOString()}
       WHERE id = ${stepId}
     `;
-    console.log(`[steps] marked generating stepId=${stepId}`);
+    console.log(`[steps] queued stepId=${stepId}`);
 
-    try {
-      console.log(`[steps] calling generateStepImage stepId=${stepId}`);
-      const imageUrl = await generateStepImage(prompt);
-      console.log(`[steps] image ready stepId=${stepId} urlLen=${imageUrl.length}`);
+    // Background generation with retry (up to 3 attempts, exponential backoff)
+    const MAX_ATTEMPTS = 3;
+    const bgWork = (async () => {
+      let lastErr = "Unknown error";
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          await sql`
+            UPDATE "RepairStep"
+            SET "imageStatus" = 'generating',
+                "imageAttempts" = ${attempt},
+                "updatedAt" = ${new Date().toISOString()}
+            WHERE id = ${stepId}
+          `;
+          console.log(`[steps] generating stepId=${stepId} attempt=${attempt}`);
+
+          const imageUrl = await generateStepImage(prompt);
+          console.log(`[steps] image ready stepId=${stepId} urlLen=${imageUrl.length}`);
+
+          await sql`
+            UPDATE "RepairStep"
+            SET "imageStatus" = 'ready', "imageUrl" = ${imageUrl},
+                "imageError" = null, "updatedAt" = ${new Date().toISOString()}
+            WHERE id = ${stepId}
+          `;
+          console.log(`[steps] DB updated ready stepId=${stepId}`);
+          return; // success — exit retry loop
+        } catch (err) {
+          lastErr = err instanceof Error ? err.message : String(err);
+          console.error(`[steps] attempt ${attempt} failed stepId=${stepId} error=${lastErr}`);
+          if (attempt < MAX_ATTEMPTS) {
+            // Exponential backoff: 2s, 4s
+            await new Promise((r) => setTimeout(r, 2000 * attempt));
+          }
+        }
+      }
+
+      // All attempts exhausted
+      const fallbackUrl = "https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed";
       await sql`
         UPDATE "RepairStep"
-        SET "imageStatus" = 'ready', "imageUrl" = ${imageUrl}, "imageError" = null, "updatedAt" = ${new Date().toISOString()}
+        SET "imageStatus" = 'failed', "imageError" = ${lastErr},
+            "imageUrl" = ${fallbackUrl}, "updatedAt" = ${new Date().toISOString()}
         WHERE id = ${stepId}
       `;
-      console.log(`[steps] DB updated ready stepId=${stepId}`);
-      return json({ imageStatus: "ready", imageUrl });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[steps] generation failed stepId=${stepId} error=${msg}`);
-      const fallbackUrl =
-        "https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed";
-      await sql`
-        UPDATE "RepairStep"
-        SET "imageStatus" = 'failed', "imageError" = ${msg}, "imageUrl" = ${fallbackUrl}, "updatedAt" = ${new Date().toISOString()}
-        WHERE id = ${stepId}
-      `;
-      return json({ imageStatus: "failed", imageUrl: fallbackUrl });
+      console.error(`[steps] all attempts failed stepId=${stepId}`);
+    })();
+
+    // Keep the Edge Function alive while the background job runs.
+    // EdgeRuntime.waitUntil is a Supabase/Deno Deploy API.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (globalThis as any).EdgeRuntime !== "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (globalThis as any).EdgeRuntime.waitUntil(bgWork);
+    } else {
+      await bgWork; // local / non-Supabase fallback: run synchronously
     }
+
+    return json({ imageStatus: "queued", imageUrl: null });
   }
 
   return errorResponse("Not Found", 404);

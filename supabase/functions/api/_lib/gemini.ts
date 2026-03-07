@@ -56,13 +56,23 @@ export async function generateRepairGuide(
   const client = getClient();
   if (!client) return mockGuide(vehicle, part);
 
-  const prompt = `You are an expert automotive and heavy equipment repair technician.
-Generate a detailed repair guide for:
-- Vehicle: ${vehicle}
-- Part: ${part}
-${context ? `- Manual context: ${context}` : ""}
+  const prompt = `You are an automotive workshop technician writing a repair procedure.
 
-Respond ONLY with valid JSON matching this exact schema:
+Vehicle: ${vehicle}
+Part: ${part}
+${context ? `Manual context: ${context}` : ""}
+
+WRITING RULES — strictly follow these:
+- title: short action phrase (e.g. "Loosen wheel nuts", "Remove caliper bracket")
+- instruction: 1–2 sentences MAX. Imperative voice. Direct action only.
+  Good: "Loosen the two M12 caliper bolts and slide the caliper off the bracket."
+  Bad: "At this point you will want to carefully make sure that the caliper is loosened."
+- warningNote: only if a real safety risk exists. One sentence. Null otherwise.
+- torqueValue: only if a specific torque applies. Format: "120 Nm". Null otherwise.
+- safetyNotes: 2–3 concise pre-job safety checks. One sentence each.
+- Never write filler: "Make sure to", "It is important to", "carefully", "at this point"
+
+Respond ONLY with valid JSON:
 {
   "title": "string",
   "difficulty": "Beginner|Intermediate|Advanced|Expert",
@@ -73,15 +83,15 @@ Respond ONLY with valid JSON matching this exact schema:
     {
       "order": 1,
       "title": "string",
-      "instruction": "string (detailed, 1-3 sentences)",
+      "instruction": "string",
       "torqueValue": "string or null",
       "warningNote": "string or null"
     }
   ],
-  "imagePlan": ["string (image description for each step)"]
+  "imagePlan": ["string (visual subject for diagram, e.g. 'caliper bolt removal tool engaged on M12 bolt')"]
 }
 
-Generate 8-10 steps. Include torque values where relevant. imagePlan should have one entry per step.`;
+Generate 8–10 steps. Include real torque specs and clearances where standard specs apply.`;
 
   try {
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });

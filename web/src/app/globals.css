@@ -1210,6 +1210,7 @@ input, textarea, select { font-family: inherit; outline: none; }
 
 .sc-bd { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
 .sc-inst { font-size: 0.9rem; line-height: 1.65; color: var(--text-sub); margin: 0; }
+.sc-inst span + span { margin-top: 6px; }
 
 .sc-specs { display: flex; flex-wrap: wrap; gap: 8px; }
 .sc-spec {

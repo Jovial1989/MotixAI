@@ -90,20 +90,24 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
       {active && (
         <div className="sc-bd">
           <StepImage step={step} guideId={guideId} />
-          <p className="sc-inst">{step.instruction}</p>
+          <div className="sc-inst">
+            {step.instruction.split('\n').filter(Boolean).map((line, i) => (
+              <span key={i} style={{ display: 'block' }}>{line}</span>
+            ))}
+          </div>
           {(step.torqueValue || step.warningNote) && (
             <div className="sc-specs">
-              {step.torqueValue && (
-                <span className="sc-spec sc-spec--ok">
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                  Torque: {step.torqueValue}
-                </span>
-              )}
               {step.warningNote && (
-                <span className="sc-spec sc-spec--warn">
+                <div className="sc-spec sc-spec--warn">
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1L10.5 10H.5L5.5 1Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 4.5v2M5.5 8v.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
                   {step.warningNote}
-                </span>
+                </div>
+              )}
+              {step.torqueValue && (
+                <div className="sc-spec sc-spec--ok">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                  Torque: {step.torqueValue}
+                </div>
               )}
             </div>
           )}
