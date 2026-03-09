@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24";
 
 export interface GuideStep {
   order: number;
@@ -18,10 +18,29 @@ export interface GeneratedGuide {
   imagePlan: string[];
 }
 
+// ── Drawing specification ────────────────────────────────────────────────────
+
+export interface DrawingSpec {
+  vehicle: string;
+  part: string;
+  stepTitle: string;
+  viewType: "exploded" | "cross-section" | "perspective" | "cutaway" | "overhead" | "side";
+  keyComponents: string[];
+  toolsShown: string[];
+  callouts: Array<{ number: number; label: string }>;
+  torqueNote: string | null;
+  warningCallout: string | null;
+  referenceContext: string;
+}
+
+// ── Gemini client ────────────────────────────────────────────────────────────
+
 function getClient(): GoogleGenerativeAI | null {
   const key = Deno.env.get("GEMINI_API_KEY");
   return key && key !== "replace-with-real-key" ? new GoogleGenerativeAI(key) : null;
 }
+
+// ── Mock fallbacks ───────────────────────────────────────────────────────────
 
 function mockGuide(vehicle: string, part: string): GeneratedGuide {
   const steps: GuideStep[] = Array.from({ length: 10 }, (_, i) => ({
@@ -48,6 +67,27 @@ function mockGuide(vehicle: string, part: string): GeneratedGuide {
   };
 }
 
+function mockDrawingSpec(vehicle: string, part: string, stepTitle: string): DrawingSpec {
+  return {
+    vehicle,
+    part,
+    stepTitle,
+    viewType: "perspective",
+    keyComponents: [part, "mounting bracket", "fasteners"],
+    toolsShown: ["socket wrench", "torque wrench"],
+    callouts: [
+      { number: 1, label: part },
+      { number: 2, label: "bolt" },
+      { number: 3, label: "bracket" },
+    ],
+    torqueNote: null,
+    warningCallout: null,
+    referenceContext: `Standard OEM workshop diagram for ${part} on ${vehicle}`,
+  };
+}
+
+// ── Guide generation ─────────────────────────────────────────────────────────
+
 export async function generateRepairGuide(
   vehicle: string,
   part: string,
@@ -64,9 +104,11 @@ ${context ? `Manual context: ${context}` : ""}
 
 WRITING RULES — strictly follow these:
 - title: short action phrase (e.g. "Loosen wheel nuts", "Remove caliper bracket")
-- instruction: 1–2 sentences MAX. Imperative voice. Direct action only.
-  Good: "Loosen the two M12 caliper bolts and slide the caliper off the bracket."
-  Bad: "At this point you will want to carefully make sure that the caliper is loosened."
+- instruction: 2–4 numbered sub-steps. Format exactly:
+  "1. First action with specific details.\n2. Second action.\n3. Third action if needed."
+  Each sub-step: one clear imperative action, beginner-friendly, include tool or spec where relevant.
+  Good sub-step: "1. Insert a 14mm socket onto the drain plug and turn counter-clockwise to remove."
+  Bad sub-step: "1. Make sure the plug is removed carefully."
 - warningNote: only if a real safety risk exists. One sentence. Null otherwise.
 - torqueValue: only if a specific torque applies. Format: "120 Nm". Null otherwise.
 - safetyNotes: 2–3 concise pre-job safety checks. One sentence each.
@@ -83,7 +125,7 @@ Respond ONLY with valid JSON:
     {
       "order": 1,
       "title": "string",
-      "instruction": "string",
+      "instruction": "string (2–4 numbered lines: '1. Action.\\n2. Action.\\n3. Action.')",
       "torqueValue": "string or null",
       "warningNote": "string or null"
     }
@@ -104,13 +146,172 @@ Generate 8–10 steps. Include real torque specs and clearances where standard s
   }
 }
 
+// ── Phase 1+2: Reference search & analysis → DrawingSpec ────────────────────
+//
+// Uses gemini-2.5-flash to consult its knowledge of OEM workshop manuals and
+// output a structured DrawingSpec describing the optimal illustration layout.
+// Google Search grounding can be enabled here by adding tools: [{ googleSearch: {} }]
+// when a Search API quota is available — it will ground the response in real
+// OEM diagram references from the web.
+
+export async function buildDrawingSpec(step: {
+  stepOrder: number;
+  title: string;
+  instruction: string;
+  torqueValue?: string | null;
+  warningNote?: string | null;
+  tools: string[];
+  vehicleModel: string;
+  partName: string;
+}): Promise<DrawingSpec> {
+  const client = getClient();
+  if (!client) return mockDrawingSpec(step.vehicleModel, step.partName, step.title);
+
+  const prompt = `You are a technical illustration director for an automotive workshop manual publisher.
+
+Task: Specify the exact layout for a technical line drawing that will be created by an AI image model.
+
+Vehicle: ${step.vehicleModel}
+Part / System: ${step.partName}
+Step action: ${step.title}
+Step instruction: ${step.instruction}
+${step.torqueValue ? `Torque spec: ${step.torqueValue}` : ""}
+${step.warningNote ? `Safety note: ${step.warningNote}` : ""}
+Available tools: ${step.tools.join(", ") || "standard hand tools"}
+
+Based on your knowledge of OEM workshop manuals (Haynes, Chilton, factory service manuals) for this vehicle type, specify the optimal illustration layout.
+
+Respond ONLY with valid JSON — no prose, no markdown fences:
+{
+  "viewType": "exploded|cross-section|perspective|cutaway|overhead|side",
+  "keyComponents": ["list of up to 6 specific component names to label in the drawing"],
+  "toolsShown": ["list of up to 3 tools to include in the diagram"],
+  "callouts": [
+    { "number": 1, "label": "short component name" },
+    { "number": 2, "label": "short component name" }
+  ],
+  "torqueNote": "e.g. '120 Nm' or null",
+  "warningCallout": "one-word safety symbol label, or null",
+  "referenceContext": "one sentence describing what a typical OEM diagram for this step shows"
+}
+
+Rules:
+- callout labels: 1–3 words maximum, noun only (no verbs)
+- keyComponents: specific part names (e.g. 'caliper bracket bolt', not 'part')
+- viewType: choose the view that best exposes the action described`;
+
+  try {
+    const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const cleaned = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      vehicle: step.vehicleModel,
+      part: step.partName,
+      stepTitle: step.title,
+      viewType: parsed.viewType ?? "perspective",
+      keyComponents: Array.isArray(parsed.keyComponents) ? parsed.keyComponents.slice(0, 6) : [],
+      toolsShown: Array.isArray(parsed.toolsShown) ? parsed.toolsShown.slice(0, 3) : [],
+      callouts: Array.isArray(parsed.callouts) ? parsed.callouts.slice(0, 5) : [],
+      torqueNote: parsed.torqueNote ?? null,
+      warningCallout: parsed.warningCallout ?? null,
+      referenceContext: parsed.referenceContext ?? "",
+    };
+  } catch (err) {
+    console.error("[gemini] buildDrawingSpec failed, using fallback:", err instanceof Error ? err.message : err);
+    return mockDrawingSpec(step.vehicleModel, step.partName, step.title);
+  }
+}
+
+// ── Phase 3: Image generation from structured spec ──────────────────────────
+
+export function specToImagePrompt(spec: DrawingSpec): string {
+  const calloutsStr = spec.callouts.map((c) => `${c.number} → ${c.label}`).join(", ");
+  const componentsStr = spec.keyComponents.join(", ");
+  const toolsStr = spec.toolsShown.join(", ") || "standard hand tools";
+  const torqueLine = spec.torqueNote ? `Torque specification arrow: ${spec.torqueNote}` : "";
+  const warningLine = spec.warningCallout ? `Warning triangle symbol labelled: ${spec.warningCallout}` : "";
+  const viewNote =
+    spec.viewType === "exploded" ? "Show components in exploded-view with alignment guidelines." :
+    spec.viewType === "cross-section" ? "Show internal structure with hatching on cut surfaces." :
+    spec.viewType === "cutaway" ? "Partial cutaway revealing internal components." : "";
+
+  return `Black-and-white technical service manual illustration. White background. OEM workshop manual style.
+
+Subject: ${spec.vehicle} — ${spec.part}
+Action depicted: ${spec.stepTitle}
+View type: ${spec.viewType} view
+Key components to show: ${componentsStr}
+Tools shown: ${toolsStr}
+Numbered callouts: ${calloutsStr}
+${torqueLine}
+${warningLine}
+
+Reference: ${spec.referenceContext}
+
+Drawing requirements:
+- Render as a clean engineering line drawing with thin, precise strokes
+- Include all listed numbered callouts pointing to the correct components
+- Directional arrows showing movement, rotation, or applied force direction
+- ${viewNote}
+
+STRICT RULES — the finished image MUST NOT contain:
+- Sentences, paragraphs, or instruction text of any kind
+- Any words other than very short part labels (2 words maximum per label)
+- Watermarks, photo frames, or decorative borders
+- Photorealistic rendering, gradients, or colour fills
+- AI generation artefacts or random characters
+
+Reference style: Haynes / Chilton automotive workshop manual line diagram.`;
+}
+
+export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<string> {
+  const client = getClient();
+  if (!client) {
+    const label = encodeURIComponent(`${spec.part} — ${spec.stepTitle}`.slice(0, 50));
+    return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${label}`;
+  }
+
+  const prompt = specToImagePrompt(spec);
+
+  const model = (client.getGenerativeModel as Function)({
+    model: "gemini-2.0-flash-exp-image-generation",
+  });
+
+  console.log(`[image-gen] generating from spec: ${spec.stepTitle} (${spec.viewType} view)`);
+  const result = await (model.generateContent as Function)({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+  });
+  console.log("[image-gen] Gemini response received");
+
+  const candidates: unknown[] = (result.response.candidates as unknown[]) ?? [];
+  for (const candidate of candidates) {
+    const parts: unknown[] =
+      (candidate as { content?: { parts?: unknown[] } }).content?.parts ?? [];
+    for (const part of parts) {
+      const p = part as { inlineData?: { data?: string; mimeType?: string } };
+      if (p.inlineData?.data) {
+        const mime = p.inlineData.mimeType ?? "image/png";
+        console.log(`[image-gen] image ready mime=${mime}`);
+        return `data:${mime};base64,${p.inlineData.data}`;
+      }
+    }
+  }
+
+  throw new Error("No image data returned from Gemini");
+}
+
+// ── Legacy single-call generator (backward compat) ───────────────────────────
+
 export async function generateStepImage(prompt: string): Promise<string> {
   const client = getClient();
   if (!client) {
     return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${encodeURIComponent(prompt.slice(0, 50))}`;
   }
 
-  // gemini-2.0-flash-exp-image-generation is the supported image generation model
   const model = (client.getGenerativeModel as Function)({
     model: "gemini-2.0-flash-exp-image-generation",
   });

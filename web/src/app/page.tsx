@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import AuthRedirect from './_auth-redirect';
+import NavAuth from './_nav-auth';
+import HeroActions from './_hero-actions';
 
 const features = [
   {
@@ -112,7 +113,6 @@ const stats = [
 export default function LandingPage() {
   return (
     <div className="page">
-      <AuthRedirect />
 
       {/* ─── NAV ─────────────────────────────────────────── */}
       <header className="nav-wrap">
@@ -123,19 +123,19 @@ export default function LandingPage() {
             <a href="#features" className="nav-link">Features</a>
             <a href="#pricing" className="nav-link">Pricing</a>
           </div>
-          <div className="nav-right">
-            <Link href="/auth/login" className="nav-btn-ghost">Log in</Link>
-            <Link href="/auth/signup" className="nav-btn-cta">Start free</Link>
-          </div>
+          <NavAuth />
         </nav>
       </header>
 
       {/* ─── HERO ────────────────────────────────────────── */}
       <section className="hero">
-        <div className="hero-bg-grid" aria-hidden />
-        <div className="hero-bg-orb hero-bg-orb--1" aria-hidden />
-        <div className="hero-bg-orb hero-bg-orb--2" aria-hidden />
+        <div className="hero-bg" aria-hidden>
+          <div className="hero-bg-grid" />
+          <div className="hero-bg-orb hero-bg-orb--1" />
+          <div className="hero-bg-orb hero-bg-orb--2" />
+        </div>
 
+        <div className="hero-content">
         <div className="hero-inner">
           <div className="hero-eyebrow">
             <span className="eyebrow-dot" />
@@ -154,19 +154,43 @@ export default function LandingPage() {
             on web and mobile.
           </p>
 
-          <div className="hero-actions">
-            <Link href="/auth/signup" className="cta-primary">
-              Start for free
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-            <Link href="/dashboard" className="cta-secondary">View dashboard</Link>
-          </div>
+          <HeroActions />
 
           <p className="hero-disclaimer">No credit card required · Free plan available</p>
         </div>
 
+        {/* ─── HERO PREVIEW CARD ───────────────────────────────── */}
+        <div className="hero-card" aria-hidden="true">
+          <div className="hero-card-topbar">
+            <span className="topbar-dot topbar-dot--red" />
+            <span className="topbar-dot topbar-dot--yellow" />
+            <span className="topbar-dot topbar-dot--green" />
+            <span className="topbar-title">Repair Guide · 2019 Ford F-150 · Oil Change</span>
+          </div>
+          <div className="hero-card-body">
+            {([
+              { done: true,  active: false, n: '✓', title: 'Warm up engine for 2 minutes',      detail: null },
+              { done: true,  active: false, n: '✓', title: 'Position drain pan under oil plug',  detail: null },
+              { done: false, active: true,  n: '3',  title: 'Remove drain plug — 14mm socket',   detail: '25 Nm torque' },
+              { done: false, active: false, n: '4',  title: 'Replace oil filter',                detail: null },
+              { done: false, active: false, n: '5',  title: 'Refill with 5W-30 synthetic',       detail: '5.7 L capacity' },
+            ] as const).map((s) => (
+              <div key={s.n} className={`mock-step${s.done ? ' mock-step--done' : ''}${s.active ? ' mock-step--active' : ''}`}>
+                <div className="mock-step-num">{s.n}</div>
+                <div>
+                  <p className="mock-step-title">{s.title}</p>
+                  {s.detail && <p className="mock-step-detail">{s.detail}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hero-card-footer">
+            <span className="card-footer-badge">3 / 5 steps complete</span>
+            <span className="card-footer-diag">Diagrams generating…</span>
+          </div>
+        </div>
+
+        </div>{/* end .hero-content */}
       </section>
 
       {/* ─── LOGOS ───────────────────────────────────────── */}

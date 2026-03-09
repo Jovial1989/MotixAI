@@ -1,6 +1,7 @@
 import { MotixApiClient } from '@motixai/api-client';
+import { env } from './env';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const baseUrl = env.apiUrl;
 
 // ── Token helpers ──────────────────────────────────────────────────────────
 
@@ -27,23 +28,38 @@ async function doRefresh(): Promise<string | null> {
   refreshInFlight = (async () => {
     try {
       const refreshToken = localStorage.getItem('motix_refresh_token');
-      if (!refreshToken) throw new Error('no refresh token');
+      if (!refreshToken) {
+        // No refresh token — session cannot be recovered
+        localStorage.removeItem('motix_access_token');
+        window.location.href = '/auth/login';
+        return null;
+      }
 
       const res = await fetch(`${baseUrl}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
       });
-      if (!res.ok) throw new Error('refresh failed');
+
+      if (res.status === 401 || res.status === 403) {
+        // Refresh token explicitly rejected by server — clear session
+        localStorage.removeItem('motix_access_token');
+        localStorage.removeItem('motix_refresh_token');
+        window.location.href = '/auth/login';
+        return null;
+      }
+
+      if (!res.ok) {
+        // Server or network error — keep existing session intact, do not force logout
+        return null;
+      }
 
       const data = await res.json() as { accessToken: string; refreshToken?: string };
       localStorage.setItem('motix_access_token', data.accessToken);
       if (data.refreshToken) localStorage.setItem('motix_refresh_token', data.refreshToken);
       return data.accessToken;
     } catch {
-      localStorage.removeItem('motix_access_token');
-      localStorage.removeItem('motix_refresh_token');
-      window.location.href = '/auth/login';
+      // fetch() threw (network unreachable) — keep existing session, do not force logout
       return null;
     } finally {
       refreshInFlight = null;
