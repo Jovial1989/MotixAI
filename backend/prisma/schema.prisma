@@ -52,21 +52,6 @@ enum GuideDifficulty {
   hard
 }
 
-// ─── Enterprise ───────────────────────────────────────────────────────────────
-
-model Enterprise {
-  id        String         @id @default(uuid())
-  name      String
-  slug      String         @unique
-  users     User[]
-  manuals   Manual[]
-  vehicles  VehicleModel[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-
-  @@map("enterprises")
-}
-
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {

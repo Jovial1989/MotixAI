@@ -27,6 +27,9 @@ jobs:
           yarn workspace @motixai/shared build
           yarn workspace @motixai/api-client build
 
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=backend/prisma/schema.prisma
+
       - name: Typecheck web
         run: yarn workspace @motixai/web typecheck
 
