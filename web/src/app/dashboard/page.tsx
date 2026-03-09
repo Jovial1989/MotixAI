@@ -4,29 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import type { AnalyticsData, GuideRequest, RepairGuide, RepairJob, VehicleWithHistory } from '@motixai/shared';
 import { webApi } from '@/lib/api';
-
-const KNOWN_VEHICLE_MODELS = [
-  'Toyota Land Cruiser 200',
-  'Nissan Qashqai J10',
-  'BMW E90 3-Series',
-  'Ford F-150',
-  'Honda Civic',
-  'Toyota Corolla',
-  'Volkswagen Golf',
-  'Mercedes C-Class',
-  'Mercedes E-Class',
-  'BMW 5 Series',
-  'Audi A4',
-  'Audi Q5',
-  'Nissan Patrol',
-  'Toyota Hilux',
-  'Mitsubishi L200',
-  'CAT 320D',
-  'Komatsu PC200',
-  'Volvo XC90',
-  'Range Rover Sport',
-  'Hyundai Tucson',
-];
+import SmartGuideForm from './_guide-form';
 
 // ── Tab type ──────────────────────────────────────────────────────────────────
 type Tab = 'guides' | 'jobs' | 'vehicles' | 'requests';
@@ -385,9 +363,7 @@ export default function DashboardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Controlled fields for guide generation form
-  const [vehicleModelSel, setVehicleModelSel] = useState('');
-  const [partNameVal, setPartNameVal] = useState('');
+  const [guideError, setGuideError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -404,27 +380,22 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  async function createGuide(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
+  async function createGuide(data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) {
     setSubmitting(true);
-    setError(null);
+    setGuideError(null);
     try {
-      const data = new FormData(form);
       const created = await webApi.createGuide({
-        vin: String(data.get('vin') || ''),
-        vehicleModel: String(data.get('vehicleModel') || ''),
-        partName: String(data.get('partName')),
-        oemNumber: String(data.get('oemNumber') || ''),
+        vin: data.vin ?? '',
+        vehicleModel: data.vehicleModel,
+        partName: data.partName,
+        oemNumber: data.oemNumber ?? '',
       });
       setGuides((prev) => [created, ...prev]);
       webApi.listVehicles().then(setVehicles).catch(() => {});
       webApi.getAnalytics().then(setAnalytics).catch(() => {});
-      form.reset();
-      setVehicleModelSel('');
-      setPartNameVal('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create guide');
+      setGuideError(err instanceof Error ? err.message : 'Failed to create guide');
+      throw err; // re-throw so SmartGuideForm stays on step 3
     } finally {
       setSubmitting(false);
     }
@@ -495,76 +466,7 @@ export default function DashboardPage() {
 
         {activeTab === 'guides' && (
           <div className="tab-content">
-            <form onSubmit={createGuide} className="gen-form">
-              <div className="gen-form-header">
-                <div className="gen-form-icon">
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <span className="gen-form-title">Generate new guide</span>
-              </div>
-              <div className="gen-inputs">
-                <div className="gen-input-wrap">
-                  <label className="gen-label">Vehicle model <span className="gen-label-required">*</span></label>
-                  <select
-                    name="vehicleModel"
-                    value={vehicleModelSel}
-                    onChange={(e) => setVehicleModelSel(e.target.value)}
-                    required
-                    className="gen-input gen-input--select"
-                  >
-                    <option value="">Select vehicle model…</option>
-                    {KNOWN_VEHICLE_MODELS.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                    <option value="other">Other</option>
-                  </select>
-                  {vehicleModelSel === 'other' && (
-                    <div className="dash-error" style={{ marginTop: 8 }}>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      Sorry, this vehicle model does not exist. A guide cannot be generated.
-                    </div>
-                  )}
-                </div>
-                <div className="gen-input-wrap">
-                  <label className="gen-label">VIN <span className="gen-label-or">optional</span></label>
-                  <input name="vin" placeholder="e.g. 1HGBH41JXMN109186" className="gen-input" />
-                </div>
-                <div className="gen-input-wrap">
-                  <label className="gen-label">Part name <span className="gen-label-required">*</span></label>
-                  <input
-                    name="partName"
-                    value={partNameVal}
-                    onChange={(e) => setPartNameVal(e.target.value)}
-                    placeholder="e.g. Hydraulic Pump"
-                    required
-                    className="gen-input"
-                  />
-                </div>
-                <div className="gen-input-wrap">
-                  <label className="gen-label">OEM number <span className="gen-label-or">optional</span></label>
-                  <input name="oemNumber" placeholder="e.g. 4633891" className="gen-input" />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={submitting || !vehicleModelSel || vehicleModelSel === 'other' || !partNameVal.trim()}
-                className="gen-btn"
-              >
-                {submitting ? <><span className="gen-spinner" /> Generating…</> : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M13 8H3M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Generate Guide
-                  </>
-                )}
-              </button>
-            </form>
+            <SmartGuideForm onSubmit={createGuide} submitting={submitting} error={guideError} />
 
             {error && (
               <div className="dash-error">

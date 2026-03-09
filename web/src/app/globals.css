@@ -1074,6 +1074,99 @@ input, textarea, select { font-family: inherit; outline: none; }
 .gen-spinner--lg { width: 28px; height: 28px; border-width: 3px; border-top-color: var(--p); border-color: var(--border); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Smart Guide Form ───────────────────────────────────────────────── */
+.sgf-step-badge {
+  margin-left: auto; font-size: 0.7rem; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.05em;
+}
+.sgf-mode-tabs {
+  display: flex; gap: 4px;
+  background: var(--bg-subtle); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 4px;
+}
+.sgf-mode-tab {
+  flex: 1; height: 34px; border: none; border-radius: calc(var(--r-md) - 2px);
+  font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
+  background: transparent; cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+}
+.sgf-mode-tab--active {
+  background: var(--bg-card); color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.sgf-vin-row { display: flex; gap: 8px; }
+.sgf-vin-row .gen-input { flex: 1; }
+.sgf-decode-btn {
+  height: 44px; padding: 0 18px; border: none; border-radius: var(--r-md);
+  background: var(--p); color: #fff; font-size: 0.88rem; font-weight: 700;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer;
+  transition: background var(--t-fast);
+}
+.sgf-decode-btn:hover:not(:disabled) { background: var(--p-hover); }
+.sgf-decode-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.sgf-field-error { font-size: 0.78rem; color: var(--red); margin-top: 4px; }
+.sgf-decoded-card {
+  display: flex; align-items: center; gap: 12px;
+  background: color-mix(in srgb, var(--green, #22c55e) 8%, var(--bg-card));
+  border: 1.5px solid color-mix(in srgb, var(--green, #22c55e) 30%, transparent);
+  border-radius: var(--r-md); padding: 12px 14px;
+}
+.sgf-decoded-icon { color: #22c55e; flex-shrink: 0; }
+.sgf-decoded-model { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+.sgf-decoded-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
+.sgf-clear-btn {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 0.85rem; padding: 4px 6px; border-radius: var(--r-sm);
+}
+.sgf-clear-btn:hover { color: var(--text); background: var(--bg-subtle); }
+.sgf-vehicle-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-subtle); border: 1px solid var(--border);
+  border-radius: var(--r-full); padding: 6px 14px;
+  font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
+  width: fit-content;
+}
+.sgf-back-inline {
+  background: none; border: none; cursor: pointer;
+  color: var(--p); font-size: 0.78rem; font-weight: 700; padding: 0; margin-left: 4px;
+}
+.sgf-back-inline:hover { text-decoration: underline; }
+.sgf-disambig { margin-top: 10px; }
+.sgf-disambig-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 8px;
+}
+.sgf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sgf-chip {
+  padding: 5px 12px; border-radius: var(--r-full);
+  border: 1.5px solid var(--border); background: var(--bg-card);
+  font-size: 0.8rem; font-weight: 500; color: var(--text);
+  cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+.sgf-chip:hover { border-color: var(--p); color: var(--p); }
+.sgf-chip--active { border-color: var(--p); background: var(--p-light); color: var(--p); }
+.sgf-btn-row { display: flex; gap: 10px; align-items: center; }
+.sgf-back-btn {
+  height: 48px; padding: 0 20px; border: 1.5px solid var(--border);
+  border-radius: var(--r-full); background: transparent; color: var(--text-muted);
+  font-size: 0.88rem; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.sgf-back-btn:hover { border-color: var(--p); color: var(--p); }
+.sgf-btn-grow { flex: 1; }
+.sgf-confirm-card {
+  background: var(--bg-subtle); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sgf-confirm-row { display: flex; align-items: baseline; gap: 12px; }
+.sgf-confirm-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted); min-width: 64px;
+}
+.sgf-confirm-value { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+.sgf-confirm-mono { font-family: var(--font-mono, monospace); font-size: 0.82rem; }
+
 /* ── Guide list ─────────────────────────────────────────────────────── */
 .guide-list { display: flex; flex-direction: column; gap: 10px; }
 
