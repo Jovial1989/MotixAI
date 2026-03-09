@@ -1,76 +1,30 @@
 import { Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { GeminiImageProvider } from 'src/ai/gemini-image.provider';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
+import { IllustrationWorker } from 'src/services/illustration/illustrationWorker';
 
-// Simple in-process queue with concurrency limit of 1.
-const activeJobs = new Set<string>();
-const MAX_CONCURRENT = 1;
-// Rate-limit: minimum gap between Gemini image requests (7s = ~8/min, under free-tier cap).
-const MIN_REQUEST_INTERVAL_MS = 7000;
-let lastRequestTime = 0;
+// Extended imageStatus values:
+// none | queued | searching_refs | analyzing_refs | generating | ready | failed
 
-function buildPrompt(step: {
-  stepOrder: number;
-  title: string;
-  instruction: string;
-  torqueValue?: string | null;
-  warningNote?: string | null;
-  guide: {
-    title: string;
-    tools: string[];
-    safetyNotes: string[];
-    vehicle: { model: string };
-    part: { name: string };
-  };
-}): string {
-  const toolsStr = step.guide.tools.join(', ');
-  const torqueNote = step.torqueValue ? `Torque specification: ${step.torqueValue}` : '';
-  const warningNote = step.warningNote ? `Safety callout: ${step.warningNote}` : '';
-
-  return `Black-and-white technical service manual illustration. White background. OEM workshop manual style.
-
-Subject: ${step.guide.vehicle.model} — ${step.guide.part.name}
-Action depicted: ${step.title}
-Tools shown: ${toolsStr || 'standard hand tools'}
-${torqueNote}
-${warningNote}
-
-Drawing requirements:
-- Show the ${step.guide.part.name} as a clean engineering line drawing
-- Include the relevant tool(s) positioned correctly relative to the component
-- Use numbered callout arrows (1, 2, 3) pointing to key parts — numbers only, no words
-- Directional arrows where the action involves movement, rotation, or applied force
-- Exploded-view or cross-section if needed to show internal parts clearly
-
-STRICT RULES — the finished image MUST NOT contain:
-- Sentences, paragraphs, or instruction text of any kind
-- Any words other than very short part names (2 words maximum per label)
-- Watermarks, photo frames, or decorative borders
-- Photorealistic rendering, gradients, or colour fills
-- AI generation artefacts or random characters
-
-Reference style: Haynes / Chilton automotive workshop manual line diagram.`;
-}
+const ACTIVE_STATUSES = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
 
 @Injectable()
 export class StepsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StepsService.name);
+  private readonly worker: IllustrationWorker;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly imageProvider: GeminiImageProvider,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {
+    this.worker = new IllustrationWorker(prisma);
+  }
 
   async onApplicationBootstrap(): Promise<void> {
-    // Reset steps stuck in queued/generating from a previous server run
+    // Reset steps stuck in any active phase from a previous server run
     const reset = await this.prisma.repairStep.updateMany({
-      where: { imageStatus: { in: ['queued', 'generating'] } },
+      where: { imageStatus: { in: ACTIVE_STATUSES } },
       data: { imageStatus: 'none' },
     });
     if (reset.count > 0) {
       this.logger.log(`Reset ${reset.count} stuck image job(s) to 'none' on startup`);
-      // Re-enqueue them
+      // Re-enqueue steps that previously had a prompt (were already processed once)
       const steps = await this.prisma.repairStep.findMany({
         where: { imageStatus: 'none', imagePrompt: { not: null } },
         select: { id: true },
@@ -81,46 +35,14 @@ export class StepsService implements OnApplicationBootstrap {
     }
   }
 
-  async generateStepImage(stepId: string, force = false): Promise<{ imageStatus: string; imageUrl: string | null }> {
-    const step = await this.prisma.repairStep.findUnique({
-      where: { id: stepId },
-      include: {
-        guide: {
-          include: { vehicle: true, part: true },
-        },
-      },
-    });
-
+  async generateStepImage(
+    stepId: string,
+    force = false,
+  ): Promise<{ imageStatus: string; imageUrl: string | null }> {
+    const step = await this.prisma.repairStep.findUnique({ where: { id: stepId } });
     if (!step) throw new NotFoundException('Step not found');
 
-    // Skip if already ready and not forced
-    if (step.imageStatus === 'ready' && step.imageUrl && !force) {
-      return { imageStatus: step.imageStatus, imageUrl: step.imageUrl };
-    }
-
-    // Skip if already in progress
-    if ((step.imageStatus === 'generating' || step.imageStatus === 'queued') && !force) {
-      return { imageStatus: step.imageStatus, imageUrl: step.imageUrl };
-    }
-
-    const prompt = buildPrompt(step as Parameters<typeof buildPrompt>[0]);
-    const promptHash = createHash('md5').update(prompt).digest('hex');
-
-    // Cache check: reuse if same prompt hash already succeeded
-    if (!force && step.imageStatus === 'ready' && step.imageUrl) {
-      return { imageStatus: 'ready', imageUrl: step.imageUrl };
-    }
-
-    // Mark as queued immediately so UI can respond
-    await this.prisma.repairStep.update({
-      where: { id: stepId },
-      data: { imageStatus: 'queued', imagePrompt: prompt, imageError: null },
-    });
-
-    // Fire-and-forget processing respecting concurrency limit
-    this.processAsync(stepId, prompt, promptHash);
-
-    return { imageStatus: 'queued', imageUrl: null };
+    return this.worker.enqueue(stepId, force);
   }
 
   async enqueueGuideImages(guideId: string): Promise<void> {
@@ -128,69 +50,8 @@ export class StepsService implements OnApplicationBootstrap {
       where: { guideId, imageStatus: 'none' },
       orderBy: { stepOrder: 'asc' },
     });
-
     for (const step of steps) {
-      // Don't await — fire and forget with staggered start
-      void this.generateStepImage(step.id, false);
-    }
-  }
-
-  private processAsync(stepId: string, prompt: string, _promptHash: string): void {
-    // Schedule with slight delay to not block the response
-    setTimeout(() => {
-      void this.runGeneration(stepId, prompt);
-    }, 50);
-  }
-
-  private async runGeneration(stepId: string, prompt: string): Promise<void> {
-    // Wait if at concurrency limit
-    if (activeJobs.size >= MAX_CONCURRENT) {
-      await new Promise<void>((resolve) => {
-        const check = setInterval(() => {
-          if (activeJobs.size < MAX_CONCURRENT) {
-            clearInterval(check);
-            resolve();
-          }
-        }, 500);
-      });
-    }
-
-    activeJobs.add(stepId);
-
-    try {
-      // Rate-limit: ensure minimum gap between Gemini requests
-      const wait = Math.max(0, MIN_REQUEST_INTERVAL_MS - (Date.now() - lastRequestTime));
-      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-      lastRequestTime = Date.now();
-
-      await this.prisma.repairStep.update({
-        where: { id: stepId },
-        data: { imageStatus: 'generating' },
-      });
-
-      this.logger.log(`Generating image for step ${stepId}`);
-      const result = await this.imageProvider.generateImage(prompt);
-
-      await this.prisma.repairStep.update({
-        where: { id: stepId },
-        data: { imageStatus: 'ready', imageUrl: result.imageUrl, imageError: null },
-      });
-
-      this.logger.log(`Image ready for step ${stepId}`);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Image generation failed for step ${stepId}: ${msg}`);
-
-      await this.prisma.repairStep.update({
-        where: { id: stepId },
-        data: {
-          imageStatus: 'failed',
-          imageError: msg,
-          imageUrl: `https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed`,
-        },
-      });
-    } finally {
-      activeJobs.delete(stepId);
+      void this.worker.enqueue(step.id, false);
     }
   }
 }

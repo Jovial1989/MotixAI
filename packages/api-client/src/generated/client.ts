@@ -1,12 +1,19 @@
 import type {
+  AnalyticsData,
   AuthTokens,
   CreateGuideInput,
+  CreateJobInput,
+  CreateRequestInput,
   EnterpriseGuideInput,
   ForgotPasswordResponse,
   GenerateImageResponse,
+  GuideRequest,
   ManualDocument,
   RepairGuide,
+  RepairJob,
+  UpdateJobInput,
   UploadManualInput,
+  VehicleWithHistory,
 } from './types';
 
 export interface ApiClientOptions {
@@ -48,25 +55,18 @@ export class MotixApiClient {
     return (await res.json()) as T;
   }
 
+  // ── Auth ──────────────────────────────────────────────────────────────────
+
   signup(body: { email: string; password: string }) {
-    return this.request<AuthTokens>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+    return this.request<AuthTokens>('/auth/signup', { method: 'POST', body: JSON.stringify(body) });
   }
 
   login(body: { email: string; password: string }) {
-    return this.request<AuthTokens>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+    return this.request<AuthTokens>('/auth/login', { method: 'POST', body: JSON.stringify(body) });
   }
 
   refresh(body: { refreshToken: string }) {
-    return this.request<AuthTokens>('/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+    return this.request<AuthTokens>('/auth/refresh', { method: 'POST', body: JSON.stringify(body) });
   }
 
   guest() {
@@ -87,6 +87,8 @@ export class MotixApiClient {
     });
   }
 
+  // ── Steps ─────────────────────────────────────────────────────────────────
+
   generateStepImage(stepId: string, force = false) {
     return this.request<GenerateImageResponse>(`/steps/${stepId}/generate-image`, {
       method: 'POST',
@@ -94,11 +96,10 @@ export class MotixApiClient {
     });
   }
 
+  // ── Guides ────────────────────────────────────────────────────────────────
+
   createGuide(body: CreateGuideInput) {
-    return this.request<RepairGuide>('/guides', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+    return this.request<RepairGuide>('/guides', { method: 'POST', body: JSON.stringify(body) });
   }
 
   listGuides() {
@@ -112,6 +113,48 @@ export class MotixApiClient {
   deleteGuide(id: string) {
     return this.request<void>(`/guides/${id}`, { method: 'DELETE' });
   }
+
+  // ── Repair Jobs ───────────────────────────────────────────────────────────
+
+  createJob(body: CreateJobInput) {
+    return this.request<RepairJob>('/jobs', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  listJobs() {
+    return this.request<RepairJob[]>('/jobs');
+  }
+
+  updateJob(id: string, body: UpdateJobInput) {
+    return this.request<RepairJob>(`/jobs/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+
+  deleteJob(id: string) {
+    return this.request<void>(`/jobs/${id}`, { method: 'DELETE' });
+  }
+
+  // ── Guide Requests ────────────────────────────────────────────────────────
+
+  createGuideRequest(body: CreateRequestInput) {
+    return this.request<GuideRequest>('/requests', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  listGuideRequests() {
+    return this.request<GuideRequest[]>('/requests');
+  }
+
+  // ── Analytics ─────────────────────────────────────────────────────────────
+
+  getAnalytics() {
+    return this.request<AnalyticsData>('/analytics');
+  }
+
+  // ── Vehicles ──────────────────────────────────────────────────────────────
+
+  listVehicles() {
+    return this.request<VehicleWithHistory[]>('/vehicles');
+  }
+
+  // ── Enterprise ────────────────────────────────────────────────────────────
 
   uploadManual(body: UploadManualInput) {
     return this.request<ManualDocument>('/enterprise/manuals', {
@@ -129,5 +172,33 @@ export class MotixApiClient {
       method: 'POST',
       body: JSON.stringify(body),
     });
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+
+  adminListRequests() {
+    return this.request<GuideRequest[]>('/admin/requests');
+  }
+
+  adminUpdateRequest(id: string, status: string, guideId?: string) {
+    return this.request<GuideRequest>(`/admin/requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, guideId }),
+    });
+  }
+
+  adminListGuides() {
+    return this.request<RepairGuide[]>('/admin/guides');
+  }
+
+  adminUpdateGuide(id: string, body: { status?: string; title?: string }) {
+    return this.request<RepairGuide>(`/admin/guides/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  }
+
+  adminListUsers() {
+    return this.request<Array<{ id: string; email: string; fullName: string; role: string; createdAt: string }>>('/admin/users');
   }
 }

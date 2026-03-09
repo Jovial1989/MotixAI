@@ -14,30 +14,65 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+const _kKnownVehicles = [
+  'Toyota Land Cruiser 200',
+  'Nissan Qashqai J10',
+  'BMW E90 3-Series',
+  'Ford F-150',
+  'Honda Civic',
+  'Toyota Corolla',
+  'Volkswagen Golf',
+  'Mercedes C-Class',
+  'Mercedes E-Class',
+  'BMW 5 Series',
+  'Audi A4',
+  'Audi Q5',
+  'Nissan Patrol',
+  'Toyota Hilux',
+  'Mitsubishi L200',
+  'CAT 320D',
+  'Komatsu PC200',
+  'Volvo XC90',
+  'Range Rover Sport',
+  'Hyundai Tucson',
+];
+
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  final _queryCtrl = TextEditingController();
+  final _partCtrl = TextEditingController();
+  String? _selectedVehicle; // null = not selected, 'other' = blocked
   bool _creating = false;
+
+  bool get _canSubmit =>
+      _selectedVehicle != null &&
+      _selectedVehicle != 'other' &&
+      _partCtrl.text.trim().isNotEmpty &&
+      !_creating;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(guidesProvider.notifier).load());
+    _partCtrl.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _queryCtrl.dispose();
+    _partCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _createGuide() async {
-    final query = _queryCtrl.text.trim();
-    if (query.isEmpty) return;
+    final vehicle = _selectedVehicle;
+    final part = _partCtrl.text.trim();
+    if (vehicle == null || vehicle == 'other' || part.isEmpty) return;
     setState(() => _creating = true);
-    _queryCtrl.clear();
+    _partCtrl.clear();
     FocusScope.of(context).unfocus();
-    final guide = await ref.read(guidesProvider.notifier).create(query);
-    setState(() => _creating = false);
+    final guide = await ref.read(guidesProvider.notifier).create(vehicle, part);
+    setState(() {
+      _creating = false;
+      _selectedVehicle = null;
+    });
     if (!mounted) return;
     if (guide != null) context.push('/guides/${guide.id}');
   }
@@ -60,7 +95,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             // ── New guide input ──
             _NewGuideBar(
-              controller: _queryCtrl,
+              partController: _partCtrl,
+              selectedVehicle: _selectedVehicle,
+              onVehicleChanged: (v) => setState(() => _selectedVehicle = v),
+              canSubmit: _canSubmit,
               isLoading: _creating,
               onSubmit: _createGuide,
             ),
@@ -184,52 +222,120 @@ class _TopBar extends StatelessWidget {
 }
 
 class _NewGuideBar extends StatelessWidget {
-  final TextEditingController controller;
+  final TextEditingController partController;
+  final String? selectedVehicle;
+  final ValueChanged<String?> onVehicleChanged;
+  final bool canSubmit;
   final bool isLoading;
   final VoidCallback onSubmit;
-  const _NewGuideBar({required this.controller, required this.isLoading, required this.onSubmit});
+
+  const _NewGuideBar({
+    required this.partController,
+    required this.selectedVehicle,
+    required this.onVehicleChanged,
+    required this.canSubmit,
+    required this.isLoading,
+    required this.onSubmit,
+  });
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(s16, s12, s16, s12),
-    color: Colors.white,
-    child: Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controller,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (_) => onSubmit(),
-            decoration: InputDecoration(
-              hintText: 'e.g. Replace brake pads on 2019 Honda Civic',
-              hintStyle: TextStyle(color: kTextMuted, fontSize: 14),
-              prefixIcon: const Icon(Icons.search, size: 20, color: kTextMuted),
-              contentPadding: const EdgeInsets.symmetric(horizontal: s12, vertical: s10),
-              filled: true,
-              fillColor: kBg,
-              border: OutlineInputBorder(borderRadius: kRadiusMd, borderSide: BorderSide(color: kBorder)),
-              enabledBorder: OutlineInputBorder(borderRadius: kRadiusMd, borderSide: BorderSide(color: kBorder)),
-              focusedBorder: OutlineInputBorder(borderRadius: kRadiusMd, borderSide: BorderSide(color: kPrimary, width: 2)),
+  Widget build(BuildContext context) {
+    final isOther = selectedVehicle == 'other';
+    return Container(
+      padding: const EdgeInsets.fromLTRB(s16, s12, s16, s12),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Vehicle model dropdown ──
+          Container(
+            decoration: BoxDecoration(
+              color: kBg,
+              borderRadius: kRadiusMd,
+              border: Border.all(color: kBorder),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: s12),
+            child: DropdownButton<String>(
+              value: selectedVehicle,
+              hint: const Text('Select vehicle model…', style: TextStyle(fontSize: 14, color: kTextMuted)),
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              items: [
+                ..._kKnownVehicles.map((m) => DropdownMenuItem(value: m, child: Text(m))),
+                const DropdownMenuItem(value: 'other', child: Text('Other')),
+              ],
+              onChanged: onVehicleChanged,
             ),
           ),
-        ),
-        const SizedBox(width: s8),
-        FilledButton(
-          onPressed: isLoading ? null : onSubmit,
-          style: FilledButton.styleFrom(
-            backgroundColor: kPrimary,
-            minimumSize: const Size(52, 48),
-            padding: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(borderRadius: kRadiusMd),
+
+          // ── "Other" error ──
+          if (isOther) ...[
+            const SizedBox(height: s8),
+            Container(
+              padding: const EdgeInsets.all(s12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: kRadiusMd,
+                border: Border.all(color: const Color(0xFFFCA5A5)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.error_outline, size: 16, color: Color(0xFFDC2626)),
+                  SizedBox(width: s8),
+                  Expanded(
+                    child: Text(
+                      'Sorry, this vehicle model does not exist. A guide cannot be generated.',
+                      style: TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: s8),
+
+          // ── Part name + submit ──
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: partController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) { if (canSubmit) onSubmit(); },
+                  decoration: InputDecoration(
+                    hintText: 'Part name, e.g. Brake pads',
+                    hintStyle: const TextStyle(color: kTextMuted, fontSize: 14),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: s12, vertical: s10),
+                    filled: true,
+                    fillColor: kBg,
+                    border: OutlineInputBorder(borderRadius: kRadiusMd, borderSide: BorderSide(color: kBorder)),
+                    enabledBorder: OutlineInputBorder(borderRadius: kRadiusMd, borderSide: BorderSide(color: kBorder)),
+                    focusedBorder: OutlineInputBorder(borderRadius: kRadiusMd, borderSide: BorderSide(color: kPrimary, width: 2)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: s8),
+              FilledButton(
+                onPressed: canSubmit ? onSubmit : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: kPrimary,
+                  minimumSize: const Size(52, 48),
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: kRadiusMd),
+                ),
+                child: isLoading
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.arrow_forward, color: Colors.white),
+              ),
+            ],
           ),
-          child: isLoading
-              ? const SizedBox(width: 20, height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Icon(Icons.add, color: Colors.white),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _GuideCard extends StatelessWidget {

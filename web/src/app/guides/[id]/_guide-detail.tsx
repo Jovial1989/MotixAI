@@ -23,7 +23,8 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
   }, [step.id, triggered, status]);
 
   useEffect(() => {
-    if (status !== 'queued' && status !== 'generating') {
+    const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
+    if (!activeStatuses.includes(status)) {
       if (timerRef.current) clearInterval(timerRef.current); return;
     }
     timerRef.current = setInterval(async () => {
@@ -55,8 +56,14 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
       )}
     </>
   );
-  if (status === 'queued' || status === 'generating') return (
-    <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>Generating illustration…</span></div>
+  const statusLabel: Record<string, string> = {
+    queued:         'Queued…',
+    searching_refs: 'Searching references…',
+    analyzing_refs: 'Analysing diagram layout…',
+    generating:     'Generating illustration…',
+  };
+  if (status in statusLabel) return (
+    <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{statusLabel[status]}</span></div>
   );
   if (status === 'failed') return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -91,9 +98,28 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
         <div className="sc-bd">
           <StepImage step={step} guideId={guideId} />
           <div className="sc-inst">
-            {step.instruction.split('\n').filter(Boolean).map((line, i) => (
-              <span key={i} style={{ display: 'block' }}>{line}</span>
-            ))}
+            {(() => {
+              const lines = step.instruction.split('\n').filter(Boolean);
+              const isNumbered = lines.some((l) => /^\d+\.\s/.test(l));
+              if (isNumbered) {
+                return (
+                  <div className="sc-inst-list">
+                    {lines.map((line, i) => {
+                      const m = line.match(/^(\d+)\.\s+(.*)/);
+                      return m ? (
+                        <div key={i} className="sc-inst-item">
+                          <span className="sc-inst-num">{m[1]}</span>
+                          <span>{m[2]}</span>
+                        </div>
+                      ) : (
+                        <span key={i} style={{ display: 'block' }}>{line}</span>
+                      );
+                    })}
+                  </div>
+                );
+              }
+              return lines.map((line, i) => <span key={i} style={{ display: 'block' }}>{line}</span>);
+            })()}
           </div>
           {(step.torqueValue || step.warningNote) && (
             <div className="sc-specs">

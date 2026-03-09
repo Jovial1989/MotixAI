@@ -35,6 +35,8 @@ model Tenant {
   guides    RepairGuide[]
   vehicles  Vehicle[]
   parts     Part[]
+  repairJobs    RepairJob[]
+  guideRequests GuideRequest[]
 }
 
 enum GuideStatus {
@@ -80,6 +82,8 @@ model User {
 
   tenant Tenant? @relation(fields: [tenantId], references: [id])
   guides RepairGuide[]
+  repairJobs   RepairJob[]
+  guideRequests GuideRequest[]
 }
 
 model Vehicle {
@@ -95,6 +99,7 @@ model Vehicle {
   tenant Tenant? @relation(fields: [tenantId], references: [id])
   guides RepairGuide[]
   manuals ManualDocument[]
+  repairJobs RepairJob[]
 
   @@index([tenantId, model])
 }
@@ -138,9 +143,11 @@ model RepairGuide {
   vehicle Vehicle        @relation(fields: [vehicleId], references: [id])
   part    Part           @relation(fields: [partId], references: [id])
   manual  ManualDocument? @relation(fields: [manualId], references: [id])
-  steps   RepairStep[]
-  images  GeneratedImage[]
-  jobs    Job[]
+  steps         RepairStep[]
+  images        GeneratedImage[]
+  jobs          Job[]
+  repairJobs    RepairJob[]
+  guideRequests GuideRequest[]
 
   @@index([tenantId, userId, createdAt])
 }
@@ -153,7 +160,7 @@ model RepairStep {
   instruction  String
   torqueValue  String?
   warningNote  String?
-  imageStatus  String   @default("none")   // none | queued | generating | ready | failed
+  imageStatus  String   @default("none")   // none | queued | searching_refs | analyzing_refs | generating | ready | failed
   imageUrl     String?
   imagePrompt  String?
   imageError   String?
@@ -163,6 +170,48 @@ model RepairStep {
   guide RepairGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@index([guideId, stepOrder])
+}
+
+model RepairJob {
+  id                   String   @id @default(cuid())
+  tenantId             String?
+  userId               String
+  vehicleId            String
+  guideId              String?
+  assignedTechnicianId String?
+  problemDescription   String
+  status               String   @default("pending")   // pending | in_progress | completed
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id])
+  tenant  Tenant?      @relation(fields: [tenantId], references: [id])
+  vehicle Vehicle      @relation(fields: [vehicleId], references: [id])
+  guide   RepairGuide? @relation(fields: [guideId], references: [id])
+
+  @@index([tenantId, userId, createdAt])
+  @@index([vehicleId])
+}
+
+model GuideRequest {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  userId       String
+  vehicleModel String
+  repairType   String
+  partNumber   String?
+  notes        String?
+  status       String   @default("pending")   // pending | processing | completed | rejected
+  guideId      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id])
+  tenant  Tenant?      @relation(fields: [tenantId], references: [id])
+  guide   RepairGuide? @relation(fields: [guideId], references: [id])
+
+  @@index([tenantId, status, createdAt])
 }
 
 model GeneratedImage {

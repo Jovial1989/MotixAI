@@ -1,9 +1,14 @@
 import { corsPreflightResponse, errorResponse, json } from "./_lib/cors.ts";
 import { extractUser } from "./_lib/jwt.ts";
+import { handleAdmin } from "./routes/admin.ts";
+import { handleAnalytics } from "./routes/analytics.ts";
 import { handleAuth } from "./routes/auth.ts";
-import { handleGuides } from "./routes/guides.ts";
-import { handleSteps } from "./routes/steps.ts";
 import { handleEnterprise } from "./routes/enterprise.ts";
+import { handleGuides } from "./routes/guides.ts";
+import { handleJobs } from "./routes/jobs.ts";
+import { handleRequests } from "./routes/requests.ts";
+import { handleSteps } from "./routes/steps.ts";
+import { handleVehicles } from "./routes/vehicles.ts";
 
 Deno.serve(async (req: Request): Promise<Response> => {
   // CORS preflight
@@ -12,7 +17,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
 
   // Extract path after the function name "api", regardless of host prefix format.
-  // Handles both /functions/v1/api/... and /api/... URL shapes.
   const pathMatch = url.pathname.match(/\/api(\/.*)?$/);
   const path = pathMatch ? (pathMatch[1] || "/") : "/";
   const method = req.method;
@@ -41,6 +45,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (path.startsWith("/enterprise")) {
     return handleEnterprise(req, method, path.replace("/enterprise", ""), user);
+  }
+
+  if (path.startsWith("/jobs")) {
+    return handleJobs(req, method, path.replace("/jobs", ""), user);
+  }
+
+  if (path.startsWith("/requests")) {
+    return handleRequests(req, method, path.replace("/requests", ""), user);
+  }
+
+  if (path.startsWith("/analytics")) {
+    return handleAnalytics(req, method, path.replace("/analytics", ""), user);
+  }
+
+  if (path.startsWith("/vehicles")) {
+    return handleVehicles(req, method, path.replace("/vehicles", ""), user);
+  }
+
+  if (path.startsWith("/admin")) {
+    return handleAdmin(req, method, path.replace("/admin", ""), user);
   }
 
   return errorResponse("Not Found", 404);
