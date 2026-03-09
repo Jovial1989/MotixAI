@@ -1,4 +1,4 @@
-import { errorResponse, json } from "../_lib/cors.ts";
+import { CORS_HEADERS, errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
 import { generateRepairGuide } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
@@ -227,7 +227,7 @@ export async function handleGuides(
     if (existing.length === 0) return errorResponse("Guide not found", 404);
 
     await sql`DELETE FROM "RepairGuide" WHERE id = ${guideId}`;
-    return new Response(null, { status: 204 });
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   return errorResponse("Not Found", 404);

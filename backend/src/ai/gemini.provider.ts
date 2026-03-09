@@ -40,6 +40,15 @@ Generate a detailed repair guide for:
 - Part: ${input.part}
 ${input.context ? `- Manual context: ${input.context}` : ''}
 
+WRITING RULES:
+- title: short action phrase (e.g. "Loosen wheel nuts", "Remove caliper bracket")
+- instruction: 2–4 numbered sub-steps. Format exactly:
+  "1. First action with specific detail.\\n2. Second action.\\n3. Third action if needed."
+  Each sub-step: one clear imperative action, beginner-friendly, include tool or spec where relevant.
+- warningNote: only if a real safety risk exists. One sentence. Null otherwise.
+- torqueValue: only if a specific torque applies. Format: "120 Nm". Null otherwise.
+- safetyNotes: 2–3 concise pre-job safety checks.
+
 Respond ONLY with valid JSON matching this exact schema:
 {
   "title": "string",
@@ -51,7 +60,7 @@ Respond ONLY with valid JSON matching this exact schema:
     {
       "order": 1,
       "title": "string",
-      "instruction": "string (detailed, 1-3 sentences)",
+      "instruction": "string (2–4 numbered lines: '1. Action.\\n2. Action.\\n3. Action.')",
       "torqueValue": "string or null",
       "warningNote": "string or null"
     }

@@ -32,14 +32,18 @@ class AuthTokens {
 
 // ── Guide ─────────────────────────────────────────────────────────────────────
 
-enum ImageStatus { none, queued, generating, ready, failed }
+// Multi-phase illustration pipeline statuses.
+// The backend progresses through: queued → searching_refs → analyzing_refs → generating → ready | failed
+enum ImageStatus { none, queued, searchingRefs, analyzingRefs, generating, ready, failed }
 
 ImageStatus _parseImageStatus(String? s) => switch (s) {
-  'queued'     => ImageStatus.queued,
-  'generating' => ImageStatus.generating,
-  'ready'      => ImageStatus.ready,
-  'failed'     => ImageStatus.failed,
-  _            => ImageStatus.none,
+  'queued'          => ImageStatus.queued,
+  'searching_refs'  => ImageStatus.searchingRefs,
+  'analyzing_refs'  => ImageStatus.analyzingRefs,
+  'generating'      => ImageStatus.generating,
+  'ready'           => ImageStatus.ready,
+  'failed'          => ImageStatus.failed,
+  _                 => ImageStatus.none,
 };
 
 class RepairStep {
@@ -85,7 +89,11 @@ class RepairStep {
     imageError: imageError,
   );
 
-  bool get isPending => imageStatus == ImageStatus.queued || imageStatus == ImageStatus.generating;
+  bool get isPending =>
+      imageStatus == ImageStatus.queued ||
+      imageStatus == ImageStatus.searchingRefs ||
+      imageStatus == ImageStatus.analyzingRefs ||
+      imageStatus == ImageStatus.generating;
 }
 
 class Vehicle {

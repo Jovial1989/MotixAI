@@ -327,7 +327,7 @@ class _StepCardState extends State<_StepCard> {
 
                 // Instruction
                 const SizedBox(height: s16),
-                Text(step.instruction, style: tsBodyMd),
+                _StepInstruction(instruction: step.instruction),
 
                 // Expandable details
                 if (hasDetails) ...[
@@ -491,6 +491,12 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
     }
 
     if (step.isPending) {
+      final statusLabel = switch (step.imageStatus) {
+        ImageStatus.searchingRefs  => 'Searching references…',
+        ImageStatus.analyzingRefs  => 'Analysing diagram layout…',
+        ImageStatus.generating     => 'Generating illustration…',
+        _                          => 'Queued…',
+      };
       return FadeTransition(
         opacity: _anim,
         child: Container(
@@ -505,7 +511,7 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
             children: [
               const CircularProgressIndicator(color: kPrimary, strokeWidth: 2),
               const SizedBox(height: s8),
-              Text('Generating illustration…', style: tsCaption.copyWith(fontWeight: FontWeight.w400)),
+              Text(statusLabel, style: tsCaption.copyWith(fontWeight: FontWeight.w400)),
             ],
           ),
         ),
@@ -621,4 +627,54 @@ class _StepNavigator extends StatelessWidget {
       ],
     ),
   );
+}
+
+// ── Step instruction renderer ─────────────────────────────────────────────────
+// Renders "1. Action\n2. Action\n3. Action" as a numbered list with styled badges.
+// Falls back to plain text for legacy non-numbered instructions.
+class _StepInstruction extends StatelessWidget {
+  final String instruction;
+  const _StepInstruction({required this.instruction});
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = instruction.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    final isNumbered = lines.any((l) => RegExp(r'^\d+\.\s').hasMatch(l));
+
+    if (!isNumbered) {
+      return Text(instruction, style: tsBodyMd);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: lines.map((line) {
+        final match = RegExp(r'^(\d+)\.\s+(.*)').firstMatch(line);
+        if (match == null) return Text(line, style: tsBodyMd);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: s8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 22, height: 22,
+                margin: const EdgeInsets.only(top: 1, right: s8),
+                decoration: BoxDecoration(
+                  color: kPrimary.withValues(alpha: 0.1),
+                  border: Border.all(color: kPrimary.withValues(alpha: 0.3)),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    match.group(1)!,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kPrimary),
+                  ),
+                ),
+              ),
+              Expanded(child: Text(match.group(2)!, style: tsBodyMd)),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
 }

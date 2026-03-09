@@ -21,6 +21,11 @@ export interface Vehicle {
   year?: number | null;
 }
 
+export interface VehicleWithHistory extends Vehicle {
+  guides: Array<{ id: string; title: string; createdAt: string; part: { name: string } }>;
+  repairJobs: Array<{ id: string; status: string; problemDescription: string; createdAt: string }>;
+}
+
 export interface Part {
   id: string;
   name: string;
@@ -34,7 +39,7 @@ export interface RepairStep {
   instruction: string;
   torqueValue?: string | null;
   warningNote?: string | null;
-  imageStatus: 'none' | 'queued' | 'generating' | 'ready' | 'failed';
+  imageStatus: 'none' | 'queued' | 'searching_refs' | 'analyzing_refs' | 'generating' | 'ready' | 'failed';
   imageUrl?: string | null;
   imagePrompt?: string | null;
   imageError?: string | null;
@@ -63,6 +68,38 @@ export interface RepairGuide {
   images: GeneratedImage[];
 }
 
+export interface RepairJob {
+  id: string;
+  vehicleId: string;
+  guideId?: string | null;
+  problemDescription: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  notes?: string | null;
+  createdAt: string;
+  vehicle: Vehicle;
+  guide?: { id: string; title: string; part: Part } | null;
+}
+
+export interface GuideRequest {
+  id: string;
+  vehicleModel: string;
+  repairType: string;
+  partNumber?: string | null;
+  notes?: string | null;
+  status: 'pending' | 'processing' | 'completed' | 'rejected';
+  guideId?: string | null;
+  createdAt: string;
+  guide?: { id: string; title: string } | null;
+}
+
+export interface AnalyticsData {
+  guidesThisMonth: number;
+  timeSavedMinutes: number;
+  activeVehicles: number;
+  mostCommonRepairs: Array<{ partName: string; count: number }>;
+  recentActivity: Array<{ id: string; type: 'guide' | 'job'; title: string; createdAt: string }>;
+}
+
 export interface ManualDocument {
   id: string;
   title: string;
@@ -76,6 +113,26 @@ export interface CreateGuideInput {
   vehicleModel?: string;
   partName: string;
   oemNumber?: string;
+}
+
+export interface CreateJobInput {
+  vehicleId: string;
+  guideId?: string;
+  problemDescription: string;
+  assignedTechnicianId?: string;
+  notes?: string;
+}
+
+export interface UpdateJobInput {
+  status: 'pending' | 'in_progress' | 'completed';
+  notes?: string;
+}
+
+export interface CreateRequestInput {
+  vehicleModel: string;
+  repairType: string;
+  partNumber?: string;
+  notes?: string;
 }
 
 export interface UploadManualInput {

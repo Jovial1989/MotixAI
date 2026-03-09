@@ -118,15 +118,142 @@ Step images are generated asynchronously:
 3. Failed images show a retry button that calls `generate-image` with `force: true`
 4. Ready images open in a full-screen `photo_view` modal on tap
 
+## Environment Configuration
+
+All runtime configuration is passed at **compile time** via `--dart-define`. No `.env` file is used — configure values in CI secrets or pass directly on the CLI.
+
+| Variable | Required | Example |
+|----------|----------|---------|
+| `API_BASE_URL` | Yes | `https://xyz.supabase.co/functions/v1/api` |
+
+See `dart_defines.env.example` for the full list and documentation.
+
 ## Building for Production
 
+### Prerequisites
+
+| Tool | Minimum version |
+|------|----------------|
+| Flutter | 3.19.0 |
+| Xcode | 15.0 (iOS) |
+| Android Studio / Java | JDK 17 (Android) |
+| Apple developer account | Required for iOS distribution |
+| Google Play account | Required for Android distribution |
+
+Set your production `API_BASE_URL` (Supabase Edge Functions endpoint):
+
 ```bash
-# iOS (requires Xcode + Apple developer account)
-flutter build ios --dart-define=API_BASE_URL=https://your-api.com
-
-# Android APK
-flutter build apk --dart-define=API_BASE_URL=https://your-api.com
-
-# Android App Bundle (Play Store)
-flutter build appbundle --dart-define=API_BASE_URL=https://your-api.com
+export PROD_API=https://<your-project-ref>.supabase.co/functions/v1/api
 ```
+
+---
+
+### iOS
+
+#### 1. Install dependencies
+
+```bash
+cd mobile_flutter
+flutter pub get
+cd ios && pod install && cd ..
+```
+
+#### 2. Configure signing in Xcode
+
+Open `ios/Runner.xcworkspace` in Xcode, select the **Runner** target, and under **Signing & Capabilities**:
+- Set your **Team** (Apple developer account)
+- Bundle ID is already set to `com.motixai.app` — change if needed
+
+#### 3. Build IPA for distribution
+
+```bash
+flutter build ipa \
+  --dart-define=API_BASE_URL=$PROD_API \
+  --release
+```
+
+The `.ipa` file will be at `build/ios/ipa/motixai_flutter.ipa`.
+
+To upload to App Store Connect:
+```bash
+xcrun altool --upload-app -f build/ios/ipa/motixai_flutter.ipa \
+  -u your@apple.id -p "@keychain:APP_STORE_CONNECT_PASSWORD"
+```
+Or drag the `.ipa` into **Transporter**.
+
+---
+
+### Android
+
+#### 1. Create a signing keystore (first time only)
+
+```bash
+keytool -genkey -v -keystore android/app/motixai-release.jks \
+  -alias motixai -keyalg RSA -keysize 2048 -validity 10000
+```
+
+**Keep `motixai-release.jks` out of version control** (it is already in `.gitignore`).
+
+#### 2. Configure signing
+
+Create `android/key.properties` (do not commit this file):
+
+```properties
+storePassword=<your-keystore-password>
+keyPassword=<your-key-password>
+keyAlias=motixai
+storeFile=motixai-release.jks
+```
+
+Then update `android/app/build.gradle.kts` to load `key.properties` for the release signing config before publishing to the Play Store.
+
+#### 3. Build APK (direct install / testing)
+
+```bash
+flutter build apk \
+  --dart-define=API_BASE_URL=$PROD_API \
+  --release
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+#### 4. Build App Bundle (Google Play)
+
+```bash
+flutter build appbundle \
+  --dart-define=API_BASE_URL=$PROD_API \
+  --release
+```
+
+Output: `build/app/outputs/bundle/release/app-release.aab`
+
+Upload `app-release.aab` to the Google Play Console.
+
+---
+
+### Version bumping
+
+Version is set in `pubspec.yaml` as `version: <semver>+<buildNumber>`.
+
+```bash
+# Example: bump to 1.1.0, build 2
+# Edit pubspec.yaml:  version: 1.1.0+2
+# Then rebuild — flutter reads versionName/versionCode from pubspec automatically
+```
+
+---
+
+### App Icons
+
+The current icons are Flutter defaults. To replace them with branded MotixAI icons:
+
+1. Add `flutter_launcher_icons` to `dev_dependencies` in `pubspec.yaml`
+2. Place a 1024×1024 PNG at `assets/icon/icon.png`
+3. Add the config:
+   ```yaml
+   flutter_launcher_icons:
+     android: true
+     ios: true
+     image_path: "assets/icon/icon.png"
+   ```
+4. Run: `dart run flutter_launcher_icons`
