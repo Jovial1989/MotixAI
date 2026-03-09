@@ -238,25 +238,27 @@ export function specToImagePrompt(spec: DrawingSpec): string {
     spec.viewType === "cross-section" ? "Cross-section with hatching on cut surfaces." :
     spec.viewType === "cutaway" ? "Partial cutaway revealing internal components." : "";
 
-  return `Haynes workshop manual technical line drawing. Black ink on white. NO text or words anywhere in the image.
+  return `Technical workshop manual line drawing. Black ink on white background. Style: Haynes/Chilton service manual.
 
-Action: ${spec.stepTitle}
-View: ${spec.viewType} — ${spec.referenceContext}
-Components to show: ${componentsStr}
-Tools engaged: ${toolsStr}
+Subject: ${spec.vehicle} — ${spec.stepTitle}
+View: ${spec.viewType} close-up — ${spec.referenceContext}
+Components: ${componentsStr}
+Tools: ${toolsStr}
 ${torqueLine}
 ${warningLine}
-${calloutsNums ? `Place circled numbers ${calloutsNums} as callout markers with thin leader lines to the relevant components.` : ""}
+${calloutsNums ? `Circled callout numbers ${calloutsNums} with thin leader lines pointing to relevant components.` : ""}
 ${viewNote}
 
-ABSOLUTE RULES:
-- Zero text, zero letters, zero words — not even part names or labels
-- Only circled numerals (①②③) are allowed, nothing else written
-- Black line drawing only — no colour, no grey fills, no shading
-- Single focused view — no split panels, no multiple diagrams
-- No title bar, no border, no watermark
-- Tools shown physically engaged with the component
-- Directional arrows for rotation, removal direction, or force`;
+ABSOLUTE RULES — no exceptions:
+- Show ONLY the relevant component and the immediately surrounding area. Tight close-up framing.
+- NO full human body, NO face, NO person shown. Disembodied hands holding tools are acceptable.
+- NO artistic style, NO manga, NO sketch art, NO painterly effects. Engineering line art ONLY.
+- ZERO text, ZERO letters, ZERO words anywhere — not even partial labels or numbers
+- Only circled numerals (①②③) are permitted as callout markers
+- Black outlines only — NO colour fills, NO grey shading, NO gradients
+- Single diagram — NO split panels, NO multiple views
+- NO title bar, NO border frame, NO watermark, NO background texture
+- Directional arrows showing rotation, removal direction, or applied force where relevant`;
 }
 
 export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<string> {

@@ -1511,6 +1511,15 @@ input, textarea, select { font-family: inherit; outline: none; }
   transition: background var(--t-fast);
 }
 .simg-failed:hover { background: rgba(234,88,12,.12); }
+.simg-regen {
+  display: block; margin-top: 6px;
+  padding: 5px 12px; border-radius: var(--r-md);
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 0.75rem; font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.simg-regen:hover { background: var(--bg-subtle); color: var(--text); }
 
 /* ── Sidebar card ─────────────────────────────────────────────────── */
 .gd-sb-card {

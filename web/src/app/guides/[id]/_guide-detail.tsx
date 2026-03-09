@@ -47,6 +47,13 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
           Expand
         </span>
       </button>
+      <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
+        e.stopPropagation();
+        webApi.generateStepImage(step.id, true).then((r) => {
+          setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+        }).catch(() => {});
+        setStatus('queued');
+      }}>↺ Regenerate</button>
       {fullscreen && (
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>

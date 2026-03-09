@@ -7,7 +7,10 @@ function hasValidToken(): boolean {
   try {
     const token = localStorage.getItem('motix_access_token');
     if (!token) return false;
-    const payload = JSON.parse(atob(token.split('.')[1])) as { exp?: number };
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/').padEnd(
+      Math.ceil(token.split('.')[1].length / 4) * 4, '='
+    );
+    const payload = JSON.parse(atob(b64)) as { exp?: number };
     return !!(payload.exp && Date.now() / 1000 < payload.exp);
   } catch {
     return false;

@@ -10,7 +10,11 @@ function readAuth(): { valid: boolean; initials: string } {
     if (!token && !refreshToken) return { valid: false, initials: '' };
 
     if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1])) as { exp?: number; email?: string; sub?: string };
+      // JWT uses Base64URL (RFC 7519) — convert to Base64 before atob()
+      const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/').padEnd(
+        Math.ceil(token.split('.')[1].length / 4) * 4, '='
+      );
+      const payload = JSON.parse(atob(b64)) as { exp?: number; email?: string; sub?: string };
       const email = payload.email ?? payload.sub ?? '';
       const initials = email ? email[0].toUpperCase() : 'U';
       // Access token still valid
