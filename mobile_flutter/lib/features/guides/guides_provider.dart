@@ -47,9 +47,19 @@ class GuidesNotifier extends StateNotifier<GuidesState> {
     }
   }
 
-  Future<RepairGuide?> create(String vehicleModel, String partName) async {
+  Future<RepairGuide?> create(
+    String vehicleModel,
+    String partName, {
+    String? vin,
+    String? oemNumber,
+  }) async {
     try {
-      final guide = await _api.createGuide(vehicleModel: vehicleModel, partName: partName);
+      final guide = await _api.createGuide(
+        vehicleModel: vehicleModel,
+        partName: partName,
+        vin: vin,
+        oemNumber: oemNumber,
+      );
       await _cache.saveGuide(guide);
       state = state.copyWith(guides: [guide, ...state.guides]);
       return guide;

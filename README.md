@@ -17,7 +17,7 @@
 │   │   └── seed.ts
 │   └── Dockerfile
 ├── web                        # Next.js App Router web app
-├── mobile                     # Expo React Native app
+├── mobile_flutter             # Flutter mobile app (iOS + Android)
 ├── packages
 │   ├── shared                 # Shared domain contracts/types
 │   └── api-client             # Generated typed API client from OpenAPI contract

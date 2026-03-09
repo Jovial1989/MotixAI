@@ -48,3 +48,4 @@ coverage/
 .cache/
 .vercel
 package-lock.json
+mobile_flutter/dart_defines.env
