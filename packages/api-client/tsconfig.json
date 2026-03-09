@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ES2022", "DOM"],
+    "composite": false,
+    "baseUrl": ".",
+    "paths": {
+      "@motixai/shared": ["../shared/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}

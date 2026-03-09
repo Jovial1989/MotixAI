@@ -1,97 +1,214 @@
-import { Metadata } from 'next';
-import { DashboardShell } from '@/components/layout/DashboardShell';
-import { Search, BookOpen, Heart, Clock, ArrowRight } from 'lucide-react';
+'use client';
+
 import Link from 'next/link';
-
-export const metadata: Metadata = { title: 'Dashboard — MotixAI' };
-
-const QUICK_ACTIONS = [
-  { href: '/dashboard/search', icon: Search, label: 'New repair guide', desc: 'Enter VIN or model + part', primary: true },
-  { href: '/dashboard/favorites', icon: Heart, label: 'Saved guides', desc: 'Your bookmarked repairs' },
-  { href: '/dashboard/history', icon: Clock, label: 'Recent searches', desc: 'Your last 50 queries' },
-];
-
-const RECENT_MOCK = [
-  { title: 'Front Brake Pad Replacement', vehicle: 'Toyota Camry 2020', status: 'ready', difficulty: 'medium', time: '1–2 hours' },
-  { title: 'Oil Filter & Drain Plug', vehicle: 'BMW 5 Series 2019', status: 'ready', difficulty: 'easy', time: '30 min' },
-  { title: 'Alternator Belt Replacement', vehicle: 'Ford Transit 2021', status: 'generating', difficulty: null, time: null },
-];
-
-const difficultyColor: Record<string, string> = {
-  easy: 'badge-green',
-  medium: 'badge-yellow',
-  hard: 'badge-red',
-};
-
-const statusColor: Record<string, string> = {
-  ready: 'badge-green',
-  generating: 'badge-orange',
-  pending: 'badge-orange',
-  failed: 'badge-red',
-};
+import { FormEvent, useEffect, useState } from 'react';
+import type { RepairGuide } from '@motixai/shared';
+import { webApi } from '@/lib/api';
 
 export default function DashboardPage() {
+  const [guides, setGuides]     = useState<RepairGuide[]>([]);
+  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    webApi
+      .listGuides()
+      .then(setGuides)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function createGuide(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const data    = new FormData(form);
+      const created = await webApi.createGuide({
+        vin:          String(data.get('vin') || ''),
+        vehicleModel: String(data.get('vehicleModel') || ''),
+        partName:     String(data.get('partName')),
+        oemNumber:    String(data.get('oemNumber') || ''),
+      });
+      setGuides((prev) => [created, ...prev]);
+      form.reset();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create guide');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function deleteGuide(id: string) {
+    setDeleting(id);
+    try {
+      await webApi.deleteGuide(id);
+      setGuides((prev) => prev.filter((g) => g.id !== id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete guide');
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  const difficultyColor: Record<string, string> = {
+    Beginner:     'badge--green',
+    Intermediate: 'badge--yellow',
+    Advanced:     'badge--orange',
+    Expert:       'badge--red',
+  };
+
   return (
-    <DashboardShell>
-      {/* Hero search prompt */}
-      <div className="rounded-xl border border-motix-100 bg-gradient-to-br from-motix-50 to-white p-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold text-neutral-900">What do you need to repair?</h2>
-        <p className="mb-6 text-neutral-500">Enter a VIN or vehicle + part to generate your repair guide</p>
-        <Link href="/dashboard/search" className="btn-primary px-8 py-3 text-base">
-          <Search className="h-4 w-4" /> Search repair guide
-        </Link>
-      </div>
-
-      {/* Quick actions */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        {QUICK_ACTIONS.map(({ href, icon: Icon, label, desc, primary }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`card flex items-center justify-between p-5 transition-shadow hover:shadow-md ${primary ? 'ring-2 ring-motix-500' : ''}`}
+    <div className="dash-root">
+      {/* Top nav */}
+      <header className="dash-nav">
+        <Link href="/dashboard" className="dash-logo">MotixAI</Link>
+        <div className="dash-nav-right">
+          <Link href="/enterprise" className="dash-nav-link">Enterprise</Link>
+          <button
+            className="dash-nav-link dash-nav-link--logout"
+            onClick={() => { localStorage.removeItem('motix_access_token'); location.href = '/auth/login'; }}
           >
-            <div className="flex items-center gap-4">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-md ${primary ? 'bg-motix-500' : 'bg-neutral-100'}`}>
-                <Icon className={`h-5 w-5 ${primary ? 'text-white' : 'text-neutral-600'}`} />
-              </div>
-              <div>
-                <p className="font-semibold text-neutral-900 text-sm">{label}</p>
-                <p className="text-xs text-neutral-500">{desc}</p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-neutral-400" />
-          </Link>
-        ))}
-      </div>
+            Log out
+          </button>
+        </div>
+      </header>
 
-      {/* Recent guides */}
-      <div className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-semibold text-neutral-900">Recent guides</h3>
-          <Link href="/dashboard/history" className="text-sm text-motix-500 hover:underline">View all</Link>
+      <div className="dash-body">
+        {/* Page title */}
+        <div className="dash-page-header">
+          <div>
+            <h1 className="dash-page-title">Repair Guides</h1>
+            <p className="dash-page-sub">Generate AI-powered workshop-grade guides instantly.</p>
+          </div>
+          <span className="dash-guide-count">{guides.length} guide{guides.length !== 1 ? 's' : ''}</span>
         </div>
-        <div className="card divide-y divide-neutral-100">
-          {RECENT_MOCK.map((guide) => (
-            <div key={guide.title} className="flex items-center justify-between px-5 py-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-neutral-50">
-                  <BookOpen className="h-4 w-4 text-neutral-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-900">{guide.title}</p>
-                  <p className="text-xs text-neutral-500">{guide.vehicle}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {guide.difficulty && (
-                  <span className={difficultyColor[guide.difficulty]}>{guide.difficulty}</span>
-                )}
-                <span className={statusColor[guide.status]}>{guide.status}</span>
-              </div>
+
+        {/* Generator form */}
+        <form onSubmit={createGuide} className="gen-form">
+          <div className="gen-form-header">
+            <div className="gen-form-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </div>
-          ))}
-        </div>
+            <span className="gen-form-title">Generate new guide</span>
+          </div>
+          <div className="gen-inputs">
+            <div className="gen-input-wrap">
+              <label className="gen-label">VIN</label>
+              <input name="vin" placeholder="e.g. 1HGBH41JXMN109186" className="gen-input" />
+            </div>
+            <div className="gen-input-wrap">
+              <label className="gen-label">Vehicle model <span className="gen-label-or">or use VIN</span></label>
+              <input name="vehicleModel" placeholder="e.g. CAT 320D, Ford F-150" className="gen-input" />
+            </div>
+            <div className="gen-input-wrap">
+              <label className="gen-label">Part name <span className="gen-label-required">*</span></label>
+              <input name="partName" placeholder="e.g. Hydraulic Pump" required className="gen-input" />
+            </div>
+            <div className="gen-input-wrap">
+              <label className="gen-label">OEM number</label>
+              <input name="oemNumber" placeholder="e.g. 4633891" className="gen-input" />
+            </div>
+          </div>
+          <button type="submit" disabled={submitting} className="gen-btn">
+            {submitting ? (
+              <><span className="gen-spinner" /> Generating…</>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M13 8H3M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Generate Guide
+              </>
+            )}
+          </button>
+        </form>
+
+        {error && (
+          <div className="dash-error">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {/* Guide list */}
+        <section className="guide-list">
+          {loading ? (
+            <div className="guide-list-empty">
+              <div className="guide-spinner-wrap"><span className="gen-spinner gen-spinner--lg" /></div>
+              <p>Loading guides…</p>
+            </div>
+          ) : guides.length === 0 ? (
+            <div className="guide-list-empty">
+              <div className="guide-empty-icon">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <rect x="6" y="4" width="20" height="24" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M11 11h10M11 16h10M11 21h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <p className="guide-empty-title">No guides yet</p>
+              <p className="guide-empty-sub">Generate your first repair guide above.</p>
+            </div>
+          ) : (
+            guides.map((guide) => (
+              <div key={guide.id} className="guide-card">
+                <Link href={`/guides/${guide.id}`} className="guide-card-main">
+                  <div className="guide-card-meta">
+                    <span className={`badge ${difficultyColor[guide.difficulty] ?? 'badge--yellow'}`}>
+                      {guide.difficulty}
+                    </span>
+                    <span className="guide-card-time">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                        <path d="M6 3.5v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                      </svg>
+                      {guide.timeEstimate ?? '—'}
+                    </span>
+                  </div>
+                  <h2 className="guide-card-title">{guide.title}</h2>
+                  <p className="guide-card-sub">
+                    {guide.vehicle.model}
+                    <span className="guide-card-dot">·</span>
+                    {guide.part.name}
+                    <span className="guide-card-dot">·</span>
+                    {guide.steps?.length ?? 0} steps
+                  </p>
+                </Link>
+                <div className="guide-card-actions">
+                  <button
+                    className="guide-card-delete"
+                    onClick={() => deleteGuide(guide.id)}
+                    disabled={deleting === guide.id}
+                    title="Delete guide"
+                  >
+                    {deleting === guide.id ? (
+                      <span className="gen-spinner" />
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                        <path d="M2 4h11M6 4V2.5h3V4M5 4v8a1 1 0 001 1h3a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </button>
+                  <Link href={`/guides/${guide.id}`} className="guide-card-arrow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
+        </section>
       </div>
-    </DashboardShell>
+    </div>
   );
 }

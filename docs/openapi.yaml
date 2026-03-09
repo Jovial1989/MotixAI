@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: MotixAI API
+  version: 1.0.0
+paths:
+  /auth/signup:
+    post: { summary: Signup }
+  /auth/login:
+    post: { summary: Login }
+  /auth/refresh:
+    post: { summary: Refresh tokens }
+  /guides:
+    get: { summary: Guide history }
+    post: { summary: Create guide }
+  /guides/{id}:
+    get: { summary: Guide detail }
+  /enterprise/manuals:
+    get: { summary: List manuals }
+    post: { summary: Upload manual }
+  /enterprise/guides:
+    post: { summary: Create guide from manual }

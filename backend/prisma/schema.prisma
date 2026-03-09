@@ -7,12 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
+enum Role {
+  USER
+  ENTERPRISE_ADMIN
+}
 
-enum UserRole {
-  user
-  enterprise_admin
-  admin
+enum JobType {
+  GUIDE_IMAGE_GENERATION
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  manuals   ManualDocument[]
+  guides    RepairGuide[]
+  vehicles  Vehicle[]
+  parts     Part[]
 }
 
 enum GuideStatus {
@@ -46,141 +68,143 @@ model Enterprise {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id           String          @id @default(uuid())
-  email        String          @unique
-  name         String
-  passwordHash String
-  role         UserRole        @default(user)
-  enterpriseId String?
-  enterprise   Enterprise?     @relation(fields: [enterpriseId], references: [id])
-  guides       RepairGuide[]
-  favorites    Favorite[]
-  history      SearchHistory[]
-  refreshToken String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  fullName         String
+  role             Role     @default(USER)
+  refreshTokenHash String?
+  tenantId         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  @@map("users")
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  guides RepairGuide[]
 }
 
-// ─── Vehicle ──────────────────────────────────────────────────────────────────
-
-model VehicleModel {
-  id           String        @id @default(uuid())
-  make         String
+model Vehicle {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  vin          String?
   model        String
+  manufacturer String?
   year         Int?
-  vin          String?       @unique
-  enterpriseId String?
-  enterprise   Enterprise?   @relation(fields: [enterpriseId], references: [id])
-  guides       RepairGuide[]
-  createdAt    DateTime      @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  @@index([make, model])
-  @@map("vehicle_models")
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  guides RepairGuide[]
+  manuals ManualDocument[]
+
+  @@index([tenantId, model])
 }
-
-// ─── Part ─────────────────────────────────────────────────────────────────────
 
 model Part {
-  id        String        @id @default(uuid())
-  name      String
-  oemNumber String?
-  category  String?
-  guides    RepairGuide[]
-  createdAt DateTime      @default(now())
+  id         String   @id @default(cuid())
+  tenantId   String?
+  name       String
+  oemNumber  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@index([oemNumber])
-  @@map("parts")
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  guides RepairGuide[]
+
+  @@index([tenantId, name])
 }
-
-// ─── Repair Guide ─────────────────────────────────────────────────────────────
 
 model RepairGuide {
-  id            String           @id @default(uuid())
-  title         String
-  status        GuideStatus      @default(pending)
-  difficulty    GuideDifficulty?
-  estimatedTime String?
-  safetyNotes   String[]
-  tools         String[]
-  materials     String[]
-  images        String[]
-  oemSummary    String?
-  errorMessage  String?
-  vehicleId     String
-  vehicle       VehicleModel     @relation(fields: [vehicleId], references: [id])
-  partId        String
-  part          Part             @relation(fields: [partId], references: [id])
-  userId        String
-  user          User             @relation(fields: [userId], references: [id])
-  steps         GuideStep[]
-  favorites     Favorite[]
-  historyItems  SearchHistory[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id             String   @id @default(cuid())
+  tenantId       String?
+  userId         String
+  vehicleId      String
+  partId         String
+  manualId       String?
+  title          String
+  difficulty     String
+  timeEstimate   String
+  safetyNotes    String[]
+  tools          String[]
+  inputVin       String?
+  inputModel     String?
+  inputPart      String
+  sourceType     String   @default("B2C")
+  status         String   @default("READY")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  @@index([userId])
-  @@index([vehicleId, partId])
-  @@map("repair_guides")
+  user    User           @relation(fields: [userId], references: [id])
+  tenant  Tenant?        @relation(fields: [tenantId], references: [id])
+  vehicle Vehicle        @relation(fields: [vehicleId], references: [id])
+  part    Part           @relation(fields: [partId], references: [id])
+  manual  ManualDocument? @relation(fields: [manualId], references: [id])
+  steps   RepairStep[]
+  images  GeneratedImage[]
+  jobs    Job[]
+
+  @@index([tenantId, userId, createdAt])
 }
 
-model GuideStep {
-  id          String      @id @default(uuid())
-  stepNumber  Int
-  title       String
-  description String      @db.Text
-  imageUrl    String?
-  warning     String?
-  guideId     String
-  guide       RepairGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
-
-  @@index([guideId])
-  @@map("guide_steps")
-}
-
-// ─── Favorites ────────────────────────────────────────────────────────────────
-
-model Favorite {
-  id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  guideId   String
-  guide     RepairGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
-  createdAt DateTime    @default(now())
-
-  @@unique([userId, guideId])
-  @@map("favorites")
-}
-
-// ─── Search History ───────────────────────────────────────────────────────────
-
-model SearchHistory {
-  id        String       @id @default(uuid())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query     String
-  guideId   String?
-  guide     RepairGuide? @relation(fields: [guideId], references: [id], onDelete: SetNull)
-  createdAt DateTime     @default(now())
-
-  @@index([userId])
-  @@map("search_history")
-}
-
-// ─── Enterprise Manuals ───────────────────────────────────────────────────────
-
-model Manual {
-  id           String     @id @default(uuid())
+model RepairStep {
+  id           String   @id @default(cuid())
+  guideId      String
+  stepOrder    Int
   title        String
-  fileName     String
-  fileUrl      String
-  vehicleModel String?
-  indexed      Boolean    @default(false)
-  enterpriseId String
-  enterprise   Enterprise @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
+  instruction  String
+  torqueValue  String?
+  warningNote  String?
+  imageStatus  String   @default("none")   // none | queued | generating | ready | failed
+  imageUrl     String?
+  imagePrompt  String?
+  imageError   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 
-  @@index([enterpriseId])
-  @@map("manuals")
+  guide RepairGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, stepOrder])
+}
+
+model GeneratedImage {
+  id          String   @id @default(cuid())
+  guideId      String
+  stepOrder    Int
+  prompt       String
+  imageUrl     String?
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  guide RepairGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, stepOrder])
+}
+
+model ManualDocument {
+  id             String   @id @default(cuid())
+  tenantId       String
+  title          String
+  fileUrl        String
+  extractedText  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id])
+  vehicles Vehicle[]
+  guides   RepairGuide[]
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  guideId      String
+  type         JobType
+  status       JobStatus @default(PENDING)
+  payload      Json
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  guide RepairGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, status])
 }

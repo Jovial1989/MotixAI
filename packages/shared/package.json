@@ -1,15 +1,13 @@
 {
-  "name": "@hammerai/shared",
+  "name": "@motixai/shared",
   "version": "1.0.0",
   "private": true,
-  "description": "HammerAI – shared types, utilities and constants",
+  "description": "MotixAI shared contracts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc --project tsconfig.json",
-    "dev": "tsc --project tsconfig.json --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "jest --passWithNoTests"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

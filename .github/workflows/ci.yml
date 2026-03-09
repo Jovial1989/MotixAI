@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, claude/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          yarn workspace @motixai/shared build
+          yarn workspace @motixai/api-client build
+
+      - name: Typecheck web
+        run: yarn workspace @motixai/web typecheck
+
+      - name: Typecheck backend
+        run: yarn workspace @motixai/backend typecheck
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: |
+          yarn workspace @motixai/shared build
+          yarn workspace @motixai/api-client build
+          yarn workspace @motixai/web build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}

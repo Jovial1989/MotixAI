@@ -1,286 +1,312 @@
 import Link from 'next/link';
-import {
-  Wrench, Cpu, BookOpen, Shield, Clock, ChevronRight,
-  CheckCircle2, Zap, Building2, ArrowRight
-} from 'lucide-react';
+import NavAuth from './_nav-auth';
+import HeroActions from './_hero-actions';
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
-
-function Navbar() {
-  return (
-    <nav className="fixed top-0 z-50 w-full border-b border-neutral-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Wrench className="h-6 w-6 text-motix-500" />
-          <span className="text-xl font-bold text-neutral-900">
-            Motix<span className="text-motix-500">AI</span>
-          </span>
-        </Link>
-        <div className="hidden items-center gap-8 text-sm font-medium text-neutral-600 md:flex">
-          <Link href="#features" className="hover:text-neutral-900 transition-colors">Features</Link>
-          <Link href="#how-it-works" className="hover:text-neutral-900 transition-colors">How it works</Link>
-          <Link href="/pricing" className="hover:text-neutral-900 transition-colors">Pricing</Link>
-          <Link href="#enterprise" className="hover:text-neutral-900 transition-colors">Enterprise</Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/login" className="btn-ghost hidden md:inline-flex">Sign in</Link>
-          <Link href="/signup" className="btn-primary">Get started free</Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-
-function Hero() {
-  return (
-    <section className="relative overflow-hidden pt-32 pb-24">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-motix-50 blur-3xl opacity-60" />
-      </div>
-
-      <div className="mx-auto max-w-4xl px-6 text-center">
-        <span className="badge-orange mb-6 inline-flex items-center gap-1">
-          <Zap className="h-3 w-3" /> AI-powered repair intelligence
-        </span>
-
-        <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight text-neutral-900 md:text-6xl">
-          Fix anything.<br />
-          <span className="text-motix-500">Fast and right.</span>
-        </h1>
-
-        <p className="mx-auto mb-10 max-w-2xl text-lg text-neutral-600">
-          Enter a VIN or vehicle model, name the part — MotixAI returns a structured,
-          step-by-step repair guide with tools, safety notes, OEM specs, and time estimate.
-          Instantly.
-        </p>
-
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link href="/signup" className="btn-primary px-8 py-3 text-base">
-            Start for free <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link href="#how-it-works" className="btn-secondary px-8 py-3 text-base">
-            See how it works
-          </Link>
-        </div>
-
-        <p className="mt-8 text-sm text-neutral-400">
-          No credit card required · 10 free guides per month
-        </p>
-      </div>
-
-      {/* Guide preview card */}
-      <div className="mx-auto mt-16 max-w-3xl px-6">
-        <div className="card overflow-hidden shadow-lg">
-          <div className="border-b border-neutral-100 bg-neutral-50 px-5 py-3">
-            <div className="flex items-center gap-2">
-              <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-              <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-              <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-              <span className="ml-3 text-xs text-neutral-400 font-mono">motixai.com/dashboard/search</span>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="mb-5 grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-neutral-500">VIN or Vehicle</label>
-                <div className="input">Toyota Camry 2020</div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-neutral-500">Part / OEM number</label>
-                <div className="input">Brake pads front</div>
-              </div>
-            </div>
-            <div className="rounded-md border border-motix-100 bg-motix-50 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-semibold text-neutral-900 text-sm">Front Brake Pad Replacement — Toyota Camry 2020</p>
-                <span className="badge-orange">Ready</span>
-              </div>
-              <div className="flex gap-4 text-sm text-neutral-500">
-                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> 1–2 hours</span>
-                <span className="flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> Safety noted</span>
-                <span className="flex items-center gap-1"><Wrench className="h-3.5 w-3.5" /> 8 steps</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Features ─────────────────────────────────────────────────────────────────
-
-const FEATURES = [
-  { icon: Cpu, title: 'AI-generated repair guides', desc: 'Claude AI synthesises accurate, step-by-step repair procedures tailored to your exact vehicle and part combination.' },
-  { icon: BookOpen, title: 'OEM specification summary', desc: 'Every guide includes torque specs, part numbers, compatibility notes, and official reference data.' },
-  { icon: Shield, title: 'Safety-first always', desc: 'Critical safety warnings and required protective equipment are highlighted before every repair begins.' },
-  { icon: Clock, title: 'Time & difficulty estimate', desc: "Know what you're getting into. Each guide shows realistic time, skill level, and required tools upfront." },
-  { icon: Wrench, title: 'Tools & materials list', desc: 'Complete shopping list generated automatically so you only go to the parts store once.' },
-  { icon: Building2, title: 'Enterprise knowledge base', desc: 'Upload your service manuals. MotixAI indexes them and generates guides for your service network.' },
+const features = [
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2L3 7v11h5v-5h4v5h5V7L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: 'Instant guide generation',
+    desc: 'VIN or model + part number → full structured repair guide in under 3 seconds.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+    title: 'Step-by-step precision',
+    desc: '8–15 ordered steps with torque specs, required tools, and safety warnings built in.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M6 17h8M10 15v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M5 8h10M5 11h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+    title: 'Engineering diagrams',
+    desc: 'AI-generated technical diagrams rendered per step via background image jobs.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+    title: 'Web & mobile',
+    desc: 'One unified backend powers both the Next.js dashboard and React Native mobile app.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+    title: 'Background job queue',
+    desc: 'Image generation runs asynchronously with real-time status polling on the client.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM14 13.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: 'Enterprise-ready',
+    desc: 'Tenant isolation, custom manual ingestion, role-based access, and admin controls.',
+  },
 ];
 
-function Features() {
-  return (
-    <section id="features" className="py-24 bg-neutral-50">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold text-neutral-900">Everything a repair needs</h2>
-          <p className="mt-3 text-neutral-600">One search. A complete, actionable guide.</p>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="card p-6">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-motix-50">
-                <Icon className="h-5 w-5 text-motix-500" />
-              </div>
-              <h3 className="mb-2 font-semibold text-neutral-900">{title}</h3>
-              <p className="text-sm text-neutral-600 leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── How it works ─────────────────────────────────────────────────────────────
-
-const HOW_STEPS = [
-  { n: '01', title: 'Enter vehicle', desc: 'Type your VIN or select make, model, and year.' },
-  { n: '02', title: 'Name the part', desc: 'Enter the part name or paste an OEM number.' },
-  { n: '03', title: 'Get the guide', desc: 'MotixAI generates a full repair guide in seconds.' },
-  { n: '04', title: 'Follow the steps', desc: 'Work through the guide — step by step, tool by tool.' },
+const steps = [
+  { n: '01', title: 'Enter vehicle info', text: 'Provide VIN or model + part / OEM number.' },
+  { n: '02', title: 'Guide is generated', text: 'MotixAI normalises the query and builds a structured repair guide.' },
+  { n: '03', title: 'Diagrams rendered', text: 'Engineering-style images are queued and generated per step.' },
+  { n: '04', title: 'Follow inline', text: 'Open guide details and follow steps on web or mobile.' },
 ];
 
-function HowItWorks() {
-  return (
-    <section id="how-it-works" className="py-24">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold text-neutral-900">From question to repair guide in seconds</h2>
-        </div>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {HOW_STEPS.map(({ n, title, desc }) => (
-            <div key={n}>
-              <span className="text-5xl font-bold text-motix-100">{n}</span>
-              <h3 className="mt-2 font-semibold text-neutral-900">{title}</h3>
-              <p className="mt-1 text-sm text-neutral-600">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Enterprise ───────────────────────────────────────────────────────────────
-
-function EnterpriseBanner() {
-  return (
-    <section id="enterprise" className="py-20 bg-neutral-900">
-      <div className="mx-auto max-w-4xl px-6 text-center">
-        <Building2 className="mx-auto mb-4 h-10 w-10 text-motix-400" />
-        <h2 className="mb-4 text-3xl font-bold text-white">Built for enterprise service networks</h2>
-        <p className="mb-8 text-neutral-400">
-          Upload your PDF service manuals. MotixAI indexes them into a structured knowledge base
-          and generates guides for your entire model range. One platform for your whole service network.
-        </p>
-        <div className="mb-10 grid gap-3 sm:grid-cols-3 text-left">
-          {['Multitenant isolation per brand', 'Upload & index PDF manuals', 'Auto-generate guides per model',
-            'Share to service network', 'Export to PDF / API', 'Admin portal for your team'].map((item) => (
-            <div key={item} className="flex items-center gap-2 text-sm text-neutral-300">
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-motix-400" />
-              {item}
-            </div>
-          ))}
-        </div>
-        <Link href="/pricing#enterprise" className="btn-primary px-8 py-3 text-base">
-          Talk to sales <ChevronRight className="h-4 w-4" />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-// ─── Pricing teaser ───────────────────────────────────────────────────────────
-
-const PLANS = [
-  { name: 'Free', price: '$0', period: 'forever', features: ['10 guides / month', 'Step-by-step instructions', 'Basic OEM info', 'Email support'], cta: 'Get started', href: '/signup', highlight: false },
-  { name: 'Pro', price: '$19', period: 'per month', features: ['Unlimited guides', 'Full OEM summaries', 'Favorites & history', 'Priority support'], cta: 'Start Pro free', href: '/signup?plan=pro', highlight: true },
-  { name: 'Enterprise', price: 'Custom', period: 'per year', features: ['Manual upload & indexing', 'Multitenant isolation', 'Admin portal', 'Dedicated support'], cta: 'Contact sales', href: '/pricing#enterprise', highlight: false },
+const plans = [
+  {
+    name: 'Free',
+    price: '$0',
+    period: '',
+    desc: 'Get started at no cost.',
+    items: ['5 guides / month', 'Standard step output', 'Web access', 'Community support'],
+    cta: 'Get started',
+    href: '/auth/signup',
+    highlight: false,
+  },
+  {
+    name: 'Pro',
+    price: '$39',
+    period: '/mo',
+    desc: 'For working technicians.',
+    items: ['Unlimited guides', 'Priority image jobs', 'Web + mobile', 'API access', 'Email support'],
+    cta: 'Start free trial',
+    href: '/auth/signup',
+    highlight: true,
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    desc: 'For fleets and workshops.',
+    items: ['Tenant isolation', 'Custom manual ingestion', 'Admin dashboard', 'SLA guarantee', 'Dedicated support'],
+    cta: 'Contact sales',
+    href: 'mailto:hello@motixai.com',
+    highlight: false,
+  },
 ];
 
-function PricingTeaser() {
-  return (
-    <section className="py-24 bg-neutral-50">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold text-neutral-900">Simple pricing</h2>
-          <p className="mt-3 text-neutral-600">Start free. Upgrade when you need more.</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {PLANS.map((plan) => (
-            <div key={plan.name} className={`card p-6 ${plan.highlight ? 'ring-2 ring-motix-500' : ''}`}>
-              {plan.highlight && <span className="badge-orange mb-4 inline-flex">Most popular</span>}
-              <p className="text-sm font-medium text-neutral-500">{plan.name}</p>
-              <p className="mt-2 text-4xl font-bold text-neutral-900">{plan.price}</p>
-              <p className="text-sm text-neutral-500">{plan.period}</p>
-              <ul className="my-6 space-y-2">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-neutral-700">
-                    <CheckCircle2 className="h-4 w-4 text-motix-500 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href={plan.href} className={plan.highlight ? 'btn-primary w-full' : 'btn-secondary w-full'}>
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Footer ───────────────────────────────────────────────────────────────────
-
-function Footer() {
-  return (
-    <footer className="border-t border-neutral-200 bg-white py-12">
-      <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <Link href="/" className="flex items-center gap-2">
-          <Wrench className="h-5 w-5 text-motix-500" />
-          <span className="font-bold text-neutral-900">Motix<span className="text-motix-500">AI</span></span>
-        </Link>
-        <div className="flex gap-6 text-sm text-neutral-500">
-          <Link href="/pricing" className="hover:text-neutral-900 transition-colors">Pricing</Link>
-          <Link href="#enterprise" className="hover:text-neutral-900 transition-colors">Enterprise</Link>
-          <Link href="/login" className="hover:text-neutral-900 transition-colors">Sign in</Link>
-        </div>
-        <p className="text-sm text-neutral-400">© 2026 MotixAI. All rights reserved.</p>
-      </div>
-    </footer>
-  );
-}
-
-// ─── Page export ──────────────────────────────────────────────────────────────
+const stats = [
+  { val: '<3s', label: 'Guide generation' },
+  { val: '8–15', label: 'Steps per guide' },
+  { val: '100%', label: 'AI-generated' },
+  { val: '∞', label: 'Vehicle models' },
+];
 
 export default function LandingPage() {
   return (
-    <>
-      <Navbar />
-      <main>
-        <Hero />
-        <Features />
-        <HowItWorks />
-        <EnterpriseBanner />
-        <PricingTeaser />
-      </main>
-      <Footer />
-    </>
+    <div className="page">
+
+      {/* ─── NAV ─────────────────────────────────────────── */}
+      <header className="nav-wrap">
+        <nav className="nav">
+          <Link href="/" className="nav-logo">MotixAI</Link>
+          <div className="nav-center">
+            <a href="#how" className="nav-link">How it works</a>
+            <a href="#features" className="nav-link">Features</a>
+            <a href="#pricing" className="nav-link">Pricing</a>
+          </div>
+          <NavAuth />
+        </nav>
+      </header>
+
+      {/* ─── HERO ────────────────────────────────────────── */}
+      <section className="hero">
+        <div className="hero-bg" aria-hidden>
+          <div className="hero-bg-grid" />
+          <div className="hero-bg-orb hero-bg-orb--1" />
+          <div className="hero-bg-orb hero-bg-orb--2" />
+        </div>
+
+        <div className="hero-content">
+        <div className="hero-inner">
+          <div className="hero-eyebrow">
+            <span className="eyebrow-dot" />
+            AI Repair Intelligence
+          </div>
+
+          <h1 className="hero-h1">
+            Workshop-grade repair guides,
+            <br />
+            <span className="hero-h1-gradient">generated in seconds.</span>
+          </h1>
+
+          <p className="hero-p">
+            Enter a VIN or vehicle model. MotixAI returns structured steps,
+            torque specs, tool lists, safety notes, and inline engineering diagrams —
+            on web and mobile.
+          </p>
+
+          <HeroActions />
+
+          <p className="hero-disclaimer">No credit card required · Free plan available</p>
+        </div>
+
+        {/* ─── HERO PREVIEW CARD ───────────────────────────────── */}
+        <div className="hero-card" aria-hidden="true">
+          <div className="hero-card-topbar">
+            <span className="topbar-dot topbar-dot--red" />
+            <span className="topbar-dot topbar-dot--yellow" />
+            <span className="topbar-dot topbar-dot--green" />
+            <span className="topbar-title">Repair Guide · 2019 Ford F-150 · Oil Change</span>
+          </div>
+          <div className="hero-card-body">
+            {([
+              { done: true,  active: false, n: '✓', title: 'Warm up engine for 2 minutes',      detail: null },
+              { done: true,  active: false, n: '✓', title: 'Position drain pan under oil plug',  detail: null },
+              { done: false, active: true,  n: '3',  title: 'Remove drain plug — 14mm socket',   detail: '25 Nm torque' },
+              { done: false, active: false, n: '4',  title: 'Replace oil filter',                detail: null },
+              { done: false, active: false, n: '5',  title: 'Refill with 5W-30 synthetic',       detail: '5.7 L capacity' },
+            ] as const).map((s) => (
+              <div key={s.n} className={`mock-step${s.done ? ' mock-step--done' : ''}${s.active ? ' mock-step--active' : ''}`}>
+                <div className="mock-step-num">{s.n}</div>
+                <div>
+                  <p className="mock-step-title">{s.title}</p>
+                  {s.detail && <p className="mock-step-detail">{s.detail}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hero-card-footer">
+            <span className="card-footer-badge">3 / 5 steps complete</span>
+            <span className="card-footer-diag">Diagrams generating…</span>
+          </div>
+        </div>
+
+        </div>{/* end .hero-content */}
+      </section>
+
+      {/* ─── LOGOS ───────────────────────────────────────── */}
+      <div className="logos-bar">
+        <p className="logos-label">Trusted by teams at</p>
+        {['AutoShop Pro', 'FleetWorks', 'HeavyMech', 'TechGarage', 'MotoServ'].map((name) => (
+          <span key={name} className="logos-name">{name}</span>
+        ))}
+      </div>
+
+      {/* ─── HOW IT WORKS ────────────────────────────────── */}
+      <section id="how" className="how-section">
+        <div className="section-header">
+          <p className="eyebrow-tag">How it works</p>
+          <h2 className="section-h2">From query to guide in four steps</h2>
+        </div>
+        <div className="how-steps">
+          {steps.map((s, i) => (
+            <div key={s.n} className="how-step">
+              <div className="how-step-num">{s.n}</div>
+              {i < steps.length - 1 && <div className="how-step-line" />}
+              <h3 className="how-step-title">{s.title}</h3>
+              <p className="how-step-text">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── STATS ───────────────────────────────────────── */}
+      <div className="stats-bar">
+        {stats.map((s) => (
+          <div key={s.label} className="stat">
+            <span className="stat-val">{s.val}</span>
+            <span className="stat-label">{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ─── FEATURES ────────────────────────────────────── */}
+      <section id="features" className="features-section">
+        <div className="section-header">
+          <p className="eyebrow-tag">Features</p>
+          <h2 className="section-h2">Everything a technician needs</h2>
+          <p className="section-sub">Built for speed, accuracy, and real-world workshop conditions.</p>
+        </div>
+        <div className="features-grid">
+          {features.map((f) => (
+            <div key={f.title} className="feat-card">
+              <div className="feat-icon">{f.icon}</div>
+              <h3 className="feat-title">{f.title}</h3>
+              <p className="feat-desc">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── PRICING ─────────────────────────────────────── */}
+      <section id="pricing" className="pricing-section">
+        <div className="section-header">
+          <p className="eyebrow-tag">Pricing</p>
+          <h2 className="section-h2">Simple, transparent pricing</h2>
+          <p className="section-sub">Start free. Upgrade when you need more.</p>
+        </div>
+        <div className="pricing-grid">
+          {plans.map((plan) => (
+            <article key={plan.name} className={`plan${plan.highlight ? ' plan--pro' : ''}`}>
+              {plan.highlight && <div className="plan-popular">Most popular</div>}
+              <p className="plan-name">{plan.name}</p>
+              <div className="plan-price-row">
+                <span className="plan-price">{plan.price}</span>
+                {plan.period && <span className="plan-period">{plan.period}</span>}
+              </div>
+              <p className="plan-desc">{plan.desc}</p>
+              <hr className="plan-divider" />
+              <ul className="plan-list">
+                {plan.items.map((item) => (
+                  <li key={item} className="plan-item">
+                    <svg className="plan-check" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href={plan.href} className={plan.highlight ? 'plan-cta plan-cta--pro' : 'plan-cta plan-cta--default'}>
+                {plan.cta}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── CTA BAND ────────────────────────────────────── */}
+      <section className="cta-band">
+        <div className="cta-band-orb" aria-hidden />
+        <p className="cta-band-eyebrow">Get started today</p>
+        <h2 className="cta-band-h2">Generate your first repair guide free.</h2>
+        <p className="cta-band-sub">No credit card. No setup. Just results.</p>
+        <div className="cta-band-actions">
+          <Link href="/auth/signup" className="cta-primary">Start for free</Link>
+          <Link href="/auth/login" className="cta-band-ghost">Already have an account →</Link>
+        </div>
+      </section>
+
+      {/* ─── FOOTER ──────────────────────────────────────── */}
+      <footer className="footer">
+        <div className="footer-inner">
+          <Link href="/" className="nav-logo">MotixAI</Link>
+          <p className="footer-copy">© 2026 MotixAI. All rights reserved.</p>
+          <div className="footer-links">
+            <a href="#" className="footer-link">Privacy</a>
+            <a href="#" className="footer-link">Terms</a>
+            <a href="mailto:hello@motixai.com" className="footer-link">Contact</a>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

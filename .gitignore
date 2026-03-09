@@ -46,6 +46,5 @@ coverage/
 # Misc
 *.pem
 .cache/
-
-# MCP local overrides (may contain sensitive tokens)
-.mcp.local.json
+.vercel
+package-lock.json

@@ -1,76 +1,116 @@
-# HammerAI
+# MotixAI Monorepo
 
-A full-stack AI-powered monorepo containing Web, Mobile, and Backend applications.
-
-## Project Structure
+## Repository Structure
 
 ```
-HammerAI/
-├── backend/          # Node.js + Express REST API
-├── web/              # Next.js web application
-├── mobile/           # React Native (Expo) mobile app
-├── packages/
-│   └── shared/       # Shared types, utilities & constants
-├── tsconfig.base.json
-└── package.json
+.
+├── backend
+│   ├── src
+│   │   ├── api                # API layer (Nest controllers/modules)
+│   │   ├── domain             # Domain layer (auth/guides/enterprise use cases)
+│   │   ├── ai                 # AI layer (provider abstraction + Gemini providers)
+│   │   ├── infrastructure     # Prisma/JWT/queue infrastructure
+│   │   └── jobs               # Background workers (BullMQ)
+│   ├── prisma
+│   │   ├── schema.prisma
+│   │   ├── migrations
+│   │   └── seed.ts
+│   └── Dockerfile
+├── web                        # Next.js App Router web app
+├── mobile                     # Expo React Native app
+├── packages
+│   ├── shared                 # Shared domain contracts/types
+│   └── api-client             # Generated typed API client from OpenAPI contract
+├── docs/openapi.yaml
+└── docker-compose.yml
 ```
 
-## Tech Stack
+## Local Setup
 
-| Layer    | Technology                              |
-|----------|-----------------------------------------|
-| Backend  | Node.js, Express, TypeScript, Prisma    |
-| Web      | Next.js 14, TypeScript, Tailwind CSS    |
-| Mobile   | React Native, Expo, TypeScript          |
-| Shared   | TypeScript                              |
-| Database | PostgreSQL (via Prisma ORM)             |
-| Auth     | JWT (access + refresh tokens)           |
-
-## Getting Started
-
-### Prerequisites
-- Node.js >= 20
-- Yarn >= 1.22
-- PostgreSQL (for backend)
-
-### Install dependencies
+1. Install dependencies:
 ```bash
 yarn install
 ```
 
-### Environment setup
+2. Create env files:
 ```bash
 cp backend/.env.example backend/.env
-cp web/.env.example web/.env.local
-cp mobile/.env.example mobile/.env
+cp .env.example .env
 ```
 
-### Run development servers
-
+3. Start infrastructure:
 ```bash
-# Backend API (port 4000)
-yarn dev:backend
-
-# Web app (port 3000)
-yarn dev:web
-
-# Mobile app (Expo)
-yarn dev:mobile
+docker compose up -d postgres redis
 ```
 
-### Build for production
+4. Generate Prisma client, migrate, seed:
+```bash
+yarn workspace /backend db:generate
+yarn workspace /backend db:migrate
+yarn workspace /backend db:seed
+```
+
+## Run Locally
+
+Backend:
+```bash
+yarn dev:backend
+```
+
+Web:
+```bash
+cd web
+NEXT_PUBLIC_API_URL=http://localhost:4000 yarn dev
+```
+
+Mobile (Expo latest SDK):
+```bash
+yarn dev:mobile
+# press i for iOS simulator / a for Android emulator
+```
+
+## Build
+
 ```bash
 yarn build
 ```
 
-## Scripts
+## Docker (Backend + Postgres + Redis)
 
-| Command           | Description                  |
-|-------------------|------------------------------|
-| `yarn dev:backend`| Start backend in watch mode  |
-| `yarn dev:web`    | Start Next.js dev server     |
-| `yarn dev:mobile` | Start Expo dev server        |
-| `yarn build`      | Build backend + web          |
-| `yarn lint`       | Lint all workspaces          |
-| `yarn test`       | Run all tests                |
-| `yarn typecheck`  | TypeScript check all         |
+```bash
+docker compose up --build
+```
+
+## Mobile Build
+
+1. Install EAS CLI:
+```bash
+npm i -g eas-cli
+```
+
+2. Login and configure project:
+```bash
+cd mobile
+eas login
+eas build:configure
+```
+
+3. Build development client:
+```bash
+eas build --profile development --platform ios
+# or
+eas build --profile development --platform android
+```
+
+## Video Generation Extension Point
+
+Video generation is intentionally not implemented.
+
+Extension interface is defined in:
+- `backend/src/ai/ai-provider.interface.ts` as `AIVideoProvider`
+
+To add video generation later:
+1. Create `GeminiVideoProvider` implementing `AIVideoProvider`.
+2. Add a new background job type (e.g. `GUIDE_VIDEO_GENERATION`) in Prisma + BullMQ worker.
+3. Persist produced storyboard/video artifacts in a dedicated table (e.g. `GeneratedVideo`).
+4. Expose optional video fields in guide detail responses for web/mobile rendering.

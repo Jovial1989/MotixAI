@@ -1,16 +1,45 @@
+version: '3.9'
 services:
   postgres:
-    image: postgres:16-alpine
-    container_name: hammerai_db
+    image: postgres:16
+    container_name: motix-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: hammerai_db
+      POSTGRES_USER: motix
+      POSTGRES_PASSWORD: motix
+      POSTGRES_DB: motixai
     ports:
       - '5432:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: motix-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: motix-backend
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://motix:motix@postgres:5432/motixai?schema=public
+      JWT_ACCESS_SECRET: change-me-access
+      JWT_REFRESH_SECRET: change-me-refresh
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      REDIS_URL: redis://redis:6379
+      GEMINI_API_KEY: demo-key
+    ports:
+      - '4000:4000'
 
 volumes:
-  postgres_data:
+  pgdata:

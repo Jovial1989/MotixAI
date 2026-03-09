@@ -1,0 +1,13 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "composite": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@motixai/shared": ["../packages/shared/src"],
+      "@motixai/api-client": ["../packages/api-client/src"]
+    }
+  }
+}

@@ -3,17 +3,14 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: '**.hammerai.com' },
+      { protocol: 'https', hostname: 'dummyimage.com' },
+      { protocol: 'https', hostname: 'placehold.co' },
     ],
+    // Allow base64 data URLs (Gemini-generated images stored as data URIs)
+    dangerouslyAllowSVG: false,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/proxy/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/:path*`,
-      },
-    ];
-  },
+  // Tell Next.js where to find packages in the monorepo
+  transpilePackages: ['@motixai/shared', '@motixai/api-client'],
 };
 
 export default nextConfig;
