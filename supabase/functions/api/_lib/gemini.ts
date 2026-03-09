@@ -228,43 +228,35 @@ Rules:
 // ── Phase 3: Image generation from structured spec ──────────────────────────
 
 export function specToImagePrompt(spec: DrawingSpec): string {
-  const calloutsStr = spec.callouts.map((c) => `${c.number} → ${c.label}`).join(", ");
   const componentsStr = spec.keyComponents.join(", ");
   const toolsStr = spec.toolsShown.join(", ") || "standard hand tools";
-  const torqueLine = spec.torqueNote ? `Torque specification arrow: ${spec.torqueNote}` : "";
-  const warningLine = spec.warningCallout ? `Warning triangle symbol labelled: ${spec.warningCallout}` : "";
+  const torqueLine = spec.torqueNote ? `Torque arrow showing: ${spec.torqueNote}` : "";
+  const warningLine = spec.warningCallout ? "Include a warning triangle symbol (no text)." : "";
+  const calloutsNums = spec.callouts.map((c) => String(c.number)).join(", ");
   const viewNote =
-    spec.viewType === "exploded" ? "Show components in exploded-view with alignment guidelines." :
-    spec.viewType === "cross-section" ? "Show internal structure with hatching on cut surfaces." :
+    spec.viewType === "exploded" ? "Exploded-view with alignment guidelines." :
+    spec.viewType === "cross-section" ? "Cross-section with hatching on cut surfaces." :
     spec.viewType === "cutaway" ? "Partial cutaway revealing internal components." : "";
 
-  return `Black-and-white technical service manual illustration. White background. OEM workshop manual style.
+  return `Haynes workshop manual technical line drawing. Black ink on white. NO text or words anywhere in the image.
 
-Subject: ${spec.vehicle} — ${spec.part}
-Action depicted: ${spec.stepTitle}
-View type: ${spec.viewType} view
-Key components to show: ${componentsStr}
-Tools shown: ${toolsStr}
-Numbered callouts: ${calloutsStr}
+Action: ${spec.stepTitle}
+View: ${spec.viewType} — ${spec.referenceContext}
+Components to show: ${componentsStr}
+Tools engaged: ${toolsStr}
 ${torqueLine}
 ${warningLine}
+${calloutsNums ? `Place circled numbers ${calloutsNums} as callout markers with thin leader lines to the relevant components.` : ""}
+${viewNote}
 
-Reference: ${spec.referenceContext}
-
-Drawing requirements:
-- Render as a clean engineering line drawing with thin, precise strokes
-- Include all listed numbered callouts pointing to the correct components
-- Directional arrows showing movement, rotation, or applied force direction
-- ${viewNote}
-
-STRICT RULES — the finished image MUST NOT contain:
-- Sentences, paragraphs, or instruction text of any kind
-- Any words other than very short part labels (2 words maximum per label)
-- Watermarks, photo frames, or decorative borders
-- Photorealistic rendering, gradients, or colour fills
-- AI generation artefacts or random characters
-
-Reference style: Haynes / Chilton automotive workshop manual line diagram.`;
+ABSOLUTE RULES:
+- Zero text, zero letters, zero words — not even part names or labels
+- Only circled numerals (①②③) are allowed, nothing else written
+- Black line drawing only — no colour, no grey fills, no shading
+- Single focused view — no split panels, no multiple diagrams
+- No title bar, no border, no watermark
+- Tools shown physically engaged with the component
+- Directional arrows for rotation, removal direction, or force`;
 }
 
 export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<string> {
