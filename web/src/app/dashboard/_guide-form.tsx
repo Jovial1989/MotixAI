@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import VehicleSelector from '../_vehicle-selector';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,17 +19,6 @@ interface Props {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const POPULAR_MAKES = [
-  'Acura','Audi','BMW','BYD','Cadillac','Caterpillar','Chevrolet','Chrysler',
-  'Dodge','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jaguar',
-  'Jeep','John Deere','Kia','Komatsu','Land Rover','Lexus','Lincoln','Mack',
-  'Mazda','Mercedes-Benz','Mitsubishi','Nissan','Peugeot','Porsche','Ram',
-  'Range Rover','Renault','Scania','Subaru','Suzuki','Tesla','Toyota',
-  'Volkswagen','Volvo',
-];
-
-const YEARS = Array.from({ length: 2026 - 1980 + 1 }, (_, i) => 2026 - i);
 
 // disambiguation map: keyword → specific repair options
 const DISAMBIGUATION: Record<string, string[]> = {
@@ -77,15 +67,6 @@ async function decodeVin(vin: string): Promise<NHTSAVinResult | null> {
   return r;
 }
 
-async function fetchModels(make: string): Promise<string[]> {
-  const res = await fetch(
-    `https://vpic.nhtsa.dot.gov/api/vehicles/getmodelsformake/${encodeURIComponent(make)}?format=json`
-  );
-  if (!res.ok) return [];
-  const json = await res.json() as { Results: { Model_Name: string }[] };
-  return (json.Results ?? []).map((r) => r.Model_Name).sort();
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SmartGuideForm({ onSubmit, submitting, error }: Props) {
@@ -100,8 +81,6 @@ export default function SmartGuideForm({ onSubmit, submitting, error }: Props) {
   const [selMake, setSelMake] = useState('');
   const [selModel, setSelModel] = useState('');
   const [selYear, setSelYear] = useState('');
-  const [models, setModels] = useState<string[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
 
   // Step 2 — repair description
   const [partName, setPartName] = useState('');
@@ -120,14 +99,6 @@ export default function SmartGuideForm({ onSubmit, submitting, error }: Props) {
     : !!(selMake && selModel && selYear);
 
   const step2Valid = partName.trim().length >= 2;
-
-  // Load models when make changes
-  useEffect(() => {
-    if (idMode !== 'manual' || !selMake) { setModels([]); setSelModel(''); return; }
-    setLoadingModels(true);
-    setSelModel('');
-    fetchModels(selMake).then(setModels).finally(() => setLoadingModels(false));
-  }, [selMake, idMode]);
 
   // Disambiguation chips when part name changes
   useEffect(() => {
@@ -232,40 +203,15 @@ export default function SmartGuideForm({ onSubmit, submitting, error }: Props) {
         </div>
       ) : (
         <div className="gen-inputs">
-          <div className="gen-input-wrap">
-            <label className="gen-label">Make <span className="gen-label-required">*</span></label>
-            <select
-              className="gen-input gen-input--select"
-              value={selMake}
-              onChange={(e) => setSelMake(e.target.value)}
-            >
-              <option value="">Select make…</option>
-              {POPULAR_MAKES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div className="gen-input-wrap">
-            <label className="gen-label">Model <span className="gen-label-required">*</span></label>
-            <select
-              className="gen-input gen-input--select"
-              value={selModel}
-              onChange={(e) => setSelModel(e.target.value)}
-              disabled={!selMake || loadingModels}
-            >
-              <option value="">{loadingModels ? 'Loading…' : 'Select model…'}</option>
-              {models.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div className="gen-input-wrap">
-            <label className="gen-label">Year <span className="gen-label-required">*</span></label>
-            <select
-              className="gen-input gen-input--select"
-              value={selYear}
-              onChange={(e) => setSelYear(e.target.value)}
-            >
-              <option value="">Select year…</option>
-              {YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-            </select>
-          </div>
+          <VehicleSelector
+            value={{ make: selMake, model: selModel, year: selYear }}
+            onChange={(next) => {
+              setSelMake(next.make);
+              setSelModel(next.model);
+              setSelYear(next.year);
+            }}
+            required
+          />
           <div className="gen-input-wrap">
             <label className="gen-label">VIN <span className="gen-label-or">optional</span></label>
             <input
