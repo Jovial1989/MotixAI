@@ -288,55 +288,16 @@ export default function LandingPage() {
             <p className="mobile-coming">Coming soon to iOS and Android</p>
           </div>
 
-          {/* Right: phone mockups */}
-          {/* TODO: Replace gradient placeholders with real Flutter app screenshots */}
-          <div className="mobile-phones" aria-hidden="true">
-            <div className="phone phone--back">
-              <div className="phone-screen phone-screen--guide">
-                <div className="ps-topbar">
-                  <span className="ps-back">‹</span>
-                  <span className="ps-title">BMW E90 · Oil Change</span>
-                </div>
-                <div className="ps-steps">
-                  {[
-                    { done: true,  n: '1', t: 'Warm up engine' },
-                    { done: true,  n: '2', t: 'Position drain pan' },
-                    { done: false, n: '3', t: 'Remove drain plug' },
-                    { done: false, n: '4', t: 'Replace oil filter' },
-                  ].map((s) => (
-                    <div key={s.n} className={`ps-step${s.done ? ' ps-step--done' : ''}`}>
-                      <div className="ps-step-dot">{s.done ? '✓' : s.n}</div>
-                      <span>{s.t}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="ps-img-placeholder" />
-              </div>
-            </div>
-
-            <div className="phone phone--front">
-              <div className="phone-screen phone-screen--dash">
-                <div className="ps-topbar ps-topbar--dark">
-                  <span className="ps-logo">MotixAI</span>
-                  <span className="ps-avatar">K</span>
-                </div>
-                <p className="ps-section-label">My Guides</p>
-                {[
-                  { title: 'Brake Caliper Replacement', sub: 'Nissan Qashqai 2020', badge: '8 steps' },
-                  { title: 'Turbocharger Replacement',  sub: 'Toyota LC 200',       badge: '10 steps' },
-                  { title: 'Oil Change',                sub: 'BMW E90 330d',        badge: '5 steps' },
-                ].map((g) => (
-                  <div key={g.title} className="ps-guide-card">
-                    <div className="ps-guide-icon" />
-                    <div className="ps-guide-info">
-                      <p className="ps-guide-title">{g.title}</p>
-                      <p className="ps-guide-sub">{g.sub}</p>
-                    </div>
-                    <span className="ps-guide-badge">{g.badge}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Right: phone mockup image */}
+          <div className="mobile-phones">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/mobile-showcase.png"
+              alt="MotixAI mobile app — guides list and guide detail screens"
+              className="mobile-phones-img"
+              width={620}
+              height={520}
+            />
           </div>
 
         </div>
