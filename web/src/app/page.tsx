@@ -311,6 +311,7 @@ export default function LandingPage() {
                   <div>
                     <p className="mp-list-eyebrow">My Workspace</p>
                     <p className="mp-list-title">Guides</p>
+                    <p className="mp-list-count">3 guides · this week</p>
                   </div>
                   <div className="mp-avatar">K</div>
                 </div>
@@ -321,16 +322,19 @@ export default function LandingPage() {
                   <span>Search guides…</span>
                 </div>
 
+                {/* Section label */}
+                <p className="mp-list-section">Recent</p>
+
                 {/* Guide cards */}
                 {[
-                  { title: 'Brake Caliper Replacement', vehicle: 'Nissan Qashqai 2020', time: '90–120 min', diff: 'Intermediate', steps: '8', diffColor: '#F59E0B' },
-                  { title: 'Turbocharger Service',      vehicle: 'Toyota Land Cruiser 200', time: '110 min',    diff: 'Advanced',      steps: '10', diffColor: '#EA580C' },
-                  { title: 'Oil Change',                vehicle: 'BMW E90 330d',          time: '45 min',     diff: 'Beginner',      steps: '5',  diffColor: '#22C55E' },
+                  { title: 'Brake Caliper Replacement', vehicle: 'Nissan Qashqai 2020', time: '90–120 min', diff: 'Intermediate', steps: '8',  diffColor: '#F59E0B' },
+                  { title: 'Turbocharger Service',      vehicle: 'Toyota LC 200',        time: '110 min',    diff: 'Advanced',     steps: '10', diffColor: '#EA580C' },
+                  { title: 'Oil Change',                vehicle: 'BMW E90 330d',          time: '45 min',     diff: 'Beginner',     steps: '5',  diffColor: '#22C55E' },
                 ].map((g) => (
                   <div key={g.title} className="mp-card">
                     <div className="mp-card-accent" style={{ background: g.diffColor }} />
-                    <div className="mp-card-icon">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="1" width="8" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.1"/><path d="M4 4h4M4 6h4M4 8h2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                    <div className="mp-card-icon" style={{ background: g.diffColor + '18', borderColor: g.diffColor + '30', color: g.diffColor }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="1" width="8" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M4 4h4M4 6.5h4M4 9h2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                     </div>
                     <div className="mp-card-body">
                       <p className="mp-card-title">{g.title}</p>
@@ -340,13 +344,15 @@ export default function LandingPage() {
                           <svg width="7" height="7" viewBox="0 0 7 7" fill="none"><circle cx="3.5" cy="3.5" r="3" stroke="currentColor" strokeWidth="0.9"/><path d="M3.5 2v1.5l1 0.8" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round"/></svg>
                           {g.time}
                         </span>
-                        <span className="mp-card-diff" style={{ color: g.diffColor, borderColor: g.diffColor + '40', background: g.diffColor + '14' }}>{g.diff}</span>
+                        <span className="mp-card-diff" style={{ color: g.diffColor, borderColor: g.diffColor + '45', background: g.diffColor + '16' }}>{g.diff}</span>
                       </div>
                     </div>
                     <div className="mp-card-right">
-                      <span className="mp-card-steps">{g.steps}</span>
-                      <span className="mp-card-steps-label">steps</span>
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ marginTop: 4, color: '#555' }}><path d="M2 1.5l3 2.5-3 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <div className="mp-card-steps-badge" style={{ background: g.diffColor + '18', borderColor: g.diffColor + '35', color: g.diffColor }}>
+                        <span className="mp-card-steps-num">{g.steps}</span>
+                        <span className="mp-card-steps-lbl">steps</span>
+                      </div>
+                      <svg width="7" height="7" viewBox="0 0 7 7" fill="none" style={{ marginTop: 5, color: '#404050' }}><path d="M1.5 1.5l4 2-4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
                   </div>
                 ))}
@@ -354,15 +360,16 @@ export default function LandingPage() {
                 {/* Tab bar */}
                 <div className="mp-tabbar">
                   <button className="mp-tab-item mp-tab-item--active">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L2 5.5V12.5H5.5V9H8.5V12.5H12V5.5L7 1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L2 5.5V12.5H5.5V9H8.5V12.5H12V5.5L7 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
                     <span>Guides</span>
+                    <div className="mp-tab-dot" />
                   </button>
                   <button className="mp-tab-item">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 11l1.5-4h5L11 11" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><rect x="2" y="11" width="10" height="2.5" rx="1" stroke="currentColor" strokeWidth="1.2"/><circle cx="5" cy="13.5" r="0.75" fill="currentColor"/><circle cx="9" cy="13.5" r="0.75" fill="currentColor"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 8l1.5-4h5L11 8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="2" y="8" width="10" height="3.5" rx="1" stroke="currentColor" strokeWidth="1.3"/><circle cx="5" cy="12.5" r="1" fill="currentColor"/><circle cx="9" cy="12.5" r="1" fill="currentColor"/></svg>
                     <span>Garage</span>
                   </button>
                   <button className="mp-tab-item">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/><path d="M2 12c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M2.5 12.5c0-2.49 2.01-4.5 4.5-4.5s4.5 2.01 4.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
                     <span>Profile</span>
                   </button>
                 </div>
@@ -399,21 +406,28 @@ export default function LandingPage() {
 
                 {/* Guide header */}
                 <div className="mp-detail-head">
-                  <p className="mp-detail-title"><span className="mp-hl">Hydraulic</span> Pump Replacement (CAT 320D)</p>
+                  <p className="mp-detail-vehicle">CAT 320D Excavator</p>
+                  <p className="mp-detail-title"><span className="mp-hl">Hydraulic</span> Pump Replacement</p>
                   <div className="mp-detail-chips">
                     <span className="mp-dc mp-dc--time">
                       <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><circle cx="4" cy="4" r="3.2" stroke="currentColor" strokeWidth="0.9"/><path d="M4 2.2V4l1.2 1" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round"/></svg>
                       90–120 min
                     </span>
-                    <span className="mp-dc mp-dc--diff">Intermediate</span>
-                    <span className="mp-dc">CAT 320D</span>
+                    <span className="mp-dc mp-dc--diff">
+                      <svg width="7" height="7" viewBox="0 0 7 7" fill="none"><path d="M3.5 1L1 3v2.5L3.5 7 6 5.5V3L3.5 1Z" stroke="currentColor" strokeWidth="0.8" strokeLinejoin="round"/></svg>
+                      Intermediate
+                    </span>
+                    <span className="mp-dc mp-dc--steps">10 steps</span>
                   </div>
                 </div>
 
                 <div className="mp-detail-scroll">
                   {/* Tools */}
                   <div className="mp-section">
-                    <p className="mp-section-hd">Tools required</p>
+                    <p className="mp-section-hd">
+                      <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 8L3.5 5.5M5.5 1l2.5 2.5-2 2-2.5-2.5L5.5 1ZM3.5 5.5L2.5 6.5" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      Tools required
+                    </p>
                     <div className="mp-tools">
                       {['Socket set', 'Torque wrench', 'Trim tools', 'Thread locker'].map((t) => (
                         <span key={t} className="mp-tool">{t}</span>
@@ -424,21 +438,22 @@ export default function LandingPage() {
                   {/* Safety */}
                   <div className="mp-safety">
                     <div className="mp-safety-hd">
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 3.5V6C1 7.93 2.79 9.62 5 10C7.21 9.62 9 7.93 9 6V3.5L5 1Z" stroke="#F59E0B" strokeWidth="0.9" strokeLinejoin="round"/><path d="M5 4V6M5 7v.5" stroke="#F59E0B" strokeWidth="0.9" strokeLinecap="round"/></svg>
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 3.5V6C1 7.93 2.79 9.62 5 10C7.21 9.62 9 7.93 9 6V3.5L5 1Z" stroke="#F59E0B" strokeWidth="1" strokeLinejoin="round" fill="rgba(245,158,11,0.12)"/><path d="M5 3.8V5.8M5 6.8v.4" stroke="#F59E0B" strokeWidth="0.9" strokeLinecap="round"/></svg>
                       <span>Safety notes</span>
                     </div>
-                    <p className="mp-safety-line">Isolate battery and hydraulic pressure before disassembly.</p>
-                    <p className="mp-safety-line">Use jack stands and wheel chocks on level ground.</p>
+                    <p className="mp-safety-line">• Isolate battery and hydraulic pressure before disassembly.</p>
+                    <p className="mp-safety-line">• Use jack stands and wheel chocks on level ground.</p>
                   </div>
 
                   {/* Step card */}
                   <div className="mp-step">
                     <div className="mp-step-hd">
                       <div className="mp-step-num">1</div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <p className="mp-step-eyebrow">STEP 1 OF 10</p>
                         <p className="mp-step-name">Preparation &amp; Access</p>
                       </div>
+                      <div className="mp-step-status">Ready</div>
                     </div>
 
                     {/* Engineering diagram */}
