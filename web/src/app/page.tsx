@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import NavAuth from './_nav-auth';
 import HeroActions from './_hero-actions';
@@ -289,16 +288,100 @@ export default function LandingPage() {
             <p className="mobile-coming">Coming soon to iOS and Android</p>
           </div>
 
-          {/* Right: phone mockup image */}
-          <div className="mobile-phones">
-            <Image
-              src="/mobile-showcase.png"
-              alt="MotixAI mobile app — guides list and guide detail screens"
-              className="mobile-phones-img"
-              width={620}
-              height={520}
-              priority
-            />
+          {/* Right: dark phone mockups matching app reference */}
+          <div className="mobile-phones" aria-hidden="true">
+
+            {/* Back phone — Guides list */}
+            <div className="phone phone--back">
+              <div className="phone-notch" />
+              <div className="phone-screen">
+                <div className="mp-status">
+                  <span>16:18</span>
+                  <span className="mp-status-icons">▲ ◀ ▮</span>
+                </div>
+                <p className="mp-screen-title">Guides</p>
+                {[
+                  { title: 'Brake Caliper\nReplacement', badge: '8 steps', sub1: '90-120 min', sub2: 'Inter steps' },
+                  { title: 'Turbocharger\nService',     badge: '8 steps', sub1: 'rota tc 2im', sub2: 'Ino steps' },
+                  { title: 'Oil Change',                badge: '5 steps', sub1: '80-120 min', sub2: 'lexe 33lob' },
+                ].map((g) => (
+                  <div key={g.title} className="mp-guide-card">
+                    <div className="mp-guide-body">
+                      <p className="mp-guide-title">{g.title.replace('\n', ' ')}</p>
+                      <div className="mp-guide-meta">
+                        <span className="mp-meta-chip">⏱ {g.sub1}</span>
+                        <span className="mp-meta-chip">📶 {g.sub2}</span>
+                      </div>
+                    </div>
+                    <span className="mp-badge">{g.badge}</span>
+                  </div>
+                ))}
+                <div className="mp-tab-bar">
+                  <span className="mp-tab mp-tab--active">⌂</span>
+                  <span className="mp-tab">👤</span>
+                  <span className="mp-tab">⊞</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Front phone — Guide detail */}
+            <div className="phone phone--front">
+              <div className="phone-notch" />
+              <div className="phone-screen">
+                <div className="mp-status">
+                  <span>16:18</span>
+                  <span className="mp-status-icons">▲ ◀ ▮</span>
+                </div>
+                <div className="mp-detail-topbar">
+                  <span className="mp-back-btn">← Back</span>
+                  <span className="mp-logo-pill">M MotixAI</span>
+                </div>
+                <div className="mp-detail-body">
+                  <p className="mp-detail-title">
+                    <span className="mp-detail-highlight">Hydraulic</span> Pump Replacement (CAT 320D)
+                  </p>
+                  <div className="mp-spec-row">
+                    <span className="mp-spec">⏱ 90-120 min</span>
+                    <span className="mp-spec">📶 Intermediate</span>
+                    <span className="mp-spec">CAT 320D</span>
+                  </div>
+                  <p className="mp-section-label">Tools required</p>
+                  <div className="mp-tools-row">
+                    <span className="mp-tool-chip">Socket set</span>
+                    <span className="mp-tool-chip">Torque wrench</span>
+                    <span className="mp-tool-chip">Trim tools</span>
+                    <span className="mp-tool-chip">Thread locker</span>
+                  </div>
+                  <div className="mp-safety-box">
+                    <p className="mp-safety-title">⚠ Safety notes</p>
+                    <p className="mp-safety-item">• Isolate battery and hydraulic pressure before disassembly.</p>
+                    <p className="mp-safety-item">• Use jack stands and wheel chocks on level ground.</p>
+                  </div>
+                  <div className="mp-step-card">
+                    <p className="mp-step-label">STEP 1</p>
+                    <p className="mp-step-title">Step 1: Preparation</p>
+                    <div className="mp-step-diagram">
+                      <svg viewBox="0 0 180 90" width="100%" className="mp-diagram-svg">
+                        <rect width="180" height="90" fill="#f5f5f0" rx="6"/>
+                        <ellipse cx="90" cy="55" rx="70" ry="28" fill="none" stroke="#ccc" strokeWidth="1"/>
+                        <circle cx="90" cy="42" r="18" fill="none" stroke="#999" strokeWidth="1.5"/>
+                        <circle cx="90" cy="42" r="8" fill="#EA580C" opacity="0.7"/>
+                        <line x1="68" y1="42" x2="112" y2="42" stroke="#666" strokeWidth="1"/>
+                        <line x1="90" y1="24" x2="90" y2="60" stroke="#666" strokeWidth="1"/>
+                        <rect x="40" y="60" width="30" height="16" rx="3" fill="none" stroke="#aaa" strokeWidth="1"/>
+                        <rect x="110" y="60" width="30" height="16" rx="3" fill="none" stroke="#aaa" strokeWidth="1"/>
+                        <text x="10" y="85" fontSize="7" fill="#999">Top 1</text>
+                      </svg>
+                    </div>
+                    <div className="mp-step-progress-row">
+                      <span className="mp-step-progress-text">1 of 10 steps</span>
+                      <div className="mp-step-progress-bar"><div className="mp-step-progress-fill" style={{ width: '10%' }} /></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
         </div>
