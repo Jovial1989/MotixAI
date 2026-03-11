@@ -288,97 +288,232 @@ export default function LandingPage() {
             <p className="mobile-coming">Coming soon to iOS and Android</p>
           </div>
 
-          {/* Right: dark phone mockups matching app reference */}
+          {/* Right: premium dark phone mockups */}
           <div className="mobile-phones" aria-hidden="true">
 
-            {/* Back phone — Guides list */}
+            {/* ── Back phone: Guide List ── */}
             <div className="phone phone--back">
-              <div className="phone-notch" />
+              <div className="phone-di" />
               <div className="phone-screen">
-                <div className="mp-status">
-                  <span>16:18</span>
-                  <span className="mp-status-icons">▲ ◀ ▮</span>
+
+                {/* Status bar */}
+                <div className="mp-sb">
+                  <span className="mp-sb-time">9:41</span>
+                  <div className="mp-sb-right">
+                    <svg width="11" height="8" viewBox="0 0 11 8" fill="none"><rect x="0" y="3" width="2" height="5" rx="0.5" fill="currentColor" opacity="0.35"/><rect x="3" y="2" width="2" height="6" rx="0.5" fill="currentColor" opacity="0.55"/><rect x="6" y="1" width="2" height="7" rx="0.5" fill="currentColor" opacity="0.75"/><rect x="9" y="0" width="2" height="8" rx="0.5" fill="currentColor"/></svg>
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M6 1.5C7.93 1.5 9.66 2.28 10.9 3.52L12 2.42C10.47 0.92 8.34 0 6 0C3.66 0 1.53 0.92 0 2.42L1.1 3.52C2.34 2.28 4.07 1.5 6 1.5Z" fill="currentColor" opacity="0.35"/><path d="M6 4C7.1 4 8.1 4.45 8.83 5.17L9.93 4.07C8.9 3.04 7.52 2.4 6 2.4C4.48 2.4 3.1 3.04 2.07 4.07L3.17 5.17C3.9 4.45 4.9 4 6 4Z" fill="currentColor" opacity="0.65"/><circle cx="6" cy="7" r="1" fill="currentColor"/></svg>
+                    <div className="mp-battery"><div className="mp-battery-fill" /></div>
+                  </div>
                 </div>
-                <p className="mp-screen-title">Guides</p>
+
+                {/* Header */}
+                <div className="mp-list-header">
+                  <div>
+                    <p className="mp-list-eyebrow">My Workspace</p>
+                    <p className="mp-list-title">Guides</p>
+                  </div>
+                  <div className="mp-avatar">K</div>
+                </div>
+
+                {/* Search bar */}
+                <div className="mp-search">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.2"/><path d="M7.5 7.5L9.5 9.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  <span>Search guides…</span>
+                </div>
+
+                {/* Guide cards */}
                 {[
-                  { title: 'Brake Caliper\nReplacement', badge: '8 steps', sub1: '90-120 min', sub2: 'Inter steps' },
-                  { title: 'Turbocharger\nService',     badge: '8 steps', sub1: 'rota tc 2im', sub2: 'Ino steps' },
-                  { title: 'Oil Change',                badge: '5 steps', sub1: '80-120 min', sub2: 'lexe 33lob' },
+                  { title: 'Brake Caliper Replacement', vehicle: 'Nissan Qashqai 2020', time: '90–120 min', diff: 'Intermediate', steps: '8', diffColor: '#F59E0B' },
+                  { title: 'Turbocharger Service',      vehicle: 'Toyota Land Cruiser 200', time: '110 min',    diff: 'Advanced',      steps: '10', diffColor: '#EA580C' },
+                  { title: 'Oil Change',                vehicle: 'BMW E90 330d',          time: '45 min',     diff: 'Beginner',      steps: '5',  diffColor: '#22C55E' },
                 ].map((g) => (
-                  <div key={g.title} className="mp-guide-card">
-                    <div className="mp-guide-body">
-                      <p className="mp-guide-title">{g.title.replace('\n', ' ')}</p>
-                      <div className="mp-guide-meta">
-                        <span className="mp-meta-chip">⏱ {g.sub1}</span>
-                        <span className="mp-meta-chip">📶 {g.sub2}</span>
+                  <div key={g.title} className="mp-card">
+                    <div className="mp-card-accent" style={{ background: g.diffColor }} />
+                    <div className="mp-card-icon">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="1" width="8" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.1"/><path d="M4 4h4M4 6h4M4 8h2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                    </div>
+                    <div className="mp-card-body">
+                      <p className="mp-card-title">{g.title}</p>
+                      <p className="mp-card-vehicle">{g.vehicle}</p>
+                      <div className="mp-card-meta">
+                        <span className="mp-card-chip">
+                          <svg width="7" height="7" viewBox="0 0 7 7" fill="none"><circle cx="3.5" cy="3.5" r="3" stroke="currentColor" strokeWidth="0.9"/><path d="M3.5 2v1.5l1 0.8" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round"/></svg>
+                          {g.time}
+                        </span>
+                        <span className="mp-card-diff" style={{ color: g.diffColor, borderColor: g.diffColor + '40', background: g.diffColor + '14' }}>{g.diff}</span>
                       </div>
                     </div>
-                    <span className="mp-badge">{g.badge}</span>
+                    <div className="mp-card-right">
+                      <span className="mp-card-steps">{g.steps}</span>
+                      <span className="mp-card-steps-label">steps</span>
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ marginTop: 4, color: '#555' }}><path d="M2 1.5l3 2.5-3 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
                   </div>
                 ))}
-                <div className="mp-tab-bar">
-                  <span className="mp-tab mp-tab--active">⌂</span>
-                  <span className="mp-tab">👤</span>
-                  <span className="mp-tab">⊞</span>
+
+                {/* Tab bar */}
+                <div className="mp-tabbar">
+                  <button className="mp-tab-item mp-tab-item--active">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L2 5.5V12.5H5.5V9H8.5V12.5H12V5.5L7 1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+                    <span>Guides</span>
+                  </button>
+                  <button className="mp-tab-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 11l1.5-4h5L11 11" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><rect x="2" y="11" width="10" height="2.5" rx="1" stroke="currentColor" strokeWidth="1.2"/><circle cx="5" cy="13.5" r="0.75" fill="currentColor"/><circle cx="9" cy="13.5" r="0.75" fill="currentColor"/></svg>
+                    <span>Garage</span>
+                  </button>
+                  <button className="mp-tab-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/><path d="M2 12c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                    <span>Profile</span>
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Front phone — Guide detail */}
+            {/* ── Front phone: Guide Detail ── */}
             <div className="phone phone--front">
-              <div className="phone-notch" />
-              <div className="phone-screen">
-                <div className="mp-status">
-                  <span>16:18</span>
-                  <span className="mp-status-icons">▲ ◀ ▮</span>
+              <div className="phone-di" />
+              <div className="phone-screen mp-screen--detail">
+
+                {/* Status bar */}
+                <div className="mp-sb">
+                  <span className="mp-sb-time">9:41</span>
+                  <div className="mp-sb-right">
+                    <svg width="11" height="8" viewBox="0 0 11 8" fill="none"><rect x="0" y="3" width="2" height="5" rx="0.5" fill="currentColor" opacity="0.35"/><rect x="3" y="2" width="2" height="6" rx="0.5" fill="currentColor" opacity="0.55"/><rect x="6" y="1" width="2" height="7" rx="0.5" fill="currentColor" opacity="0.75"/><rect x="9" y="0" width="2" height="8" rx="0.5" fill="currentColor"/></svg>
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M6 1.5C7.93 1.5 9.66 2.28 10.9 3.52L12 2.42C10.47 0.92 8.34 0 6 0C3.66 0 1.53 0.92 0 2.42L1.1 3.52C2.34 2.28 4.07 1.5 6 1.5Z" fill="currentColor" opacity="0.35"/><path d="M6 4C7.1 4 8.1 4.45 8.83 5.17L9.93 4.07C8.9 3.04 7.52 2.4 6 2.4C4.48 2.4 3.1 3.04 2.07 4.07L3.17 5.17C3.9 4.45 4.9 4 6 4Z" fill="currentColor" opacity="0.65"/><circle cx="6" cy="7" r="1" fill="currentColor"/></svg>
+                    <div className="mp-battery"><div className="mp-battery-fill" /></div>
+                  </div>
                 </div>
-                <div className="mp-detail-topbar">
-                  <span className="mp-back-btn">← Back</span>
-                  <span className="mp-logo-pill">M MotixAI</span>
+
+                {/* Top nav */}
+                <div className="mp-detail-nav">
+                  <button className="mp-back">
+                    <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M6.5 1L1.5 6l5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Back
+                  </button>
+                  <div className="mp-motix-logo">
+                    <div className="mp-motix-mark">M</div>
+                    <span>MotixAI</span>
+                  </div>
+                  <div style={{ width: 40 }} />
                 </div>
-                <div className="mp-detail-body">
-                  <p className="mp-detail-title">
-                    <span className="mp-detail-highlight">Hydraulic</span> Pump Replacement (CAT 320D)
-                  </p>
-                  <div className="mp-spec-row">
-                    <span className="mp-spec">⏱ 90-120 min</span>
-                    <span className="mp-spec">📶 Intermediate</span>
-                    <span className="mp-spec">CAT 320D</span>
+
+                {/* Guide header */}
+                <div className="mp-detail-head">
+                  <p className="mp-detail-title"><span className="mp-hl">Hydraulic</span> Pump Replacement (CAT 320D)</p>
+                  <div className="mp-detail-chips">
+                    <span className="mp-dc mp-dc--time">
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><circle cx="4" cy="4" r="3.2" stroke="currentColor" strokeWidth="0.9"/><path d="M4 2.2V4l1.2 1" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round"/></svg>
+                      90–120 min
+                    </span>
+                    <span className="mp-dc mp-dc--diff">Intermediate</span>
+                    <span className="mp-dc">CAT 320D</span>
                   </div>
-                  <p className="mp-section-label">Tools required</p>
-                  <div className="mp-tools-row">
-                    <span className="mp-tool-chip">Socket set</span>
-                    <span className="mp-tool-chip">Torque wrench</span>
-                    <span className="mp-tool-chip">Trim tools</span>
-                    <span className="mp-tool-chip">Thread locker</span>
+                </div>
+
+                <div className="mp-detail-scroll">
+                  {/* Tools */}
+                  <div className="mp-section">
+                    <p className="mp-section-hd">Tools required</p>
+                    <div className="mp-tools">
+                      {['Socket set', 'Torque wrench', 'Trim tools', 'Thread locker'].map((t) => (
+                        <span key={t} className="mp-tool">{t}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mp-safety-box">
-                    <p className="mp-safety-title">⚠ Safety notes</p>
-                    <p className="mp-safety-item">• Isolate battery and hydraulic pressure before disassembly.</p>
-                    <p className="mp-safety-item">• Use jack stands and wheel chocks on level ground.</p>
+
+                  {/* Safety */}
+                  <div className="mp-safety">
+                    <div className="mp-safety-hd">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 3.5V6C1 7.93 2.79 9.62 5 10C7.21 9.62 9 7.93 9 6V3.5L5 1Z" stroke="#F59E0B" strokeWidth="0.9" strokeLinejoin="round"/><path d="M5 4V6M5 7v.5" stroke="#F59E0B" strokeWidth="0.9" strokeLinecap="round"/></svg>
+                      <span>Safety notes</span>
+                    </div>
+                    <p className="mp-safety-line">Isolate battery and hydraulic pressure before disassembly.</p>
+                    <p className="mp-safety-line">Use jack stands and wheel chocks on level ground.</p>
                   </div>
-                  <div className="mp-step-card">
-                    <p className="mp-step-label">STEP 1</p>
-                    <p className="mp-step-title">Step 1: Preparation</p>
-                    <div className="mp-step-diagram">
-                      <svg viewBox="0 0 180 90" width="100%" className="mp-diagram-svg">
-                        <rect width="180" height="90" fill="#f5f5f0" rx="6"/>
-                        <ellipse cx="90" cy="55" rx="70" ry="28" fill="none" stroke="#ccc" strokeWidth="1"/>
-                        <circle cx="90" cy="42" r="18" fill="none" stroke="#999" strokeWidth="1.5"/>
-                        <circle cx="90" cy="42" r="8" fill="#EA580C" opacity="0.7"/>
-                        <line x1="68" y1="42" x2="112" y2="42" stroke="#666" strokeWidth="1"/>
-                        <line x1="90" y1="24" x2="90" y2="60" stroke="#666" strokeWidth="1"/>
-                        <rect x="40" y="60" width="30" height="16" rx="3" fill="none" stroke="#aaa" strokeWidth="1"/>
-                        <rect x="110" y="60" width="30" height="16" rx="3" fill="none" stroke="#aaa" strokeWidth="1"/>
-                        <text x="10" y="85" fontSize="7" fill="#999">Top 1</text>
+
+                  {/* Step card */}
+                  <div className="mp-step">
+                    <div className="mp-step-hd">
+                      <div className="mp-step-num">1</div>
+                      <div>
+                        <p className="mp-step-eyebrow">STEP 1 OF 10</p>
+                        <p className="mp-step-name">Preparation &amp; Access</p>
+                      </div>
+                    </div>
+
+                    {/* Engineering diagram */}
+                    <div className="mp-diagram">
+                      <svg viewBox="0 0 220 110" width="100%" height="100%">
+                        {/* Background */}
+                        <rect width="220" height="110" fill="#F0EDE8" rx="0"/>
+
+                        {/* Grid lines (technical drawing style) */}
+                        {[20,40,60,80,100,120,140,160,180,200].map(x => (
+                          <line key={x} x1={x} y1="0" x2={x} y2="110" stroke="#DDD8D0" strokeWidth="0.4"/>
+                        ))}
+                        {[20,40,60,80,100].map(y => (
+                          <line key={y} x1="0" y1={y} x2="220" y2={y} stroke="#DDD8D0" strokeWidth="0.4"/>
+                        ))}
+
+                        {/* Hydraulic pump body */}
+                        <rect x="70" y="30" width="80" height="55" rx="4" fill="none" stroke="#555" strokeWidth="1.4"/>
+                        <rect x="80" y="38" width="60" height="38" rx="2" fill="none" stroke="#888" strokeWidth="0.8"/>
+
+                        {/* Pump shaft */}
+                        <line x1="110" y1="10" x2="110" y2="30" stroke="#444" strokeWidth="2"/>
+                        <rect x="104" y="8" width="12" height="6" rx="1" fill="none" stroke="#444" strokeWidth="1.2"/>
+
+                        {/* Port A (inlet) */}
+                        <line x1="70" y1="52" x2="50" y2="52" stroke="#444" strokeWidth="1.8"/>
+                        <rect x="38" y="46" width="12" height="12" rx="1.5" fill="none" stroke="#444" strokeWidth="1.2"/>
+                        <line x1="38" y1="52" x2="28" y2="52" stroke="#888" strokeWidth="1"/>
+
+                        {/* Port B (outlet) */}
+                        <line x1="150" y1="52" x2="170" y2="52" stroke="#EA580C" strokeWidth="1.8"/>
+                        <rect x="170" y="46" width="12" height="12" rx="1.5" fill="none" stroke="#EA580C" strokeWidth="1.2"/>
+                        <line x1="182" y1="52" x2="192" y2="52" stroke="#EA580C" strokeWidth="1"/>
+
+                        {/* Drain port */}
+                        <line x1="110" y1="85" x2="110" y2="100" stroke="#444" strokeWidth="1.4"/>
+                        <rect x="102" y="100" width="16" height="7" rx="1" fill="none" stroke="#666" strokeWidth="1"/>
+
+                        {/* Mounting bolts */}
+                        {[[76,32],[76,80],[144,32],[144,80]].map(([bx,by]) => (
+                          <circle key={`${bx}-${by}`} cx={bx} cy={by} r="3" fill="none" stroke="#666" strokeWidth="0.8"/>
+                        ))}
+
+                        {/* Center gear indicator */}
+                        <circle cx="110" cy="57" r="10" fill="none" stroke="#777" strokeWidth="1"/>
+                        <circle cx="110" cy="57" r="4" fill="none" stroke="#EA580C" strokeWidth="1.2"/>
+                        {[0,45,90,135,180,225,270,315].map(a => {
+                          const r1 = 10, r2 = 13;
+                          const rad = a * Math.PI / 180;
+                          return <line key={a} x1={110 + r1*Math.cos(rad)} y1={57 + r1*Math.sin(rad)} x2={110 + r2*Math.cos(rad)} y2={57 + r2*Math.sin(rad)} stroke="#888" strokeWidth="0.8"/>;
+                        })}
+
+                        {/* Labels */}
+                        <text x="14" y="55" fontSize="5.5" fill="#777" fontFamily="monospace">IN</text>
+                        <text x="185" y="45" fontSize="5.5" fill="#EA580C" fontFamily="monospace">OUT</text>
+                        <text x="98" y="108" fontSize="5.5" fill="#777" fontFamily="monospace">DRAIN</text>
+                        <text x="88" y="18" fontSize="5.5" fill="#555" fontFamily="monospace">SHAFT</text>
+
+                        {/* Leader lines */}
+                        <line x1="110" y1="19" x2="88" y2="14" stroke="#999" strokeWidth="0.5" strokeDasharray="2,1"/>
+                        <line x1="38" y1="48" x2="14" y2="43" stroke="#999" strokeWidth="0.5" strokeDasharray="2,1"/>
+                        <line x1="182" y1="48" x2="185" y2="42" stroke="#EA580C" strokeWidth="0.5" strokeDasharray="2,1" opacity="0.7"/>
                       </svg>
                     </div>
-                    <div className="mp-step-progress-row">
-                      <span className="mp-step-progress-text">1 of 10 steps</span>
-                      <div className="mp-step-progress-bar"><div className="mp-step-progress-fill" style={{ width: '10%' }} /></div>
+
+                    {/* Progress */}
+                    <div className="mp-progress">
+                      <span className="mp-progress-label">1 of 10 steps</span>
+                      <div className="mp-progress-track">
+                        <div className="mp-progress-fill" style={{ width: '10%' }} />
+                      </div>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 
