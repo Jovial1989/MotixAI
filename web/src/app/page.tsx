@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import NavAuth from './_nav-auth';
 import HeroActions from './_hero-actions';
@@ -290,13 +291,13 @@ export default function LandingPage() {
 
           {/* Right: phone mockup image */}
           <div className="mobile-phones">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/mobile-showcase.png"
               alt="MotixAI mobile app — guides list and guide detail screens"
               className="mobile-phones-img"
               width={620}
               height={520}
+              priority
             />
           </div>
 
