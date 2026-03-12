@@ -120,6 +120,10 @@ model RepairGuide {
   inputPart      String
   sourceType     String   @default("B2C")
   status         String   @default("READY")
+  searchKeywords String[]
+  popularity     Int      @default(0)
+  source         String   @default("generated")
+  confidence     Int?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

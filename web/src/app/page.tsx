@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import NavAuth from './_nav-auth';
-import HeroActions from './_hero-actions';
+import SearchHero from './_search-hero';
 
 const features = [
   {
@@ -64,10 +64,10 @@ const features = [
 ];
 
 const steps = [
-  { n: '01', title: 'Enter vehicle info', text: 'Provide VIN or model + part / OEM number.' },
-  { n: '02', title: 'Guide is generated', text: 'MotixAI normalises the query and builds a structured repair guide.' },
-  { n: '03', title: 'Diagrams rendered', text: 'Engineering-style images are queued and generated per step.' },
-  { n: '04', title: 'Follow inline', text: 'Open guide details and follow steps on web or mobile.' },
+  { n: '01', title: 'Search or ask a question', text: 'Type a vehicle model and repair description — or ask naturally like "bmw e90 oil change".' },
+  { n: '02', title: 'AI searches knowledge base', text: 'MotixAI checks thousands of stored guides before generating anything new.' },
+  { n: '03', title: 'Instant result or new guide', text: 'Get an existing guide in under a second, or AI generates a new one in under 3 seconds.' },
+  { n: '04', title: 'Follow step-by-step', text: 'Open the guide on web or mobile and follow inline with engineering diagrams.' },
 ];
 
 const plans = [
@@ -134,63 +134,7 @@ export default function LandingPage() {
           <div className="hero-bg-orb hero-bg-orb--1" />
           <div className="hero-bg-orb hero-bg-orb--2" />
         </div>
-
-        <div className="hero-content">
-        <div className="hero-inner">
-          <div className="hero-eyebrow">
-            <span className="eyebrow-dot" />
-            AI Repair Intelligence
-          </div>
-
-          <h1 className="hero-h1">
-            Workshop-grade repair guides,
-            <br />
-            <span className="hero-h1-gradient">generated in seconds.</span>
-          </h1>
-
-          <p className="hero-p">
-            Enter a VIN or vehicle model. MotixAI returns structured steps,
-            torque specs, tool lists, safety notes, and inline engineering diagrams —
-            on web and mobile.
-          </p>
-
-          <HeroActions />
-
-          <p className="hero-disclaimer">No credit card required · Free plan available</p>
-        </div>
-
-        {/* ─── HERO PREVIEW CARD ───────────────────────────────── */}
-        <div className="hero-card" aria-hidden="true">
-          <div className="hero-card-topbar">
-            <span className="topbar-dot topbar-dot--red" />
-            <span className="topbar-dot topbar-dot--yellow" />
-            <span className="topbar-dot topbar-dot--green" />
-            <span className="topbar-title">Repair Guide · 2019 Ford F-150 · Oil Change</span>
-          </div>
-          <div className="hero-card-body">
-            {([
-              { done: true,  active: false, n: '✓', title: 'Warm up engine for 2 minutes',      detail: null },
-              { done: true,  active: false, n: '✓', title: 'Position drain pan under oil plug',  detail: null },
-              { done: false, active: true,  n: '3',  title: 'Remove drain plug — 14mm socket',   detail: '25 Nm torque' },
-              { done: false, active: false, n: '4',  title: 'Replace oil filter',                detail: null },
-              { done: false, active: false, n: '5',  title: 'Refill with 5W-30 synthetic',       detail: '5.7 L capacity' },
-            ] as const).map((s) => (
-              <div key={s.n} className={`mock-step${s.done ? ' mock-step--done' : ''}${s.active ? ' mock-step--active' : ''}`}>
-                <div className="mock-step-num">{s.n}</div>
-                <div>
-                  <p className="mock-step-title">{s.title}</p>
-                  {s.detail && <p className="mock-step-detail">{s.detail}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="hero-card-footer">
-            <span className="card-footer-badge">3 / 5 steps complete</span>
-            <span className="card-footer-diag">Diagrams generating…</span>
-          </div>
-        </div>
-
-        </div>{/* end .hero-content */}
+        <SearchHero />
       </section>
 
       {/* ─── LOGOS ───────────────────────────────────────── */}

@@ -22,8 +22,17 @@ export interface GeneratedGuide {
   imagePlan: string[];
 }
 
+export interface ExplainStepInput {
+  stepTitle: string;
+  instruction: string;
+  vehicleModel: string;
+  partName: string;
+  question: string;
+}
+
 export interface AIProvider {
   generateRepairGuide(input: GuideGenerationInput): Promise<GeneratedGuide>;
+  explainStep(input: ExplainStepInput): Promise<string>;
 }
 
 export interface AIImageProvider {

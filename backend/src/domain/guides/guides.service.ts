@@ -23,6 +23,68 @@ export class DomainGuidesService {
       : null;
   }
 
+  async findOrCreate(input: {
+    userId: string;
+    tenantId: string | null;
+    vin?: string;
+    vehicleModel?: string;
+    partName: string;
+    oemNumber?: string;
+    sourceType: 'B2C' | 'ENTERPRISE';
+  }) {
+    const vehicleModel = (input.vehicleModel || input.vin || 'Unknown vehicle').trim();
+    const partNorm = input.partName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+    // Search for an existing guide with a matching vehicle + part
+    const candidates = await this.prisma.repairGuide.findMany({
+      where: {
+        OR: [
+          { inputModel: { contains: vehicleModel, mode: 'insensitive' } },
+          { vehicle: { model: { contains: vehicleModel, mode: 'insensitive' } } },
+        ],
+      },
+      include: { vehicle: true, part: true, steps: true, images: true },
+      orderBy: { popularity: 'desc' },
+      take: 20,
+    });
+
+    for (const g of candidates) {
+      const gPart = g.part.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+      if (gPart.includes(partNorm) || partNorm.includes(gPart)) {
+        // Cache hit — increment popularity and return
+        await this.prisma.repairGuide.update({
+          where: { id: g.id },
+          data: { popularity: { increment: 1 }, source: 'cached' },
+        });
+        return g;
+      }
+    }
+
+    // Not found — generate a new guide and mark it
+    const created = await this.createGuide({ ...input, sourceType: input.sourceType });
+    return this.prisma.repairGuide.update({
+      where: { id: created.id },
+      data: { source: 'generated', confidence: 88 },
+      include: { steps: true, images: true, vehicle: true, part: true },
+    });
+  }
+
+  async askStep(guideId: string, stepId: string, question: string, userId: string, tenantId: string | null) {
+    const guide = await this.getGuide(guideId, userId, tenantId);
+    const step = (guide.steps as Array<{ id: string; title: string; instruction: string }>)
+      .find(s => s.id === stepId);
+    if (!step) throw new NotFoundException('Step not found');
+
+    const answer = await this.gemini.explainStep({
+      stepTitle: step.title,
+      instruction: step.instruction,
+      vehicleModel: guide.vehicle.model,
+      partName: guide.part.name,
+      question,
+    });
+    return { answer };
+  }
+
   async createGuide(input: {
     userId: string;
     tenantId: string | null;

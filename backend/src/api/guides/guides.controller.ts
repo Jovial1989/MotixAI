@@ -16,7 +16,7 @@ export class GuidesController {
   create(@CurrentUser() user: AuthUser, @Body() body: unknown) {
     if (user.role === 'GUEST') throw new ForbiddenException('Create an account to generate guides');
     const parsed = createGuideSchema.parse(body);
-    return this.guides.createGuide({
+    return this.guides.findOrCreate({
       userId: user.sub,
       tenantId: user.tenantId,
       vin: parsed.vin,
@@ -25,6 +25,15 @@ export class GuidesController {
       oemNumber: parsed.oemNumber,
       sourceType: user.role === 'ENTERPRISE_ADMIN' ? 'ENTERPRISE' : 'B2C',
     });
+  }
+
+  @Post(':id/ask')
+  ask(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() body: { stepId: string; question?: string },
+  ) {
+    return this.guides.askStep(id, body.stepId, body.question ?? '', user.sub, user.tenantId);
   }
 
   @Get(':id')

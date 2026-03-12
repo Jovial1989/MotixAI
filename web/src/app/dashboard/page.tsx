@@ -763,12 +763,13 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
 // ── New Guide full-screen view ────────────────────────────────────────────────
 
 function NewGuideView({
-  submitting, guideError, onSubmit, onBack,
+  submitting, guideError, onSubmit, onBack, initialQuery,
 }: {
   submitting: boolean;
   guideError: string | null;
   onSubmit: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) => Promise<void>;
   onBack: () => void;
+  initialQuery?: string;
 }) {
   return (
     <div className="ng-root">
@@ -784,7 +785,7 @@ function NewGuideView({
       </div>
       <div className="ng-body">
         <div className="ng-form-wrap">
-          <SmartGuideForm onSubmit={onSubmit} submitting={submitting} error={guideError} />
+          <SmartGuideForm onSubmit={onSubmit} submitting={submitting} error={guideError} initialQuery={initialQuery} />
         </div>
       </div>
     </div>
@@ -795,6 +796,7 @@ function NewGuideView({
 
 export default function DashboardPage() {
   const [view, setView] = useState<DashView>('guides');
+  const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
   const [guides, setGuides] = useState<RepairGuide[]>([]);
   const [vehicles, setVehicles] = useState<VehicleWithHistory[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -804,6 +806,17 @@ export default function DashboardPage() {
   const [guideError, setGuideError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Handle ?q= URL param — open new guide form with pre-filled query
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) {
+      setInitialQuery(q);
+      setView('new-guide');
+      // Clean the URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Read plan from JWT
   const [userInfo, setUserInfo] = useState({ role: 'USER', email: '' });
@@ -865,7 +878,8 @@ export default function DashboardPage() {
         submitting={submitting}
         guideError={guideError}
         onSubmit={createGuide}
-        onBack={() => { setGuideError(null); setView('guides'); }}
+        onBack={() => { setGuideError(null); setInitialQuery(undefined); setView('guides'); }}
+        initialQuery={initialQuery}
       />
     );
   }

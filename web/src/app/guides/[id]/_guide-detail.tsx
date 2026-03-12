@@ -84,6 +84,70 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
   return null;
 }
 
+/* ── Ask AI panel ────────────────────────────────────────────────────── */
+function AskAiPanel({ step, guideId }: { step: RepairStep; guideId: string }) {
+  const [open, setOpen]         = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer]     = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
+
+  async function ask() {
+    if (loading) return;
+    setLoading(true); setAnswer(null);
+    try {
+      const res = await webApi.askGuideStep(guideId, step.id, question);
+      setAnswer(res.answer);
+    } catch {
+      setAnswer('Could not get an AI explanation at this time.');
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="ask-ai-wrap">
+      {!open ? (
+        <button className="ask-ai-btn" onClick={() => setOpen(true)}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1l1.12 3.44H11L8.44 6.56 9.56 10 6 7.88 2.44 10l1.12-3.44L1 4.44h3.88L6 1z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/>
+          </svg>
+          Ask AI about this step
+        </button>
+      ) : (
+        <div className="ask-ai-panel">
+          <div className="ask-ai-panel-hd">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M6.5 1.5c2.76 0 5 2.01 5 4.5 0 1.56-.85 2.94-2.14 3.76L9 11.5l-1.5-.75A5.4 5.4 0 016.5 11c-2.76 0-5-2.01-5-4.5s2.24-4.5 5-4.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
+              <path d="M6.5 5v1.5M6.5 8.5v.2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+            </svg>
+            Ask AI
+            <button className="ask-ai-close" onClick={() => { setOpen(false); setAnswer(null); setQuestion(''); }}>✕</button>
+          </div>
+          <div className="ask-ai-input-row">
+            <input
+              className="ask-ai-input"
+              placeholder="e.g. What torque should I use here?"
+              value={question}
+              onChange={e => setQuestion(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && ask()}
+              autoFocus
+            />
+            <button className="ask-ai-submit" onClick={ask} disabled={loading}>
+              {loading ? <span className="gen-spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> : 'Ask'}
+            </button>
+          </div>
+          {answer && (
+            <div className="ask-ai-answer">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <path d="M5.5 1l1 3H10L7.5 5.8l1 3L5.5 7.2 3 8.8l1-3L1.5 4h3.5L5.5 1z" fill="currentColor" opacity="0.6"/>
+              </svg>
+              {answer}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Step card ────────────────────────────────────────────────────────── */
 function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
   step: RepairStep; index: number; active: boolean; onActivate: () => void; guideId: string;
@@ -144,6 +208,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
               )}
             </div>
           )}
+          <AskAiPanel step={step} guideId={guideId} />
         </div>
       )}
     </div>
@@ -276,6 +341,14 @@ export default function GuideDetailPage() {
             </div>
             <h2 className="gd-sb-title">{guide.title}</h2>
             <p className="gd-sb-sub">{guide.part.name} · {steps.length} steps</p>
+            <div className="gd-ai-meta">
+              <span className={`ai-source-chip${guide.source === 'cached' ? ' ai-source-chip--cached' : ''}`}>
+                {guide.source === 'cached' ? '📦 Knowledge Base' : '⚡ AI Generated'}
+              </span>
+              {guide.confidence != null && (
+                <span className="ai-confidence">{guide.confidence}% confidence</span>
+              )}
+            </div>
             <div className="gd-prog-track">
               <div className="gd-prog-fill" style={{ width: `${pct}%` }} />
             </div>

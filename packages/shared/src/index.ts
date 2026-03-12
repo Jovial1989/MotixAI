@@ -66,6 +66,10 @@ export interface RepairGuide {
   part: Part;
   steps: RepairStep[];
   images: GeneratedImage[];
+  searchKeywords?: string[];
+  popularity?: number;
+  source?: string;
+  confidence?: number;
 }
 
 export interface RepairJob {

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { AIProvider, GeneratedGuide, GuideGenerationInput } from './ai-provider.interface';
+import { AIProvider, ExplainStepInput, GeneratedGuide, GuideGenerationInput } from './ai-provider.interface';
 
 @Injectable()
 export class GeminiProvider implements AIProvider {
@@ -77,6 +77,28 @@ Generate 8-10 steps. Include torque values where relevant. imagePlan should have
     } catch (err) {
       this.logger.error(`Gemini generation failed: ${err instanceof Error ? err.message : err}`);
       return this.mockGuide(input);
+    }
+  }
+
+  async explainStep(input: ExplainStepInput): Promise<string> {
+    if (!this.client) {
+      return `This step involves: ${input.instruction.split('\n')[0]}. Ensure all safety precautions are followed and use the specified tools for accurate results.`;
+    }
+    try {
+      const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const prompt = `You are an expert automotive and heavy equipment repair technician.
+A technician is following a repair guide for: ${input.vehicleModel} — ${input.partName}
+Current step: "${input.stepTitle}"
+Instruction: ${input.instruction}
+
+${input.question ? `Question: ${input.question}` : 'Explain this step in more detail with practical workshop tips.'}
+
+Provide a clear, concise answer (2-4 sentences) focused on practical workshop guidance.`;
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (err) {
+      this.logger.error(`explainStep failed: ${err instanceof Error ? err.message : err}`);
+      return 'Could not get AI explanation at this time. Please try again.';
     }
   }
 

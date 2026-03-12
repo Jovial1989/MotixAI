@@ -16,6 +16,7 @@ interface Props {
   onSubmit: (data: GuideFormData) => Promise<void>;
   submitting: boolean;
   error: string | null;
+  initialQuery?: string;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ async function decodeVin(vin: string): Promise<NHTSAVinResult | null> {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function SmartGuideForm({ onSubmit, submitting, error }: Props) {
+export default function SmartGuideForm({ onSubmit, submitting, error, initialQuery }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1 — vehicle identification
@@ -83,7 +84,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error }: Props) {
   const [selYear, setSelYear] = useState('');
 
   // Step 2 — repair description
-  const [partName, setPartName] = useState('');
+  const [partName, setPartName] = useState(initialQuery ?? '');
   const [oemNumber, setOemNumber] = useState('');
   const [disambigOptions, setDisambigOptions] = useState<string[] | null>(null);
 

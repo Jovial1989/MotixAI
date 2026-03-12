@@ -114,6 +114,13 @@ export class MotixApiClient {
     return this.request<void>(`/guides/${id}`, { method: 'DELETE' });
   }
 
+  askGuideStep(guideId: string, stepId: string, question: string) {
+    return this.request<{ answer: string }>(`/guides/${guideId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ stepId, question }),
+    });
+  }
+
   // ── Repair Jobs ───────────────────────────────────────────────────────────
 
   createJob(body: CreateJobInput) {
