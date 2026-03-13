@@ -37,10 +37,10 @@ function relativeTime(iso: string): string {
 }
 
 function guideStatusDot(guide: RepairGuide): 'green' | 'yellow' | 'red' {
-  const steps = guide.steps ?? [];
+  const steps = (guide.steps ?? []).filter(Boolean);
   if (steps.length === 0) return 'green';
-  if (steps.some((s) => s.imageStatus === 'failed')) return 'red';
-  if (steps.some((s) => s.imageStatus !== 'ready' && s.imageStatus !== 'none' && s.imageStatus !== 'failed')) return 'yellow';
+  if (steps.some((s) => s?.imageStatus === 'failed')) return 'red';
+  if (steps.some((s) => s?.imageStatus !== 'ready' && s?.imageStatus !== 'none' && s?.imageStatus !== 'failed')) return 'yellow';
   return 'green';
 }
 
