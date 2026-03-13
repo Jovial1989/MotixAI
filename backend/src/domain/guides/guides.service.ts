@@ -5,11 +5,14 @@ import { GeminiProvider } from 'src/ai/gemini.provider';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
 import { SourceAdapterRegistry } from 'src/ai/source-adapters/source-adapter.registry';
 import { TaskType } from 'src/ai/source-adapters/source-package.types';
+import { ProviderRegistry } from 'src/providers/provider-registry';
 
 @Injectable()
 export class DomainGuidesService {
   private readonly imageQueue: Queue | null;
   private readonly sourceRegistry = new SourceAdapterRegistry();
+  // New provider layer — wraps adapters with proper async interface
+  private readonly providerRegistry = new ProviderRegistry();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -24,6 +27,63 @@ export class DomainGuidesService {
           },
         })
       : null;
+  }
+
+  /**
+   * Search stored guides by free-text query and optional structured filters.
+   * This is the first step in the search → retrieve → generate flow.
+   * Results are ordered by popularity so frequently-accessed guides surface first.
+   */
+  async searchGuides(params: { q?: string; make?: string; model?: string; component?: string }) {
+    const term = params.q?.trim() ?? '';
+    const makeFilter = params.make?.trim();
+    const modelFilter = params.model?.trim();
+    const componentFilter = params.component?.trim();
+
+    // Build a combined OR filter across relevant text fields
+    const textClauses = term
+      ? [
+          { title: { contains: term, mode: 'insensitive' as const } },
+          { vehicle: { model: { contains: term, mode: 'insensitive' as const } } },
+          { part: { name: { contains: term, mode: 'insensitive' as const } } },
+          { inputPart: { contains: term, mode: 'insensitive' as const } },
+        ]
+      : [];
+
+    const andClauses: object[] = [];
+    if (makeFilter) {
+      andClauses.push({ vehicle: { model: { contains: makeFilter, mode: 'insensitive' as const } } });
+    }
+    if (modelFilter) {
+      andClauses.push({ vehicle: { model: { contains: modelFilter, mode: 'insensitive' as const } } });
+    }
+    if (componentFilter) {
+      andClauses.push({
+        OR: [
+          { part: { name: { contains: componentFilter, mode: 'insensitive' as const } } },
+          { inputPart: { contains: componentFilter, mode: 'insensitive' as const } },
+        ],
+      });
+    }
+
+    if (!term && andClauses.length === 0) {
+      // No filters — return popular guides as suggestions
+      return this.prisma.repairGuide.findMany({
+        orderBy: { popularity: 'desc' },
+        take: 10,
+        include: { vehicle: true, part: true },
+      });
+    }
+
+    return this.prisma.repairGuide.findMany({
+      where: {
+        ...(textClauses.length > 0 ? { OR: textClauses } : {}),
+        ...(andClauses.length > 0 ? { AND: andClauses } : {}),
+      },
+      include: { vehicle: true, part: true },
+      orderBy: { popularity: 'desc' },
+      take: 15,
+    });
   }
 
   async findOrCreate(input: {
@@ -232,6 +292,30 @@ export class DomainGuidesService {
     component: string;
     taskType: TaskType;
   }) {
+    // Step 1: Search — check if this guide already exists before generating.
+    // This is the core search → retrieve → generate flow.
+    const partNorm = input.component.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+    const existingCandidates = await this.prisma.repairGuide.findMany({
+      where: { inputModel: { contains: `${input.make} ${input.model}`, mode: 'insensitive' } },
+      include: { steps: true, images: true, vehicle: true, part: true },
+      orderBy: { popularity: 'desc' },
+      take: 10,
+    });
+
+    for (const g of existingCandidates) {
+      const gPart = g.inputPart.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+      if (gPart.includes(partNorm) || partNorm.includes(gPart)) {
+        // Cache hit — return existing guide with bumped popularity
+        await this.prisma.repairGuide.update({
+          where: { id: g.id },
+          data: { popularity: { increment: 1 }, source: 'cached' },
+        });
+        return { ...g, source: 'cached' };
+      }
+    }
+
+    // Step 2: Not found — retrieve source package and synthesize.
     const pkg = this.sourceRegistry.getPackage(
       input.make,
       input.model,

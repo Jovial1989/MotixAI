@@ -120,12 +120,7 @@ export default function Sidebar({
                 count={requestCount}
                 onClick={() => nav('requests')}
               />
-              <NavItem
-                icon={<IconManuals />}
-                label="Manuals"
-                active={view === 'manuals'}
-                onClick={() => nav('manuals')}
-              />
+              {/* Manuals upload hidden — not available in this phase */}
               <NavItem
                 icon={<IconAnalytics />}
                 label="Analytics"

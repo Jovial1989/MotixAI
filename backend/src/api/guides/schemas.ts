@@ -11,6 +11,13 @@ export const createGuideSchema = z.object({
   message: 'vin or vehicleModel is required',
 });
 
+export const searchGuidesSchema = z.object({
+  q: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+  make: z.preprocess(emptyToUndefined, z.string().optional()),
+  model: z.preprocess(emptyToUndefined, z.string().optional()),
+  component: z.preprocess(emptyToUndefined, z.string().optional()),
+});
+
 export const createSourceGuideSchema = z.object({
   make: z.string().min(2),
   model: z.string().min(2),

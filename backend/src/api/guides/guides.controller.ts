@@ -1,9 +1,9 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type AuthUser } from 'src/common/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/jwt-auth.guard';
 import { DomainGuidesService } from 'src/domain/guides/guides.service';
-import { createGuideSchema, createSourceGuideSchema } from './schemas';
+import { createGuideSchema, createSourceGuideSchema, searchGuidesSchema } from './schemas';
 
 @ApiTags('guides')
 @ApiBearerAuth()
@@ -49,6 +49,24 @@ export class GuidesController {
     @Body() body: { stepId: string; question?: string },
   ) {
     return this.guides.askStep(id, body.stepId, body.question ?? '', user.sub, user.tenantId);
+  }
+
+  /**
+   * GET /guides/search?q=...&make=...&model=...&component=...
+   *
+   * Public-accessible search across all stored guides. Follows the product's
+   * search → retrieve → generate flow: always search before generating.
+   * GUEST users can call this endpoint (no generation happens here).
+   */
+  @Get('search')
+  search(
+    @Query('q') q: string | undefined,
+    @Query('make') make: string | undefined,
+    @Query('model') model: string | undefined,
+    @Query('component') component: string | undefined,
+  ) {
+    const parsed = searchGuidesSchema.parse({ q, make, model, component });
+    return this.guides.searchGuides(parsed);
   }
 
   @Get(':id')

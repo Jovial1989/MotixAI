@@ -304,22 +304,9 @@ async function decodeVin(vin: string): Promise<NHTSAVinResult | null> {
 export default function SmartGuideForm({ onSubmit, submitting, error, initialQuery }: Props) {
   const [formMode, setFormMode] = useState<'standard' | 'source'>('standard');
 
-  if (formMode === 'source') {
-    return (
-      <div>
-        <div className="sgf-mode-tabs sgf-mode-tabs--top">
-          <button type="button" className="sgf-mode-tab" onClick={() => setFormMode('standard')}>
-            ← AI Generated
-          </button>
-          <button type="button" className="sgf-mode-tab sgf-mode-tab--active">
-            Source-Backed (POC)
-          </button>
-        </div>
-        <SourceGuideForm onSubmit={onSubmit} submitting={submitting} error={error} />
-      </div>
-    );
-  }
-
+  // ALL hooks must be declared at the top level, before any conditional returns.
+  // Putting hooks after an early return violates React's Rules of Hooks and causes
+  // "client-side exception" crashes when formMode changes between renders.
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1 — vehicle identification
@@ -354,6 +341,23 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
   useEffect(() => {
     setDisambigOptions(partName.length >= 2 ? getDisambiguation(partName) : null);
   }, [partName]);
+
+  // Now safe to conditionally return — all hooks have been declared above.
+  if (formMode === 'source') {
+    return (
+      <div>
+        <div className="sgf-mode-tabs sgf-mode-tabs--top">
+          <button type="button" className="sgf-mode-tab" onClick={() => setFormMode('standard')}>
+            ← AI Generated
+          </button>
+          <button type="button" className="sgf-mode-tab sgf-mode-tab--active">
+            Source-Backed (POC)
+          </button>
+        </div>
+        <SourceGuideForm onSubmit={onSubmit} submitting={submitting} error={error} />
+      </div>
+    );
+  }
 
   async function handleVinDecode() {
     const vin = vinInput.trim().toUpperCase();

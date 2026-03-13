@@ -938,7 +938,7 @@ export default function DashboardPage() {
         {view === 'garage' && <GarageView vehicles={vehicles} loading={loading} />}
         {view === 'jobs' && isEnterprise && <JobsView vehicles={vehicles} />}
         {view === 'requests' && isEnterprise && <RequestsView />}
-        {view === 'manuals' && isEnterprise && <ManualsView />}
+        {/* Manuals upload view hidden — manual ingestion not available in this phase */}
         {view === 'settings' && (
           <SettingsView email={email} isEnterprise={isEnterprise} guidesUsed={guidesUsed} guidesLimit={guidesLimit === Infinity ? 9999 : guidesLimit} />
         )}

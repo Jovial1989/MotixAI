@@ -129,6 +129,20 @@ export class MotixApiClient {
     });
   }
 
+  /**
+   * Search stored guides — step 1 of the search → retrieve → generate flow.
+   * Works for all authenticated users including GUEST role.
+   */
+  searchGuides(params: { q?: string; make?: string; model?: string; component?: string }) {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set('q', params.q);
+    if (params.make) qs.set('make', params.make);
+    if (params.model) qs.set('model', params.model);
+    if (params.component) qs.set('component', params.component);
+    const query = qs.toString();
+    return this.request<RepairGuide[]>(`/guides/search${query ? `?${query}` : ''}`);
+  }
+
   // ── Repair Jobs ───────────────────────────────────────────────────────────
 
   createJob(body: CreateJobInput) {
