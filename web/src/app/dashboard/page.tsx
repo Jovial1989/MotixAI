@@ -73,8 +73,8 @@ function GuidesView({
       const q = search.toLowerCase();
       list = list.filter((g) =>
         g.title.toLowerCase().includes(q) ||
-        g.vehicle.model.toLowerCase().includes(q) ||
-        g.part.name.toLowerCase().includes(q)
+        (g.vehicle?.model ?? '').toLowerCase().includes(q) ||
+        (g.part?.name ?? '').toLowerCase().includes(q)
       );
     }
     if (filterDiff) list = list.filter((g) => g.difficulty === filterDiff);
@@ -203,9 +203,9 @@ function GuidesView({
                   </div>
                   <h2 className="guide-card-title">{guide.title}</h2>
                   <p className="guide-card-sub">
-                    {guide.vehicle.model}
+                    {guide.vehicle?.model ?? '—'}
                     <span className="guide-card-dot">·</span>
-                    {guide.part.name}
+                    {guide.part?.name ?? '—'}
                   </p>
                 </Link>
                 <div className="guide-card-actions">
