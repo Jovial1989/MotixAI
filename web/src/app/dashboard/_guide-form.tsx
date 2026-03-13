@@ -67,9 +67,15 @@ function SourceGuideForm({
   const [year, setYear] = useState('');
   const [taskType, setTaskType] = useState<TaskType | ''>('');
   const [component, setComponent] = useState('');
+  const [suppressError, setSuppressError] = useState(false);
 
   const catalog = make ? SOURCE_CATALOG[make] : null;
   const selectedTask = catalog?.tasks.find((t) => t.value === taskType);
+
+  // Clear stale error when the user changes any input
+  useEffect(() => { setSuppressError(true); }, [make, model, year, taskType, component]);
+  // Re-show error when a new error arrives from the parent
+  useEffect(() => { setSuppressError(false); }, [error]);
 
   useEffect(() => {
     if (selectedTask) setComponent(selectedTask.label);
@@ -219,7 +225,7 @@ function SourceGuideForm({
         </div>
       )}
 
-      {error && (
+      {error && !suppressError && (
         <div className="dash-error">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
