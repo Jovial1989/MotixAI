@@ -120,11 +120,14 @@ model RepairGuide {
   inputPart      String
   sourceType     String   @default("B2C")
   status         String   @default("READY")
-  searchKeywords String[]
-  popularity     Int      @default(0)
-  source         String   @default("generated")
-  confidence     Int?
-  createdAt      DateTime @default(now())
+  searchKeywords   String[]
+  popularity       Int      @default(0)
+  source           String   @default("generated")
+  confidence       Int?
+  taskType         String?
+  sourceProvider   String?
+  sourceReferences Json?
+  createdAt        DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   user    User           @relation(fields: [userId], references: [id])

@@ -841,20 +841,28 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  async function createGuide(data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) {
+  async function createGuide(data: {
+    vehicleModel: string;
+    vin?: string;
+    partName: string;
+    oemNumber?: string;
+    sourceInput?: { make: string; model: string; year: number; component: string; taskType: import('@motixai/shared').TaskType };
+  }) {
     setSubmitting(true);
     setGuideError(null);
     try {
-      const created = await webApi.createGuide({
-        vin: data.vin ?? '',
-        vehicleModel: data.vehicleModel,
-        partName: data.partName,
-        oemNumber: data.oemNumber ?? '',
-      });
+      const created = data.sourceInput
+        ? await webApi.createSourceGuide(data.sourceInput)
+        : await webApi.createGuide({
+            vin: data.vin ?? '',
+            vehicleModel: data.vehicleModel,
+            partName: data.partName,
+            oemNumber: data.oemNumber ?? '',
+          });
       setGuides((prev) => [created, ...prev]);
       webApi.listVehicles().then(setVehicles).catch(() => {});
       webApi.getAnalytics().then(setAnalytics).catch(() => {});
-      setView('guides'); // return to guides list after creation
+      setView('guides');
     } catch (err: unknown) {
       setGuideError(err instanceof Error ? err.message : 'Failed to create guide');
       throw err;

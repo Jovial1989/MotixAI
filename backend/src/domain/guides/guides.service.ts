@@ -3,10 +3,13 @@ import { JobType } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { GeminiProvider } from 'src/ai/gemini.provider';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
+import { SourceAdapterRegistry } from 'src/ai/source-adapters/source-adapter.registry';
+import { TaskType } from 'src/ai/source-adapters/source-package.types';
 
 @Injectable()
 export class DomainGuidesService {
   private readonly imageQueue: Queue | null;
+  private readonly sourceRegistry = new SourceAdapterRegistry();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -218,5 +221,94 @@ export class DomainGuidesService {
         images: true,
       },
     });
+  }
+
+  async createFromSource(input: {
+    userId: string;
+    tenantId: string | null;
+    make: string;
+    model: string;
+    year: number;
+    component: string;
+    taskType: TaskType;
+  }) {
+    const pkg = this.sourceRegistry.getPackage(
+      input.make,
+      input.model,
+      input.year,
+      input.taskType,
+    );
+
+    if (!pkg) {
+      throw new NotFoundException(
+        `No source data found for ${input.make} ${input.model} — ${input.taskType.replace(/_/g, ' ')}. ` +
+          `Supported: ${this.sourceRegistry.listSupportedMakes().join(', ')}.`,
+      );
+    }
+
+    const generated = await this.gemini.synthesizeFromSource(pkg);
+
+    const vehicleModel = `${input.year} ${input.make} ${input.model}`.trim();
+
+    const vehicle = await this.prisma.vehicle.create({
+      data: {
+        tenantId: input.tenantId,
+        model: vehicleModel,
+        year: input.year,
+      },
+    });
+
+    const part = await this.prisma.part.create({
+      data: {
+        tenantId: input.tenantId,
+        name: pkg.component,
+      },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const guide = await (this.prisma.repairGuide.create as any)({
+      data: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        vehicleId: vehicle.id,
+        partId: part.id,
+        title: generated.title,
+        difficulty: generated.difficulty,
+        timeEstimate: generated.timeEstimate,
+        safetyNotes: generated.safetyNotes,
+        tools: generated.tools,
+        inputModel: vehicleModel,
+        inputPart: pkg.component,
+        sourceType: 'B2C',
+        source: 'source-backed',
+        confidence: 95,
+        taskType: input.taskType,
+        sourceProvider: pkg.sourceProvider,
+        sourceReferences: pkg.sourceReferences as object[],
+        steps: {
+          create: generated.steps.map((step) => ({
+            stepOrder: step.order,
+            title: step.title,
+            instruction: step.instruction,
+            torqueValue: step.torqueValue,
+            warningNote: step.warningNote,
+          })),
+        },
+        images: {
+          create: generated.imagePlan.map((prompt, idx) => ({
+            stepOrder: idx + 1,
+            prompt,
+          })),
+        },
+      },
+      include: {
+        steps: true,
+        images: true,
+        vehicle: true,
+        part: true,
+      },
+    });
+
+    return guide;
   }
 }

@@ -58,6 +58,27 @@ export interface GeneratedImage {
   status: string;
 }
 
+export interface SourceReference {
+  title: string;
+  url: string;
+  excerpt: string;
+}
+
+export type TaskType =
+  | 'oil_change'
+  | 'brake_pad_replacement'
+  | 'brake_fluid_flush'
+  | 'timing_belt'
+  | 'coolant_flush';
+
+export interface SourceGuideInput {
+  make: string;
+  model: string;
+  year: number;
+  component: string;
+  taskType: TaskType;
+}
+
 export interface RepairGuide {
   id: string;
   title: string;
@@ -71,6 +92,11 @@ export interface RepairGuide {
   part: Part;
   steps: RepairStep[];
   images: GeneratedImage[];
+  source?: string | null;
+  confidence?: number | null;
+  taskType?: string | null;
+  sourceProvider?: string | null;
+  sourceReferences?: SourceReference[] | null;
 }
 
 export interface RepairJob {

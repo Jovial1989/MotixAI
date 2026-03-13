@@ -1,5 +1,26 @@
 export type Role = 'USER' | 'ENTERPRISE_ADMIN' | 'GUEST';
 
+export type TaskType =
+  | 'oil_change'
+  | 'brake_pad_replacement'
+  | 'brake_fluid_flush'
+  | 'timing_belt'
+  | 'coolant_flush';
+
+export interface SourceReference {
+  title: string;
+  url: string;
+  excerpt: string;
+}
+
+export interface SourceGuideInput {
+  make: string;
+  model: string;
+  year: number;
+  component: string;
+  taskType: TaskType;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -68,8 +89,11 @@ export interface RepairGuide {
   images: GeneratedImage[];
   searchKeywords?: string[];
   popularity?: number;
-  source?: string;
-  confidence?: number;
+  source?: string | null;
+  confidence?: number | null;
+  taskType?: string | null;
+  sourceProvider?: string | null;
+  sourceReferences?: SourceReference[] | null;
 }
 
 export interface RepairJob {

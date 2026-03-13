@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AIProvider, ExplainStepInput, GeneratedGuide, GuideGenerationInput } from './ai-provider.interface';
+import { SourcePackage } from './source-adapters/source-package.types';
 
 @Injectable()
 export class GeminiProvider implements AIProvider {
@@ -100,6 +101,99 @@ Provide a clear, concise answer (2-4 sentences) focused on practical workshop gu
       this.logger.error(`explainStep failed: ${err instanceof Error ? err.message : err}`);
       return 'Could not get AI explanation at this time. Please try again.';
     }
+  }
+
+  async synthesizeFromSource(pkg: SourcePackage): Promise<GeneratedGuide> {
+    // Build the step-by-step source text to ground Gemini's output
+    const stepsText = pkg.steps
+      .map((s) => {
+        const torque = s.torqueSpec ? `\n  Torque spec: ${s.torqueSpec}` : '';
+        const warn = s.warningNote ? `\n  Warning: ${s.warningNote}` : '';
+        return `Step ${s.order} — ${s.title}:\n  ${s.rawText}${torque}${warn}`;
+      })
+      .join('\n\n');
+
+    const sourceLabel = `${pkg.sourceProvider} (${pkg.make} ${pkg.model} ${pkg.year})`;
+
+    // If Gemini is unavailable fall back to a direct synthesis from the source data
+    if (!this.client) {
+      return this.synthesizeFromSourceMock(pkg);
+    }
+
+    try {
+      const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+      const prompt = `You are a technical editor reviewing a verified repair procedure sourced from ${sourceLabel}.
+Your task is to restructure the provided source text into a clean, beginner-friendly repair guide.
+
+RULES:
+- Do NOT invent steps, torque values, or specifications not present in the source text.
+- Rephrase each source step into a clear, numbered instruction (2–4 sub-steps per step).
+- Preserve all torque specs and warnings exactly as given.
+- instruction format: "1. Action.\\n2. Action.\\n3. Action." (newlines as \\n)
+- Keep the exact number of steps provided in the source.
+- safetyNotes: use the provided safety notes.
+- tools: use the provided tools list.
+
+SOURCE DATA:
+Vehicle: ${pkg.make} ${pkg.model} ${pkg.year}
+Task: ${pkg.taskType.replace(/_/g, ' ')}
+Component: ${pkg.component}
+Difficulty: ${pkg.difficulty}
+Time: ${pkg.timeEstimate}
+Tools: ${pkg.tools.join(', ')}
+Safety notes: ${pkg.safetyNotes.join(' | ')}
+
+SOURCE STEPS:
+${stepsText}
+
+Respond ONLY with valid JSON matching this exact schema:
+{
+  "title": "string",
+  "difficulty": "${pkg.difficulty}",
+  "timeEstimate": "${pkg.timeEstimate}",
+  "tools": ["string"],
+  "safetyNotes": ["string"],
+  "steps": [
+    {
+      "order": 1,
+      "title": "string",
+      "instruction": "string (2–4 numbered lines)",
+      "torqueValue": "string or null",
+      "warningNote": "string or null"
+    }
+  ],
+  "imagePlan": ["string (one brief image description per step)"]
+}`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+      const json = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      return JSON.parse(json) as GeneratedGuide;
+    } catch (err) {
+      this.logger.error(`synthesizeFromSource failed: ${err instanceof Error ? err.message : err}`);
+      return this.synthesizeFromSourceMock(pkg);
+    }
+  }
+
+  private synthesizeFromSourceMock(pkg: SourcePackage): GeneratedGuide {
+    return {
+      title: `${pkg.make} ${pkg.model} — ${pkg.component}`,
+      difficulty: pkg.difficulty,
+      timeEstimate: pkg.timeEstimate,
+      tools: pkg.tools,
+      safetyNotes: pkg.safetyNotes,
+      steps: pkg.steps.map((s) => ({
+        order: s.order,
+        title: s.title,
+        instruction: s.rawText,
+        torqueValue: s.torqueSpec ?? undefined,
+        warningNote: s.warningNote ?? undefined,
+      })),
+      imagePlan: pkg.steps.map(
+        (s) => `Technical diagram: ${pkg.make} ${pkg.model} ${s.title}`,
+      ),
+    };
   }
 
   private mockGuide(input: GuideGenerationInput): GeneratedGuide {

@@ -33,6 +33,7 @@ export interface ExplainStepInput {
 export interface AIProvider {
   generateRepairGuide(input: GuideGenerationInput): Promise<GeneratedGuide>;
   explainStep(input: ExplainStepInput): Promise<string>;
+  synthesizeFromSource(pkg: import('./source-adapters/source-package.types').SourcePackage): Promise<GeneratedGuide>;
 }
 
 export interface AIImageProvider {

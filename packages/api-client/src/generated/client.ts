@@ -11,6 +11,7 @@ import type {
   ManualDocument,
   RepairGuide,
   RepairJob,
+  SourceGuideInput,
   UpdateJobInput,
   UploadManualInput,
   VehicleWithHistory,
@@ -118,6 +119,13 @@ export class MotixApiClient {
     return this.request<{ answer: string }>(`/guides/${guideId}/ask`, {
       method: 'POST',
       body: JSON.stringify({ stepId, question }),
+    });
+  }
+
+  createSourceGuide(body: SourceGuideInput) {
+    return this.request<RepairGuide>('/guides/source-backed', {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
   }
 

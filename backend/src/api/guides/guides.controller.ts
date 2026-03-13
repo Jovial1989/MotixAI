@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type AuthUser } from 'src/common/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/jwt-auth.guard';
 import { DomainGuidesService } from 'src/domain/guides/guides.service';
-import { createGuideSchema } from './schemas';
+import { createGuideSchema, createSourceGuideSchema } from './schemas';
 
 @ApiTags('guides')
 @ApiBearerAuth()
@@ -11,6 +11,21 @@ import { createGuideSchema } from './schemas';
 @Controller('guides')
 export class GuidesController {
   constructor(private readonly guides: DomainGuidesService) {}
+
+  @Post('source-backed')
+  createSourceBacked(@CurrentUser() user: AuthUser, @Body() body: unknown) {
+    if (user.role === 'GUEST') throw new ForbiddenException('Create an account to use source-backed guides');
+    const parsed = createSourceGuideSchema.parse(body);
+    return this.guides.createFromSource({
+      userId: user.sub,
+      tenantId: user.tenantId,
+      make: parsed.make,
+      model: parsed.model,
+      year: parsed.year,
+      component: parsed.component,
+      taskType: parsed.taskType,
+    });
+  }
 
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() body: unknown) {

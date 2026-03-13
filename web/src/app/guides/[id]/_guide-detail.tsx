@@ -342,9 +342,12 @@ export default function GuideDetailPage() {
             <h2 className="gd-sb-title">{guide.title}</h2>
             <p className="gd-sb-sub">{guide.part.name} · {steps.length} steps</p>
             <div className="gd-ai-meta">
-              <span className={`ai-source-chip${guide.source === 'cached' ? ' ai-source-chip--cached' : ''}`}>
-                {guide.source === 'cached' ? '📦 Knowledge Base' : '⚡ AI Generated'}
+              <span className={`ai-source-chip${guide.source === 'cached' ? ' ai-source-chip--cached' : guide.source === 'source-backed' ? ' ai-source-chip--sourced' : ''}`}>
+                {guide.source === 'cached' ? '📦 Knowledge Base' : guide.source === 'source-backed' ? '📄 Source-Backed' : '⚡ AI Generated'}
               </span>
+              {guide.sourceProvider && (
+                <span className="ai-source-chip ai-source-chip--provider">{guide.sourceProvider}</span>
+              )}
               {guide.confidence != null && (
                 <span className="ai-confidence">{guide.confidence}% confidence</span>
               )}
@@ -391,6 +394,21 @@ export default function GuideDetailPage() {
                   {guide.safetyNotes.map((n, i) => <li key={i} className="gd-safety-item">{n}</li>)}
                 </ul>
               )}
+            </div>
+          )}
+
+          {/* Source References */}
+          {guide.sourceReferences && guide.sourceReferences.length > 0 && (
+            <div className="gd-sb-card">
+              <p className="gd-sb-section">SOURCE REFERENCES</p>
+              <div className="gd-sources">
+                {guide.sourceReferences.map((ref, i) => (
+                  <div key={i} className="gd-source-item">
+                    <a href={ref.url} target="_blank" rel="noopener noreferrer" className="gd-source-title">{ref.title}</a>
+                    <p className="gd-source-excerpt">{ref.excerpt}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
