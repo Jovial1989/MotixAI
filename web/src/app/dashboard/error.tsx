@@ -33,6 +33,11 @@ export default function DashboardError({
         </h1>
         <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.6 }}>
           The dashboard encountered an error. This has been logged.
+          {error.message && (
+            <span style={{ display: 'block', marginTop: 8, fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--red)', textAlign: 'left', background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: 6, wordBreak: 'break-all' }}>
+              {error.message}
+            </span>
+          )}
           {error.digest && (
             <span style={{ display: 'block', marginTop: 8, fontFamily: 'monospace', fontSize: '0.78rem' }}>
               Error ID: {error.digest}
