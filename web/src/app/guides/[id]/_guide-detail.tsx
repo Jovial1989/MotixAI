@@ -342,8 +342,8 @@ export default function GuideDetailPage() {
             <h2 className="gd-sb-title">{guide.title}</h2>
             <p className="gd-sb-sub">{guide.part.name} · {steps.length} steps</p>
             <div className="gd-ai-meta">
-              <span className={`ai-source-chip${guide.source === 'cached' ? ' ai-source-chip--cached' : guide.source === 'source-backed' ? ' ai-source-chip--sourced' : ''}`}>
-                {guide.source === 'cached' ? '📦 Knowledge Base' : guide.source === 'source-backed' ? '📄 Source-Backed' : '⚡ AI Generated'}
+              <span className={`ai-source-chip${guide.source === 'cached' ? ' ai-source-chip--cached' : guide.source === 'source-backed' ? ' ai-source-chip--sourced' : guide.source === 'web-fallback' ? ' ai-source-chip--fallback' : ''}`}>
+                {guide.source === 'cached' ? '📦 Knowledge Base' : guide.source === 'source-backed' ? '📄 Source-Backed' : guide.source === 'web-fallback' ? '🌐 Web Synthesis' : '⚡ AI Generated'}
               </span>
               {guide.sourceProvider && (
                 <span className="ai-source-chip ai-source-chip--provider">{guide.sourceProvider}</span>

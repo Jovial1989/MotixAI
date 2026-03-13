@@ -323,16 +323,36 @@ export class DomainGuidesService {
       input.taskType,
     );
 
-    if (!pkg) {
-      throw new NotFoundException(
-        `No source data found for ${input.make} ${input.model} — ${input.taskType.replace(/_/g, ' ')}. ` +
-          `Supported: ${this.sourceRegistry.listSupportedMakes().join(', ')}.`,
-      );
-    }
-
-    const generated = await this.gemini.synthesizeFromSource(pkg);
-
     const vehicleModel = `${input.year} ${input.make} ${input.model}`.trim();
+
+    let generated: Awaited<ReturnType<typeof this.gemini.synthesizeFromSource>>;
+    let sourceProvider: string;
+    let sourceReferences: object[];
+    let sourceTag: string;
+    let confidence: number;
+
+    if (pkg) {
+      generated = await this.gemini.synthesizeFromSource(pkg);
+      sourceProvider = pkg.sourceProvider;
+      sourceReferences = pkg.sourceReferences as object[];
+      sourceTag = 'source-backed';
+      confidence = 95;
+    } else {
+      console.warn(
+        `[GuidesService] No seeded source for ${input.make} ${input.model} (${input.taskType}) — using web fallback synthesis`,
+      );
+      generated = await this.gemini.synthesizeFromWeb(
+        input.make,
+        input.model,
+        input.year,
+        input.component,
+        input.taskType,
+      );
+      sourceProvider = 'AI Web Synthesis';
+      sourceReferences = [];
+      sourceTag = 'web-fallback';
+      confidence = 75;
+    }
 
     const vehicle = await this.prisma.vehicle.create({
       data: {
@@ -345,7 +365,7 @@ export class DomainGuidesService {
     const part = await this.prisma.part.create({
       data: {
         tenantId: input.tenantId,
-        name: pkg.component,
+        name: input.component,
       },
     });
 
@@ -362,13 +382,13 @@ export class DomainGuidesService {
         safetyNotes: generated.safetyNotes,
         tools: generated.tools,
         inputModel: vehicleModel,
-        inputPart: pkg.component,
+        inputPart: input.component,
         sourceType: 'B2C',
-        source: 'source-backed',
-        confidence: 95,
+        source: sourceTag,
+        confidence,
         taskType: input.taskType,
-        sourceProvider: pkg.sourceProvider,
-        sourceReferences: pkg.sourceReferences as object[],
+        sourceProvider,
+        sourceReferences,
         steps: {
           create: generated.steps.map((step) => ({
             stepOrder: step.order,

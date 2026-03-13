@@ -215,7 +215,7 @@ function SourceGuideForm({
             <rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
             <path d="M3 5.5h5M3 3.5h5M3 7.5h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
           </svg>
-          Source: {make === 'Nissan' ? 'NICOclub service manual' : 'ToyoDIY component reference'}
+          Source: {make === 'Nissan' ? 'NICOclub service manual' : make === 'Toyota' ? 'ToyoDIY component reference' : 'Web synthesis (fallback)'}
         </div>
       )}
 

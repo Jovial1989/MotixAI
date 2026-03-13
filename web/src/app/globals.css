@@ -2808,6 +2808,10 @@ input, textarea, select { font-family: inherit; outline: none; }
   background: var(--green-light); border-color: var(--green-border);
   color: var(--green);
 }
+.ai-source-chip--fallback {
+  background: var(--amber-light, #fffbeb); border-color: var(--amber-border, #fde68a);
+  color: var(--amber, #92400e);
+}
 .ai-source-chip--provider {
   background: var(--bg-hover); border-color: var(--border);
   color: var(--text-muted);

@@ -176,6 +176,72 @@ Respond ONLY with valid JSON matching this exact schema:
     }
   }
 
+  async synthesizeFromWeb(
+    make: string,
+    model: string,
+    year: number,
+    component: string,
+    taskType: string,
+  ): Promise<GeneratedGuide> {
+    const vehicleLabel = `${year} ${make} ${model}`;
+    const taskLabel = taskType.replace(/_/g, ' ');
+
+    if (!this.client) {
+      return this.mockGuide({ vehicle: vehicleLabel, part: component });
+    }
+
+    try {
+      const geminiModel = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+      const prompt = `You are an expert automotive and heavy equipment repair technician.
+Generate a detailed, workshop-grade repair guide for:
+- Vehicle: ${vehicleLabel}
+- Task: ${taskLabel}
+- Component: ${component}
+
+Use your general knowledge of this vehicle and task. Be as specific as possible for this make/model/year.
+
+WRITING RULES:
+- title: short action phrase (e.g. "Drain engine oil", "Remove drain plug")
+- instruction: 2–4 numbered sub-steps. Format exactly:
+  "1. First action with specific detail.\\n2. Second action.\\n3. Third action if needed."
+  Each sub-step: one clear imperative action, beginner-friendly, include tool or spec where relevant.
+- warningNote: only if a real safety risk exists. One sentence. Null otherwise.
+- torqueValue: only if a specific torque applies to this vehicle. Format: "120 Nm". Null otherwise.
+- safetyNotes: 2–3 concise pre-job safety checks specific to this vehicle/task.
+- tools: list the specific tools needed for this task on this vehicle.
+
+Respond ONLY with valid JSON matching this exact schema:
+{
+  "title": "string",
+  "difficulty": "Beginner|Intermediate|Advanced|Expert",
+  "timeEstimate": "string (e.g. '45-60 min')",
+  "tools": ["string"],
+  "safetyNotes": ["string"],
+  "steps": [
+    {
+      "order": 1,
+      "title": "string",
+      "instruction": "string (2–4 numbered lines: '1. Action.\\n2. Action.\\n3. Action.')",
+      "torqueValue": "string or null",
+      "warningNote": "string or null"
+    }
+  ],
+  "imagePlan": ["string (image description for each step)"]
+}
+
+Generate 8-10 steps. Include torque values where relevant for this specific vehicle. imagePlan should have one entry per step.`;
+
+      const result = await geminiModel.generateContent(prompt);
+      const text = result.response.text().trim();
+      const json = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      return JSON.parse(json) as GeneratedGuide;
+    } catch (err) {
+      this.logger.error(`synthesizeFromWeb failed: ${err instanceof Error ? err.message : err}`);
+      return this.mockGuide({ vehicle: vehicleLabel, part: component });
+    }
+  }
+
   private synthesizeFromSourceMock(pkg: SourcePackage): GeneratedGuide {
     return {
       title: `${pkg.make} ${pkg.model} — ${pkg.component}`,
