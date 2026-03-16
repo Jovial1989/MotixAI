@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import VehicleSelector from '../_vehicle-selector';
 import type { TaskType } from '@motixai/shared';
 
@@ -67,15 +67,22 @@ function SourceGuideForm({
   const [year, setYear] = useState('');
   const [taskType, setTaskType] = useState<TaskType | ''>('');
   const [component, setComponent] = useState('');
-  const [suppressError, setSuppressError] = useState(false);
+  // Start suppressed; only show errors that arrive AFTER mount (i.e. from this session's submission)
+  const [suppressError, setSuppressError] = useState(true);
+  const prevErrorRef = useRef(error); // captures any stale error present at mount time
 
   const catalog = make ? SOURCE_CATALOG[make] : null;
   const selectedTask = catalog?.tasks.find((t) => t.value === taskType);
 
-  // Clear stale error when the user changes any input
+  // Show error only when the error prop changes to a NEW value after mount
+  useEffect(() => {
+    if (error !== prevErrorRef.current) {
+      prevErrorRef.current = error;
+      setSuppressError(error === null);
+    }
+  }, [error]);
+  // Hide error whenever the user changes any input
   useEffect(() => { setSuppressError(true); }, [make, model, year, taskType, component]);
-  // Re-show error when a new error arrives from the parent
-  useEffect(() => { setSuppressError(false); }, [error]);
 
   useEffect(() => {
     if (selectedTask) setComponent(selectedTask.label);
