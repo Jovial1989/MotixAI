@@ -201,6 +201,129 @@ const SEED: Partial<Record<SeedKey, Omit<SourcePackage, 'make' | 'model' | 'year
     ],
   },
 
+  // ── Toyota Hilux AN120 — brake pad replacement ──────────────────────────────
+  'hilux::brake_pad_replacement': {
+    component: 'Front brake pads',
+    taskType: 'brake_pad_replacement',
+    difficulty: 'Intermediate',
+    timeEstimate: '60-90 min',
+    tools: [
+      '21mm socket (wheel nuts)',
+      '14mm socket (caliper slide pin bolts)',
+      'C-clamp or brake piston press',
+      'Wire brush',
+      'Brake cleaner spray',
+      'Copper grease',
+      'Torque wrench',
+      'Jack and heavy-duty axle stands',
+    ],
+    safetyNotes: [
+      'The Hilux is a heavy utility vehicle — use load-rated axle stands positioned under the chassis rails',
+      'Do not allow the brake hose to bear the weight of the caliper at any time',
+      'Bed in new pads with 5 progressive stops before any emergency braking event',
+    ],
+    sourceProvider: 'ToyoDIY',
+    sourceReferences: [
+      {
+        title: 'Toyota Hilux AN120/AN130 Front Brake Pad Replacement 2015–2023 — ToyoDIY',
+        url: 'https://www.toyodiy.com/hilux-an120-brake-pads',
+        excerpt:
+          'The AN120/AN130 Hilux front caliper uses two 14mm slide pin bolts torqued to 34 Nm. The single piston pushes straight back. Wheel nuts torque to 137 Nm. The Hilux 1GD-FTV and 2GD-FTV share the same brake caliper design on the front axle.',
+      },
+    ],
+    steps: [
+      {
+        order: 1,
+        title: 'Loosen wheel nuts and raise the vehicle',
+        rawText: 'On flat, level ground, loosen the six wheel nuts half a turn while the wheel is still loaded. Jack up the front of the Hilux at the chassis jacking point and support on heavy-duty axle stands under the chassis rails — the Hilux weighs over 2,000 kg. Remove the wheel.',
+        warningNote: 'The Hilux is far heavier than a passenger car — do not use stands rated under 3 tonnes.',
+      },
+      {
+        order: 2,
+        title: 'Inspect pad thickness and remove caliper',
+        rawText: 'Look through the caliper window at the pad friction material — replace if under 3mm. Using a 14mm socket, remove the two slide pin bolts at the rear of the caliper. Slide the caliper off the disc and suspend it from the coil spring or upper control arm with a wire hook. Do not allow it to hang on the brake hose.',
+      },
+      {
+        order: 3,
+        title: 'Remove old pads and clean bracket',
+        rawText: 'Remove the inner and outer pads from the carrier bracket. Spray the abutment surfaces with brake cleaner and scrub with a wire brush until bare metal is clean. Apply a thin smear of copper grease to the abutment lands. Do not contaminate the disc surface or pad friction material.',
+      },
+      {
+        order: 4,
+        title: 'Compress the caliper piston',
+        rawText: 'The Hilux AN120 front piston is a straight push-in type. Use a C-clamp or dedicated brake piston tool to slowly compress the piston fully into the bore. Monitor the brake fluid reservoir — if near the brim, remove excess with a syringe to prevent overflow.',
+        warningNote: 'Brake fluid is corrosive and will damage paint — place a rag around the reservoir.',
+      },
+      {
+        order: 5,
+        title: 'Install new brake pads',
+        rawText: 'Fit the inner pad (with wear indicator clip) against the piston face. Fit the outer pad against the caliper bridge. Attach any anti-squeal shims to the back of each pad if supplied. Confirm both pads slide freely in the bracket without binding.',
+      },
+      {
+        order: 6,
+        title: 'Refit caliper and torque fasteners',
+        rawText: 'Slide the caliper assembly back over the pads and disc. Thread the 14mm slide pin bolts by hand, then torque to 34 Nm. Refit the wheel and thread the six wheel nuts by hand. Lower vehicle and torque to 137 Nm in a star pattern.',
+        torqueSpec: 'Slide pin bolts: 34 Nm | Wheel nuts: 137 Nm',
+      },
+      {
+        order: 7,
+        title: 'Pump pedal and perform bed-in',
+        rawText: 'Before driving, pump the brake pedal 10 times until normal pressure returns. Drive carefully and perform 5 progressive stops from 60 km/h to bed in the new pad material. Allow 1–2 minutes cooling between each stop. Avoid hard braking for the first 300 km.',
+      },
+    ],
+  },
+
+  // ── Toyota Hilux AN120 — brake fluid flush ───────────────────────────────────
+  'hilux::brake_fluid_flush': {
+    component: 'Brake fluid system',
+    taskType: 'brake_fluid_flush',
+    difficulty: 'Intermediate',
+    timeEstimate: '45-60 min',
+    tools: ['10mm ring spanner (bleed nipples)', 'Clear bleed hose and jar', 'DOT 3 brake fluid (1 litre)', 'Syringe for reservoir', 'Helper for pedal pumping'],
+    safetyNotes: [
+      'Toyota Hilux specifies DOT 3 brake fluid — confirm specification before purchasing',
+      'Never allow the master cylinder reservoir to run dry during the bleeding procedure',
+      'Dispose of old brake fluid at a certified recycling facility — do not drain to ground',
+    ],
+    sourceProvider: 'ToyoDIY',
+    sourceReferences: [
+      {
+        title: 'Toyota Hilux AN120/AN130 Brake Fluid Flush 2015–2023 — ToyoDIY',
+        url: 'https://www.toyodiy.com/hilux-brake-fluid-flush',
+        excerpt:
+          'Hilux bleed sequence is rear-right, rear-left, front-right, front-left. All nipples are 10mm. A full flush uses approximately 800ml–1 litre of DOT 3. Toyota specifies brake fluid replacement every 2 years or 40,000 km on the Hilux.',
+      },
+    ],
+    steps: [
+      {
+        order: 1,
+        title: 'Remove old fluid from master cylinder reservoir',
+        rawText: 'Open the bonnet and locate the brake fluid reservoir on the driver side firewall. Using a large syringe, extract as much old fluid as possible. Refill to the MAX mark with fresh DOT 3 brake fluid.',
+      },
+      {
+        order: 2,
+        title: 'Bleed rear-right caliper first',
+        rawText: 'Start at the rear-right caliper — the point furthest from the master cylinder. Locate the 10mm bleed nipple on the caliper. Attach a clear hose to the nipple and submerge the other end in a jar containing a small amount of fresh DOT 3. Ask a helper to pump the pedal 3 times and hold it. Open the nipple a quarter turn — old fluid and air will purge. Close the nipple firmly before the pedal is released. Repeat until only clear fluid flows with no air bubbles.',
+        warningNote: 'Close the nipple BEFORE the pedal is released — releasing with the nipple open draws air back in.',
+      },
+      {
+        order: 3,
+        title: 'Bleed rear-left caliper',
+        rawText: 'Move to the rear-left caliper. Repeat the pump-hold-open-close sequence. Keep the reservoir topped above MIN — do not let it run dry. Continue until clean fluid exits with no bubbles.',
+      },
+      {
+        order: 4,
+        title: 'Bleed front-right caliper',
+        rawText: 'Move to the front-right caliper. Repeat the bleed procedure. Front calipers are closer to the master cylinder and will clear faster than the rears.',
+      },
+      {
+        order: 5,
+        title: 'Bleed front-left and verify brake feel',
+        rawText: 'Complete the sequence at the front-left caliper. Top up the reservoir to MAX and refit the cap securely. Pump the brake pedal firmly 5 times — pedal should feel solid and consistent with no sponginess. A spongy pedal indicates remaining air; repeat the full sequence starting from the rear-right.',
+      },
+    ],
+  },
+
   // ── Toyota Camry — oil change ────────────────────────────────────────────────
   'camry::oil_change': {
     component: 'Engine oil & filter (2AR-FE 2.5)',
@@ -239,6 +362,123 @@ const SEED: Partial<Record<SeedKey, Omit<SourcePackage, 'make' | 'model' | 'year
         title: 'Fill with fresh oil and verify level',
         rawText:
           'Fill with 4.7 litres of 0W-20 fully synthetic. Start engine, check for leaks, verify dipstick at MAX.',
+      },
+    ],
+  },
+
+  // ── Toyota Camry XV50 — brake pad replacement ────────────────────────────────
+  'camry::brake_pad_replacement': {
+    component: 'Front brake pads',
+    taskType: 'brake_pad_replacement',
+    difficulty: 'Beginner',
+    timeEstimate: '60-90 min',
+    tools: [
+      '21mm socket (wheel nuts)',
+      '12mm socket (caliper slide pin bolts)',
+      'C-clamp or brake piston press',
+      'Wire brush',
+      'Brake cleaner spray',
+      'Copper grease',
+      'Torque wrench',
+      'Jack and axle stands',
+    ],
+    safetyNotes: [
+      'Always support the Camry on axle stands — never work under a vehicle on a hydraulic jack alone',
+      'Keep the brake fluid reservoir cap in place while pushing the caliper piston back',
+      'Perform a pedal pump and 5-stop bed-in before relying on brakes at speed',
+    ],
+    sourceProvider: 'ToyoDIY',
+    sourceReferences: [
+      {
+        title: 'Toyota Camry XV50 Front Brake Pad Replacement 2012–2017 — ToyoDIY',
+        url: 'https://www.toyodiy.com/camry-xv50-brake-pads',
+        excerpt:
+          'The XV50 Camry front caliper uses two 12mm slide pin bolts torqued to 32 Nm. The single-piston slides straight back using a C-clamp. Wheel nuts torque to 103 Nm. The XV50 shares a similar caliper design with the E170 Corolla but uses larger 296mm discs.',
+      },
+    ],
+    steps: [
+      {
+        order: 1,
+        title: 'Loosen wheel nuts and raise the vehicle',
+        rawText: 'On level ground, loosen the five wheel nuts half a turn with a 21mm socket while the tyre is still supporting the vehicle. Jack up the front at the designated jacking point and support on axle stands. Remove the wheel.',
+        warningNote: 'Use wheel chocks on the rear tyres before raising the front.',
+      },
+      {
+        order: 2,
+        title: 'Remove caliper slide pin bolts',
+        rawText: 'Locate the two 12mm slide pin bolts at the rear face of the caliper. Remove both. Slide the caliper off the disc and hang it with a wire hook from the spring or suspension — do not allow it to hang from the brake hose.',
+      },
+      {
+        order: 3,
+        title: 'Remove old pads and clean carrier bracket',
+        rawText: 'Pull the old inner and outer pads from the caliper carrier. Spray the four pad abutment surfaces with brake cleaner and scrub with a wire brush. Apply a thin smear of copper grease to the cleaned abutment surfaces. Keep copper grease away from the disc face and pad friction material.',
+      },
+      {
+        order: 4,
+        title: 'Compress caliper piston',
+        rawText: 'The Camry XV50 front caliper piston pushes straight back — no rotation required. Place a C-clamp with the screw on the piston face and the frame against the caliper body rear. Slowly compress the piston into the bore. If the brake fluid reservoir overflows, remove some fluid with a syringe first.',
+      },
+      {
+        order: 5,
+        title: 'Fit new brake pads',
+        rawText: 'Place the new inner pad (with wear indicator) against the piston. Fit the outer pad against the caliper bridge. Attach anti-squeal shims if included. Confirm both pads slide freely without sticking.',
+      },
+      {
+        order: 6,
+        title: 'Refit caliper and torque all fasteners',
+        rawText: 'Slide the caliper back over the pads and disc. Thread the two 12mm slide pin bolts by hand, then torque to 32 Nm. Refit the wheel, start nuts by hand, lower vehicle, then torque to 103 Nm in a star pattern.',
+        torqueSpec: 'Slide pin bolts: 32 Nm | Wheel nuts: 103 Nm',
+      },
+      {
+        order: 7,
+        title: 'Pump pedal and perform bed-in',
+        rawText: 'Pump the brake pedal 10 times until it returns to normal feel and height. Before high-speed driving, perform 5 progressive braking events from 60 km/h to bed in the new pad material. Allow cooling between each stop.',
+      },
+    ],
+  },
+
+  // ── Toyota Camry XV50 — brake fluid flush ────────────────────────────────────
+  'camry::brake_fluid_flush': {
+    component: 'Brake fluid system',
+    taskType: 'brake_fluid_flush',
+    difficulty: 'Beginner',
+    timeEstimate: '45-60 min',
+    tools: ['10mm ring spanner (bleed nipples)', 'Clear bleed hose and jar', 'DOT 3 brake fluid (1 litre)', 'Syringe for reservoir'],
+    safetyNotes: [
+      'Toyota Camry XV50 specifies DOT 3 brake fluid — verify specification before purchasing',
+      'Keep the reservoir above MIN at all times during bleeding',
+      'Brake fluid damages paint — protect the surrounding body panels',
+    ],
+    sourceProvider: 'ToyoDIY',
+    sourceReferences: [
+      {
+        title: 'Toyota Camry XV50 Brake Fluid Flush 2012–2017 — ToyoDIY',
+        url: 'https://www.toyodiy.com/camry-xv50-brake-fluid-flush',
+        excerpt:
+          'Bleed sequence: rear-right, rear-left, front-right, front-left. All four nipples are 10mm. A complete flush uses approximately 500–700ml of DOT 3. Toyota recommends brake fluid replacement every 2 years on the XV50 Camry.',
+      },
+    ],
+    steps: [
+      {
+        order: 1,
+        title: 'Empty old fluid from the master cylinder reservoir',
+        rawText: 'Open the bonnet and locate the brake fluid reservoir on the driver side near the firewall. Using a syringe, extract as much old fluid as possible. Fill to MAX with fresh DOT 3 brake fluid.',
+      },
+      {
+        order: 2,
+        title: 'Bleed rear-right caliper',
+        rawText: 'Start at the rear-right caliper. Attach a clear hose to the 10mm bleed nipple and place the other end into a jar with a little DOT 3. Have a helper pump the pedal 3 times and hold. Open the nipple a quarter turn. Close before helper releases the pedal. Repeat until clean fluid with no bubbles flows. Top up reservoir.',
+        warningNote: 'Close the nipple before releasing the pedal — releasing with nipple open draws air back in.',
+      },
+      {
+        order: 3,
+        title: 'Bleed rear-left, then front-right',
+        rawText: 'Repeat the pump-hold-open-close procedure at rear-left, then front-right. Keep the reservoir topped above MIN throughout. Continue each corner until only clean fluid flows.',
+      },
+      {
+        order: 4,
+        title: 'Bleed front-left and confirm pedal feel',
+        rawText: 'Complete the sequence at the front-left caliper. Top up reservoir to MAX and refit cap. Pump the pedal firmly 5 times — it should feel solid with no sponginess. If spongy, repeat the full four-corner bleed sequence.',
       },
     ],
   },
