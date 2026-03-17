@@ -6,6 +6,13 @@ import { useParams } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 
+// Guard against AI-generated string "null"/"none" values for optional fields
+function isMeaningfulString(v: string | null | undefined): v is string {
+  if (!v) return false;
+  const t = v.trim().toLowerCase();
+  return t !== 'null' && t !== 'none' && t !== 'n/a' && t !== '-' && t.length > 0;
+}
+
 /* ── Image viewer ─────────────────────────────────────────────────────── */
 function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
   const [status, setStatus] = useState(step.imageStatus ?? 'none');
@@ -37,6 +44,8 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [status, step.id, guideId]);
 
+  const illustrationType = url?.startsWith('data:') ? 'ai' : url ? 'fallback' : null;
+
   if (status === 'ready' && url) return (
     <>
       <button className="simg-preview" onClick={() => setFullscreen(true)}>
@@ -47,6 +56,9 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
           Expand
         </span>
       </button>
+      {illustrationType === 'fallback' && (
+        <span className="simg-fallback-badge">Fallback illustration</span>
+      )}
       <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
         e.stopPropagation();
         webApi.generateStepImage(step.id, true).then((r) => {
@@ -192,15 +204,15 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
               return lines.map((line, i) => <span key={i} style={{ display: 'block' }}>{line}</span>);
             })()}
           </div>
-          {(step.torqueValue || step.warningNote) && (
+          {(isMeaningfulString(step.torqueValue) || isMeaningfulString(step.warningNote)) && (
             <div className="sc-specs">
-              {step.warningNote && (
+              {isMeaningfulString(step.warningNote) && (
                 <div className="sc-spec sc-spec--warn">
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1L10.5 10H.5L5.5 1Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 4.5v2M5.5 8v.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
                   {step.warningNote}
                 </div>
               )}
-              {step.torqueValue && (
+              {isMeaningfulString(step.torqueValue) && (
                 <div className="sc-spec sc-spec--ok">
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
                   Torque: {step.torqueValue}

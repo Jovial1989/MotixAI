@@ -48,6 +48,7 @@ export interface RepairStep {
 export interface GenerateImageResponse {
   imageStatus: string;
   imageUrl: string | null;
+  type: 'ai' | 'fallback' | null;
 }
 
 export interface GeneratedImage {

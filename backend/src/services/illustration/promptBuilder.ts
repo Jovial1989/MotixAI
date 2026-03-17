@@ -84,6 +84,10 @@ ABSOLUTE RULES — no exceptions:
 - Directional arrows showing rotation, removal direction, or applied force where relevant`;
 }
 
+// ── Timeouts ─────────────────────────────────────────────────────────────────
+
+const SPEC_TIMEOUT_MS = 10_000;
+
 // ── Prompt builder service ────────────────────────────────────────────────────
 
 export class PromptBuilder {
@@ -136,7 +140,10 @@ Rules:
 
     try {
       const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const result = await model.generateContent(prompt);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`buildDrawingSpec timed out after ${SPEC_TIMEOUT_MS}ms`)), SPEC_TIMEOUT_MS),
+      );
+      const result = await Promise.race([model.generateContent(prompt), timeoutPromise]);
       const text = result.response.text().trim();
       const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       const parsed = JSON.parse(cleaned);

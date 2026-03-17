@@ -2220,6 +2220,12 @@ input, textarea, select { font-family: inherit; outline: none; }
   transition: background var(--t-fast), color var(--t-fast);
 }
 .simg-regen:hover { background: var(--bg-subtle); color: var(--text); }
+.simg-fallback-badge {
+  display: inline-block; margin-top: 4px;
+  padding: 2px 8px; border-radius: var(--r-sm);
+  font-size: 11px; color: var(--text-muted);
+  background: var(--bg-subtle); border: 1px solid var(--border);
+}
 
 /* ── Sidebar card ─────────────────────────────────────────────────── */
 .gd-sb-card {

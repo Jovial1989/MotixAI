@@ -17,8 +17,26 @@ const MAX_CONCURRENT = 1;
 const MIN_REQUEST_INTERVAL_MS = 7_000;
 let lastRequestTime = 0;
 
+// Timeout for a single image generation call
+const IMAGE_TIMEOUT_MS = 5_000;
+// Max time to wait for a free concurrency slot before force-clearing
+const WAIT_SLOT_TIMEOUT_MS = 30_000;
+
+const FAILED_PLACEHOLDER_URL = 'https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed';
+
+function imageType(url: string | null): 'ai' | 'fallback' | null {
+  if (!url) return null;
+  return url.startsWith('data:') ? 'ai' : 'fallback';
+}
+
 async function waitForSlot(): Promise<void> {
+  const deadline = Date.now() + WAIT_SLOT_TIMEOUT_MS;
   while (activeJobs.size >= MAX_CONCURRENT) {
+    if (Date.now() >= deadline) {
+      // Force-release stuck slot so this step isn't blocked forever
+      activeJobs.clear();
+      return;
+    }
     await new Promise<void>((resolve) => setTimeout(resolve, 500));
   }
 }
@@ -49,7 +67,7 @@ export class IllustrationWorker {
   }
 
   // Enqueue a step for illustration generation. Returns immediately with 'queued'.
-  async enqueue(stepId: string, force = false): Promise<{ imageStatus: string; imageUrl: string | null }> {
+  async enqueue(stepId: string, force = false): Promise<{ imageStatus: string; imageUrl: string | null; type: 'ai' | 'fallback' | null }> {
     const step = await this.prisma.repairStep.findUnique({
       where: { id: stepId },
       include: { guide: { include: { vehicle: true, part: true } } },
@@ -58,13 +76,13 @@ export class IllustrationWorker {
 
     // Return cached result when not forced
     if (step.imageStatus === 'ready' && step.imageUrl && !force) {
-      return { imageStatus: 'ready', imageUrl: step.imageUrl };
+      return { imageStatus: 'ready', imageUrl: step.imageUrl, type: imageType(step.imageUrl) };
     }
 
     // Skip if already running any active phase
     const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
     if (activeStatuses.includes(step.imageStatus) && !force) {
-      return { imageStatus: step.imageStatus, imageUrl: step.imageUrl };
+      return { imageStatus: step.imageStatus, imageUrl: step.imageUrl, type: imageType(step.imageUrl) };
     }
 
     // Mark as queued and fire the pipeline
@@ -75,7 +93,7 @@ export class IllustrationWorker {
 
     setTimeout(() => void this.runPipeline(stepId, step as Parameters<typeof this.runPipeline>[1]), 50);
 
-    return { imageStatus: 'queued', imageUrl: null };
+    return { imageStatus: 'queued', imageUrl: null, type: null };
   }
 
   private async runPipeline(
@@ -106,79 +124,93 @@ export class IllustrationWorker {
 
     let lastErr = 'Unknown error';
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      try {
-        if (attempt > 1) {
-          const delay = RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1];
-          this.logger.log(`Retry delay ${delay}ms for step ${stepId} attempt ${attempt}`);
-          await new Promise((r) => setTimeout(r, delay));
-        }
-
-        // ── Phase 1: searching_refs ─────────────────────────────────────────
-        await this.prisma.repairStep.update({
-          where: { id: stepId },
-          data: { imageStatus: 'searching_refs', imageError: null },
-        });
-        this.logger.log(`searching_refs step=${stepId} attempt=${attempt}`);
-
-        // ── Phase 2: analyzing_refs → DrawingSpec ───────────────────────────
-        await this.prisma.repairStep.update({
-          where: { id: stepId },
-          data: { imageStatus: 'analyzing_refs' },
-        });
-        this.logger.log(`analyzing_refs step=${stepId}`);
-
-        const spec = await this.promptBuilder.buildDrawingSpec(ctx);
-        this.logger.log(`spec built step=${stepId} view=${spec.viewType} components=${spec.keyComponents.length}`);
-
-        const imagePrompt = specToImagePrompt(spec);
-        await this.prisma.repairStep.update({
-          where: { id: stepId },
-          data: { imagePrompt },
-        });
-
-        // ── Phase 3: generating ─────────────────────────────────────────────
-        await waitForSlot();
-        activeJobs.add(stepId);
-
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
-          await rateLimit();
+          if (attempt > 1) {
+            const delay = RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1];
+            this.logger.log(`Retry delay ${delay}ms for step ${stepId} attempt ${attempt}`);
+            await new Promise((r) => setTimeout(r, delay));
+          }
+
+          // ── Phase 1: searching_refs ───────────────────────────────────────
           await this.prisma.repairStep.update({
             where: { id: stepId },
-            data: { imageStatus: 'generating' },
+            data: { imageStatus: 'searching_refs', imageError: null },
           });
-          this.logger.log(`generating step=${stepId}`);
+          this.logger.log(`searching_refs step=${stepId} attempt=${attempt}`);
 
-          const imageUrl = await this.generateImage(imagePrompt);
-
+          // ── Phase 2: analyzing_refs → DrawingSpec ─────────────────────────
           await this.prisma.repairStep.update({
             where: { id: stepId },
-            data: { imageStatus: 'ready', imageUrl, imageError: null },
+            data: { imageStatus: 'analyzing_refs' },
           });
-          this.logger.log(`ready step=${stepId}`);
-          return; // success
+          this.logger.log(`analyzing_refs step=${stepId}`);
 
-        } finally {
+          const spec = await this.promptBuilder.buildDrawingSpec(ctx);
+          this.logger.log(`spec built step=${stepId} view=${spec.viewType} components=${spec.keyComponents.length}`);
+
+          const imagePrompt = specToImagePrompt(spec);
+          await this.prisma.repairStep.update({
+            where: { id: stepId },
+            data: { imagePrompt },
+          });
+
+          // ── Phase 3: generating ───────────────────────────────────────────
+          await waitForSlot();
+          activeJobs.add(stepId);
+
+          try {
+            await rateLimit();
+            await this.prisma.repairStep.update({
+              where: { id: stepId },
+              data: { imageStatus: 'generating' },
+            });
+            this.logger.log(`generating step=${stepId}`);
+
+            const imageUrl = await this.generateImage(imagePrompt);
+
+            await this.prisma.repairStep.update({
+              where: { id: stepId },
+              data: { imageStatus: 'ready', imageUrl, imageError: null },
+            });
+            this.logger.log(`ready step=${stepId}`);
+            return; // success
+
+          } finally {
+            activeJobs.delete(stepId);
+          }
+
+        } catch (err) {
+          lastErr = err instanceof Error ? err.message : String(err);
+          this.logger.error(`attempt ${attempt} failed step=${stepId}: ${lastErr}`);
           activeJobs.delete(stepId);
         }
+      }
 
-      } catch (err) {
-        lastErr = err instanceof Error ? err.message : String(err);
-        this.logger.error(`attempt ${attempt} failed step=${stepId}: ${lastErr}`);
-        activeJobs.delete(stepId);
+      // All retries exhausted — mark as failed with fallback placeholder
+      await this.prisma.repairStep.update({
+        where: { id: stepId },
+        data: { imageStatus: 'failed', imageError: lastErr, imageUrl: FAILED_PLACEHOLDER_URL },
+      });
+      this.logger.error(`all attempts failed step=${stepId}`);
+
+    } catch (fatal) {
+      // Safety net: unexpected error outside the retry loop (e.g. Prisma failure on the final update)
+      this.logger.error(`runPipeline fatal error step=${stepId}: ${fatal}`);
+      try {
+        await this.prisma.repairStep.update({
+          where: { id: stepId },
+          data: {
+            imageStatus: 'failed',
+            imageError: fatal instanceof Error ? fatal.message : 'Fatal pipeline error',
+            imageUrl: FAILED_PLACEHOLDER_URL,
+          },
+        });
+      } catch (e) {
+        this.logger.error(`Could not persist failed status for step=${stepId}: ${e}`);
       }
     }
-
-    // All attempts exhausted
-    await this.prisma.repairStep.update({
-      where: { id: stepId },
-      data: {
-        imageStatus: 'failed',
-        imageError: lastErr,
-        imageUrl: 'https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed',
-      },
-    });
-    this.logger.error(`all attempts failed step=${stepId}`);
   }
 
   private async generateImage(prompt: string): Promise<string> {
@@ -191,10 +223,20 @@ export class IllustrationWorker {
       model: 'gemini-2.0-flash-exp-image-generation',
     });
 
-    const result = await (model.generateContent as Function)({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
-    });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Image generation timed out after ${IMAGE_TIMEOUT_MS}ms`)),
+        IMAGE_TIMEOUT_MS,
+      ),
+    );
+
+    const result = await Promise.race([
+      (model.generateContent as Function)({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+      }),
+      timeoutPromise,
+    ]);
 
     const candidates: unknown[] = (result.response.candidates as unknown[]) ?? [];
     for (const candidate of candidates) {
