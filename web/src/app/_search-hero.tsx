@@ -150,7 +150,7 @@ export default function SearchHero() {
 
               {/* Technical schematic diagram */}
               <div className="sh-man-diagram">
-                <svg viewBox="0 0 280 158" width="100%" height="100%">
+                <svg viewBox="0 0 280 158" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style={{display:'block'}}>
                   <defs>
                     <pattern id="mgrid" width="14" height="14" patternUnits="userSpaceOnUse">
                       <path d="M 14 0 L 0 0 0 14" fill="none" stroke="#e2e8f0" strokeWidth="0.5"/>
