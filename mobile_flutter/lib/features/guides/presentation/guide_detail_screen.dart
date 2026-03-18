@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import '../guides_provider.dart';
+import '../../../shared/api/providers.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/mx_widgets.dart';
 import '../../../app/theme.dart';
@@ -38,7 +41,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
       );
     }
 
-    if (state.isLoading && state.guide == null) {
+    if (state.guide == null) {
       return Scaffold(
         backgroundColor: kBg,
         body: const Center(child: CircularProgressIndicator(color: kPrimary)),
@@ -134,6 +137,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
                     if (currentStep != null)
                       _StepCard(
                         step: currentStep,
+                        guideId: widget.guideId,
                         onRetry: () => ref
                             .read(guideDetailProvider(widget.guideId).notifier)
                             .retryStepImage(currentStep.id),
@@ -251,6 +255,14 @@ class _GuideHeader extends StatelessWidget {
             child: Text(guide.title, style: tsStepTitle,
               maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
+          // Source badge
+          if (guide.source != null) ...[
+            const SizedBox(height: s4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: s16),
+              child: _SourceBadge(guide: guide),
+            ),
+          ],
           const SizedBox(height: s10),
           // Progress bar
           LinearProgressIndicator(
@@ -269,8 +281,9 @@ class _GuideHeader extends StatelessWidget {
 
 class _StepCard extends StatefulWidget {
   final RepairStep step;
+  final String guideId;
   final VoidCallback onRetry;
-  const _StepCard({required this.step, required this.onRetry});
+  const _StepCard({required this.step, required this.guideId, required this.onRetry});
 
   @override
   State<_StepCard> createState() => _StepCardState();
@@ -368,6 +381,10 @@ class _StepCardState extends State<_StepCard> {
                     ],
                   ],
                 ],
+
+                // Ask AI
+                const SizedBox(height: s16),
+                _AskAiWidget(guideId: widget.guideId, step: step),
               ],
             ),
           ),
@@ -465,8 +482,8 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
           children: [
             ClipRRect(
               borderRadius: kRadiusMd,
-              child: Image.network(
-                step.imageUrl!,
+              child: Image(
+                image: _resolveImage(step.imageUrl!),
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
@@ -551,6 +568,19 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
   );
 }
 
+/// Resolves a URL that may be either an HTTPS URL or a base64 data URI.
+/// Flutter's NetworkImage cannot handle data: URIs, so we decode them to MemoryImage.
+ImageProvider _resolveImage(String url) {
+  if (url.startsWith('data:')) {
+    final commaIndex = url.indexOf(',');
+    if (commaIndex != -1) {
+      final data = url.substring(commaIndex + 1);
+      try { return MemoryImage(base64Decode(data)); } catch (_) {}
+    }
+  }
+  return NetworkImage(url);
+}
+
 class _FullscreenImage extends StatelessWidget {
   final String imageUrl;
   const _FullscreenImage({required this.imageUrl});
@@ -562,7 +592,7 @@ class _FullscreenImage extends StatelessWidget {
       backgroundColor: Colors.black,
       iconTheme: const IconThemeData(color: Colors.white),
     ),
-    body: PhotoView(imageProvider: NetworkImage(imageUrl)),
+    body: PhotoView(imageProvider: _resolveImage(imageUrl)),
   );
 }
 
@@ -675,6 +705,228 @@ class _StepInstruction extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+// ── Source badge ───────────────────────────────────────────────────────────────
+
+class _SourceBadge extends StatelessWidget {
+  final RepairGuide guide;
+  const _SourceBadge({required this.guide});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSourceBacked = guide.source == 'source-backed';
+    final isWebFallback  = guide.source == 'web-fallback';
+
+    final Color bg     = isSourceBacked ? const Color(0xFFF0FDF4)
+                       : isWebFallback  ? const Color(0xFFFFFBEB)
+                       : kPrimaryLight;
+    final Color border = isSourceBacked ? const Color(0xFF86EFAC)
+                       : isWebFallback  ? const Color(0xFFFCD34D)
+                       : kPrimaryBorder;
+    final Color text   = isSourceBacked ? const Color(0xFF16A34A)
+                       : isWebFallback  ? const Color(0xFFB45309)
+                       : kPrimaryDark;
+    final String label = isSourceBacked
+        ? '📄 ${guide.sourceProvider ?? "Source"}'
+        : isWebFallback
+            ? '🌐 Web Synthesis'
+            : '⚡ AI Generated';
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: s8, vertical: s4),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: kRadiusFull,
+            border: Border.all(color: border),
+          ),
+          child: Text(label, style: tsCaption.copyWith(color: text, fontWeight: FontWeight.w600)),
+        ),
+        if (guide.confidence != null) ...[
+          const SizedBox(width: s8),
+          Text('${guide.confidence}% confidence',
+            style: tsCaption.copyWith(color: kTextMuted, fontWeight: FontWeight.w500)),
+        ],
+      ],
+    );
+  }
+}
+
+// ── Ask AI widget ──────────────────────────────────────────────────────────────
+
+class _AskAiWidget extends ConsumerStatefulWidget {
+  final String guideId;
+  final RepairStep step;
+  const _AskAiWidget({required this.guideId, required this.step});
+
+  @override
+  ConsumerState<_AskAiWidget> createState() => _AskAiWidgetState();
+}
+
+class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
+  final _ctrl = TextEditingController();
+  bool _loading = false;
+  String? _answer;
+  String? _error;
+  bool _expanded = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final q = _ctrl.text.trim();
+    if (q.isEmpty) return;
+    setState(() { _loading = true; _error = null; _answer = null; });
+    try {
+      final api = ref.read(apiClientProvider);
+      final answer = await api.askGuideStep(widget.guideId, widget.step.id, q);
+      if (mounted) setState(() { _answer = answer; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: kBgSubtle,
+        borderRadius: kRadiusMd,
+        border: Border.all(color: kBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header toggle
+          GestureDetector(
+            onTap: () => setState(() { _expanded = !_expanded; }),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: s12, vertical: s10),
+              child: Row(
+                children: [
+                  const Text('🤖', style: TextStyle(fontSize: 14)),
+                  const SizedBox(width: s8),
+                  Text('Ask AI about this step', style: tsSmallBold.copyWith(color: kPrimary)),
+                  const Spacer(),
+                  Icon(_expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    size: 18, color: kPrimary),
+                ],
+              ),
+            ),
+          ),
+
+          if (_expanded) ...[
+            Divider(height: 1, color: kBorder),
+            Padding(
+              padding: const EdgeInsets.all(s12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Input row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _ctrl,
+                          minLines: 1,
+                          maxLines: 3,
+                          style: tsBodyMd,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _submit(),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. What torque for this bolt?',
+                            hintStyle: tsCaption.copyWith(color: kTextMuted),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: s12, vertical: s10),
+                            border: OutlineInputBorder(
+                              borderRadius: kRadiusMd,
+                              borderSide: BorderSide(color: kBorder),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: kRadiusMd,
+                              borderSide: BorderSide(color: kBorder),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: kRadiusMd,
+                              borderSide: BorderSide(color: kPrimary, width: 1.5),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: s8),
+                      SizedBox(
+                        width: 44, height: 44,
+                        child: FilledButton(
+                          onPressed: _loading ? null : _submit,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: kPrimary,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: kRadiusMd),
+                          ),
+                          child: _loading
+                              ? const SizedBox(width: 18, height: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.send, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Answer
+                  if (_answer != null) ...[
+                    const SizedBox(height: s10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(s12),
+                      decoration: BoxDecoration(
+                        color: kPrimaryLight,
+                        borderRadius: kRadiusMd,
+                        border: Border.all(color: kPrimaryBorder),
+                      ),
+                      child: Text(_answer!, style: tsBodyMd),
+                    ),
+                  ],
+
+                  // Error
+                  if (_error != null) ...[
+                    const SizedBox(height: s10),
+                    GestureDetector(
+                      onTap: _submit,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(s12),
+                        decoration: BoxDecoration(
+                          color: kErrorLight,
+                          borderRadius: kRadiusMd,
+                          border: Border.all(color: const Color(0xFFFCA5A5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('⟳', style: TextStyle(fontSize: 16, color: Color(0xFFDC2626))),
+                            const SizedBox(width: s8),
+                            Expanded(
+                              child: Text(_error!, style: tsCaption.copyWith(color: const Color(0xFFDC2626))),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
