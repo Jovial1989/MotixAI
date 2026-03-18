@@ -2695,66 +2695,106 @@ input, textarea, select { font-family: inherit; outline: none; }
   gap: 48px; width: 100%;
 }
 
-/* Left: text + search */
+/* Left: copy + search */
 .sh-left {
   display: flex; flex-direction: column; align-items: center;
   gap: 24px; text-align: center; width: 100%;
 }
 
-/* Right: phone mockup */
+/* Right: phones container */
 .sh-right {
   display: flex; justify-content: center; align-items: center;
-  width: 100%;
+  flex-shrink: 0;
 }
 
-/* Phone scene wrapper */
-.sh-phone-scene {
+/* ── Dual-phone stage ──────────────────────────────────────────────────
+   Mirrors the .mobile-phones container so .phone--back / .phone--front
+   absolute positioning works correctly without any !important overrides.
+ ─────────────────────────────────────────────────────────────────────── */
+.sh-duo {
   position: relative;
-  display: flex; justify-content: center; align-items: flex-end;
-}
-
-/* Override .phone positioning for hero context */
-.sh-phone {
-  position: relative !important;
-  bottom: auto !important; right: auto !important; left: auto !important;
-  height: 480px;
-  transform: rotate(3deg) !important;
-  animation: sh-float 5s ease-in-out infinite;
-  filter: none !important;
+  width: 340px;
+  height: 540px;
+  /* Subtle float for the whole composition */
+  animation: sh-float 6s ease-in-out infinite;
 }
 @keyframes sh-float {
-  0%, 100% { transform: rotate(3deg) translateY(0px); }
-  50%       { transform: rotate(3deg) translateY(-14px); }
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
 }
-@media (prefers-reduced-motion: reduce) { .sh-phone { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .sh-duo { animation: none; } }
 
-/* Warm glow beneath the phone */
-.sh-phone-glow {
-  position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
-  width: 200px; height: 100px;
-  background: radial-gradient(ellipse, rgba(234,88,12,0.22) 0%, transparent 70%);
-  filter: blur(20px);
-  pointer-events: none; z-index: -1;
+/* Warm radial glow that sits behind both phones */
+.sh-duo-glow {
+  position: absolute;
+  bottom: -20px; left: 50%; transform: translateX(-50%);
+  width: 320px; height: 180px;
+  background: radial-gradient(ellipse at center,
+    rgba(234,88,12,0.28) 0%,
+    rgba(234,88,12,0.10) 45%,
+    transparent 75%);
+  filter: blur(24px);
+  pointer-events: none; z-index: 0;
 }
 
-/* Desktop: side-by-side */
+/* ── Floating stat badges around the phones ── */
+.sh-badge {
+  position: absolute; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(234,88,12,0.18);
+  border-radius: 12px;
+  padding: 8px 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(234,88,12,0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+.sh-badge-val {
+  font-size: 0.82rem; font-weight: 800; color: var(--p);
+  letter-spacing: -0.02em;
+}
+.sh-badge-lbl {
+  font-size: 0.65rem; font-weight: 500; color: var(--text-muted);
+}
+
+/* Badge positions */
+.sh-badge--tl { top: 48px;  left: -20px;  animation: sh-badge-bob 4.5s 0.0s ease-in-out infinite; }
+.sh-badge--tr { top: 20px;  right: -16px; animation: sh-badge-bob 4.5s 1.2s ease-in-out infinite; }
+.sh-badge--bl { bottom: 80px; left: -24px; animation: sh-badge-bob 4.5s 2.4s ease-in-out infinite; }
+
+@keyframes sh-badge-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sh-badge--tl, .sh-badge--tr, .sh-badge--bl { animation: none; }
+}
+
+/* ── Desktop: two-column side-by-side ── */
 @media (min-width: 960px) {
   .sh-cols {
     flex-direction: row; align-items: center;
-    gap: 72px;
+    gap: 64px;
   }
   .sh-left {
     flex: 1; align-items: flex-start; text-align: left;
   }
-  .sh-right {
-    flex-shrink: 0;
-    justify-content: flex-end;
-  }
-  .sh-chips { justify-content: flex-start; }
+  .sh-chips  { justify-content: flex-start; }
   .sh-recent { justify-content: flex-start; }
 }
 
-/* Legacy — kept for old markup compatibility */
+/* ── Mobile: hide phones, keep badges out of the way ── */
+@media (max-width: 959px) {
+  .sh-duo { width: 300px; height: 480px; }
+  .sh-badge--tl { left: -10px; }
+  .sh-badge--bl { left: -10px; }
+}
+@media (max-width: 600px) {
+  .sh-right { display: none; } /* phones hidden on small mobile, keep search primary */
+}
+
+/* Legacy — kept for any old markup */
 .sh-hero {
   display: flex; flex-direction: column; align-items: center;
   gap: 24px; text-align: center; width: 100%;
