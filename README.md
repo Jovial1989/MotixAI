@@ -63,10 +63,13 @@ cd web
 NEXT_PUBLIC_API_URL=http://localhost:4000 yarn dev
 ```
 
-Mobile (Expo latest SDK):
+Mobile (Flutter — primary):
 ```bash
-yarn dev:mobile
-# press i for iOS simulator / a for Android emulator
+cd mobile_flutter
+flutter pub get
+flutter run                  # pick device interactively
+flutter run -d ios           # iOS Simulator
+flutter run -d android       # Android Emulator
 ```
 
 ## Build
@@ -81,25 +84,25 @@ yarn build
 docker compose up --build
 ```
 
-## Mobile Build
+## Mobile Build (Flutter)
 
-1. Install EAS CLI:
 ```bash
-npm i -g eas-cli
+cd mobile_flutter
+flutter build ipa            # iOS
+flutter build apk            # Android
 ```
 
-2. Login and configure project:
-```bash
-cd mobile
-eas login
-eas build:configure
-```
+## Mobile Legacy (React Native / Expo — deprecated)
 
-3. Build development client:
+The legacy Expo app lives in `mobile_rn_legacy/` and is **not maintained**.
+See `mobile_rn_legacy/DEPRECATED.md` for details.
+
+To run locally for reference only:
 ```bash
-eas build --profile development --platform ios
-# or
-eas build --profile development --platform android
+cd mobile_rn_legacy
+npm install
+npx expo start               # Expo Go / emulator
+npx expo start --tunnel      # if network issues
 ```
 
 ## Video Generation Extension Point

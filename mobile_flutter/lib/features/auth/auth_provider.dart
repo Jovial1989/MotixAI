@@ -15,13 +15,18 @@ class AuthState {
   const AuthState({this.tokens, this.isLoading = false, this.error});
 
   bool get isAuthenticated => tokens != null;
+
+  /// Whether the user has completed onboarding. Guests always skip onboarding.
+  bool get hasCompletedOnboarding =>
+      tokens?.user.hasCompletedOnboarding ?? false;
+
   AuthState copyWith({AuthTokens? tokens, bool? isLoading, String? error, bool clearError = false}) =>
       AuthState(
         tokens: tokens ?? this.tokens,
         isLoading: isLoading ?? this.isLoading,
         error: clearError ? null : (error ?? this.error),
       );
-  AuthState withLoading()    => copyWith(isLoading: true, clearError: true);
+  AuthState withLoading()       => copyWith(isLoading: true, clearError: true);
   AuthState withError(String e) => copyWith(isLoading: false, error: e);
 }
 
@@ -34,26 +39,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._api, this._tokens, this._cache) : super(const AuthState());
 
-  /// Called on app boot — loads persisted tokens.
+  /// Called on app boot — loads persisted tokens and onboarding status.
   Future<AuthBootResult> bootstrap() async {
     final access  = await _tokens.accessToken();
     final refresh = await _tokens.refreshToken();
     if (access == null) return AuthBootResult.noSession;
 
-    // Optimistically assume valid; on 401 the Dio interceptor will refresh.
-    // We decode the email/role from the JWT claims for display purposes only.
     try {
       final claims = _decodeJwt(access);
+      final onboardingDone = await _tokens.hasCompletedOnboarding();
       final user = AuthUser(
         id: claims['sub'] as String? ?? '',
         email: claims['email'] as String? ?? '',
         role: claims['role'] as String? ?? 'USER',
         tenantId: claims['tenantId'] as String?,
+        hasCompletedOnboarding: onboardingDone,
       );
       state = AuthState(tokens: AuthTokens(
         accessToken: access, refreshToken: refresh, user: user,
       ));
-      return AuthBootResult.hasSession;
+      return onboardingDone
+          ? AuthBootResult.hasSession
+          : AuthBootResult.needsOnboarding;
     } catch (_) {
       return AuthBootResult.noSession;
     }
@@ -64,6 +71,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final tokens = await _api.login(email, password);
       await _tokens.save(tokens.accessToken, tokens.refreshToken);
+      await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
       state = AuthState(tokens: tokens);
     } catch (e) {
       state = state.withError(e.toString());
@@ -75,6 +83,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final tokens = await _api.signup(email, password);
       await _tokens.save(tokens.accessToken, tokens.refreshToken);
+      await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
       state = AuthState(tokens: tokens);
     } catch (e) {
       state = state.withError(e.toString());
@@ -87,6 +96,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
   }
 
+  /// Called after onboarding is completed — flips the in-memory flag so the
+  /// router immediately navigates to /dashboard without needing a full restart.
+  void markOnboardingComplete() {
+    final current = state.tokens;
+    if (current == null) return;
+    final updatedUser = AuthUser(
+      id: current.user.id,
+      email: current.user.email,
+      role: current.user.role,
+      tenantId: current.user.tenantId,
+      hasCompletedOnboarding: true,
+      planType: current.user.planType,
+      trialEndsAt: current.user.trialEndsAt,
+      subscriptionStatus: current.user.subscriptionStatus,
+    );
+    state = state.copyWith(
+      tokens: AuthTokens(
+        accessToken: current.accessToken,
+        refreshToken: current.refreshToken,
+        user: updatedUser,
+      ),
+    );
+  }
+
   void clearError() => state = state.copyWith(clearError: true);
 
   // ── JWT decode (payload only, no verification) ────────────────────────────
@@ -97,14 +130,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     payload = payload.replaceAll('-', '+').replaceAll('_', '/');
     final pad = payload.length % 4;
     if (pad != 0) payload = payload.padRight(payload.length + (4 - pad), '=');
-    // Dart's base64 decoder
-    final decoded = String.fromCharCodes(
-        base64DecodeBytes(payload));
+    final decoded = String.fromCharCodes(base64DecodeBytes(payload));
     return (decoded.isNotEmpty) ? _jsonDecode(decoded) : {};
   }
 
   List<int> base64DecodeBytes(String s) {
-    // Use dart:convert via the codec
     final bytes = <int>[];
     for (var i = 0; i < s.length; i += 4) {
       final chunk = s.substring(i, i + 4 > s.length ? s.length : i + 4);
@@ -134,8 +164,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Map<String, dynamic> _jsonDecode(String s) {
     try {
-      // Simple JSON parse using dart:core
-      // We only need top-level string/null values
       final result = <String, dynamic>{};
       final cleaned = s.trim().replaceFirst('{', '').replaceAll(RegExp(r'\}$'), '');
       final pairs = _splitJsonPairs(cleaned);
@@ -179,7 +207,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-enum AuthBootResult { hasSession, noSession }
+enum AuthBootResult { hasSession, noSession, needsOnboarding }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 

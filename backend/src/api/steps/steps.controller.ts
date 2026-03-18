@@ -13,8 +13,8 @@ export class StepsController {
   @Post(':stepId/generate-image')
   generateImage(
     @Param('stepId') stepId: string,
-    @Body() body: { force?: boolean },
+    @Body() body: unknown,
   ) {
-    return this.steps.generateStepImage(stepId, body?.force ?? false);
+    return this.steps.generateStepImage(stepId, (body as { force?: boolean })?.force ?? false);
   }
 }

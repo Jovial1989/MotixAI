@@ -9,8 +9,10 @@ import type {
   GenerateImageResponse,
   GuideRequest,
   ManualDocument,
+  PlanType,
   RepairGuide,
   RepairJob,
+  SelectPlanResponse,
   SourceGuideInput,
   UpdateJobInput,
   UploadManualInput,
@@ -86,6 +88,19 @@ export class MotixApiClient {
       method: 'POST',
       body: JSON.stringify({ resetToken, newPassword }),
     });
+  }
+
+  // ── User / Onboarding ─────────────────────────────────────────────────────
+
+  selectPlan(planType: PlanType) {
+    return this.request<SelectPlanResponse>('/user/select-plan', {
+      method: 'POST',
+      body: JSON.stringify({ planType }),
+    });
+  }
+
+  completeOnboarding() {
+    return this.request<{ success: boolean }>('/user/onboarding-complete', { method: 'POST' });
   }
 
   // ── Steps ─────────────────────────────────────────────────────────────────

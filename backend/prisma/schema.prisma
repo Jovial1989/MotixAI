@@ -16,6 +16,18 @@ enum JobType {
   GUIDE_IMAGE_GENERATION
 }
 
+enum PlanType {
+  free
+  trial
+  premium
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  none
+}
+
 enum JobStatus {
   PENDING
   RUNNING
@@ -55,15 +67,19 @@ enum GuideDifficulty {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id               String   @id @default(cuid())
-  email            String   @unique
+  id               String             @id @default(cuid())
+  email            String             @unique
   passwordHash     String
   fullName         String
-  role             Role     @default(USER)
+  role             Role               @default(USER)
   refreshTokenHash String?
   tenantId         String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  hasCompletedOnboarding Boolean      @default(false)
+  planType               PlanType     @default(free)
+  trialEndsAt            DateTime?
+  subscriptionStatus     SubscriptionStatus @default(none)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   tenant Tenant? @relation(fields: [tenantId], references: [id])
   guides RepairGuide[]

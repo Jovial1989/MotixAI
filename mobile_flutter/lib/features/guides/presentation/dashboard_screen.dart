@@ -31,7 +31,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final guide = await ref.read(guidesProvider.notifier).create(
       data.vehicleModel,
       data.partName,
-      vin: data.vin,
       oemNumber: data.oemNumber,
     );
     setState(() => _creating = false);

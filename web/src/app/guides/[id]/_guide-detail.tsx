@@ -239,6 +239,10 @@ export default function GuideDetailPage() {
 
   useEffect(() => {
     if (!params.id) return;
+    // Clear stale data from any previously-viewed guide immediately so the
+    // wrong vehicle / title never shows while the new fetch is in flight.
+    setGuide(null);
+    setError(null);
     webApi.getGuide(params.id)
       .then(setGuide)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load'));
@@ -289,12 +293,14 @@ export default function GuideDetailPage() {
     <div className="dash-root">
       {/* Nav */}
       <header className="dash-nav">
-        <Link href="/dashboard" className="dash-logo">MotixAI</Link>
-        <div className="dash-nav-right">
-          <Link href="/dashboard" className="dash-nav-back">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            All guides
-          </Link>
+        <div className="dash-nav-inner">
+          <Link href="/dashboard" className="dash-logo">MotixAI</Link>
+          <div className="dash-nav-right">
+            <Link href="/dashboard" className="dash-nav-back">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              All guides
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -354,13 +360,18 @@ export default function GuideDetailPage() {
             <h2 className="gd-sb-title">{guide.title}</h2>
             <p className="gd-sb-sub">{guide.part.name} · {steps.length} steps</p>
             <div className="gd-ai-meta">
-              <span className={`ai-source-chip${guide.source === 'cached' ? ' ai-source-chip--cached' : guide.source === 'source-backed' ? ' ai-source-chip--sourced' : guide.source === 'web-fallback' ? ' ai-source-chip--fallback' : ''}`}>
-                {guide.source === 'cached' ? '📦 Knowledge Base' : guide.source === 'source-backed' ? '📄 Source-Backed' : guide.source === 'web-fallback' ? '🌐 Web Synthesis' : '⚡ AI Generated'}
-              </span>
-              {guide.sourceProvider && (
-                <span className="ai-source-chip ai-source-chip--provider">{guide.sourceProvider}</span>
+              {guide.source === 'source-backed' ? (
+                <span className="ai-source-chip ai-source-chip--sourced">
+                  📄 {guide.sourceProvider ?? 'Source-Backed'}
+                </span>
+              ) : guide.source === 'web-fallback' ? (
+                <span className="ai-source-chip ai-source-chip--fallback">
+                  🌐 Web Synthesis
+                </span>
+              ) : (
+                <span className="ai-source-chip">⚡ AI Generated</span>
               )}
-              {guide.confidence != null && (
+              {guide.confidence != null && guide.source === 'source-backed' && (
                 <span className="ai-confidence">{guide.confidence}% confidence</span>
               )}
             </div>

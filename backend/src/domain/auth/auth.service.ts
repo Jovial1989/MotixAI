@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, Role, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
 
@@ -32,12 +32,7 @@ export class DomainAuthService {
         },
       });
 
-      return this.issueTokens({
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenantId,
-      });
+      return this._issueTokensForUser(user);
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new ConflictException('Email already registered');
@@ -60,12 +55,7 @@ export class DomainAuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.issueTokens({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenantId,
-    });
+    return this._issueTokensForUser(user);
   }
 
   guestLogin() {
@@ -82,7 +72,16 @@ export class DomainAuthService {
     return {
       accessToken,
       refreshToken: null,
-      user: { id: 'guest', email: 'guest@motixai.dev', role: 'GUEST' as const, tenantId: null },
+      user: {
+        id: 'guest',
+        email: 'guest@motixai.dev',
+        role: 'GUEST' as const,
+        tenantId: null,
+        hasCompletedOnboarding: true,
+        planType: 'free' as const,
+        trialEndsAt: null,
+        subscriptionStatus: 'none' as const,
+      },
     };
   }
 
@@ -92,7 +91,14 @@ export class DomainAuthService {
         secret: process.env.JWT_REFRESH_SECRET || 'change-me-refresh',
       });
 
-      return this.issueTokens(decoded);
+      // Look up fresh user data so subscription fields are always current
+      if (decoded.sub !== 'guest') {
+        const user = await this.prisma.user.findUnique({ where: { id: decoded.sub } });
+        if (!user) throw new UnauthorizedException('User not found');
+        return this._issueTokensForUser(user);
+      }
+
+      return this.guestLogin();
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -144,7 +150,29 @@ export class DomainAuthService {
     return { message: 'Password updated successfully' };
   }
 
-  private issueTokens(payload: TokenPayload) {
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  private _buildUserResponse(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role as TokenRole,
+      tenantId: user.tenantId,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+      planType: user.planType,
+      trialEndsAt: user.trialEndsAt?.toISOString() ?? null,
+      subscriptionStatus: user.subscriptionStatus,
+    };
+  }
+
+  private _issueTokensForUser(user: User) {
+    const payload: TokenPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+    };
+
     const accessToken = this.jwt.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET || 'change-me-access',
       expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
@@ -158,12 +186,7 @@ export class DomainAuthService {
     return {
       accessToken,
       refreshToken,
-      user: {
-        id: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        tenantId: payload.tenantId,
-      },
+      user: this._buildUserResponse(user),
     };
   }
 }

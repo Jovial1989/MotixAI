@@ -1342,6 +1342,138 @@ input, textarea, select { font-family: inherit; outline: none; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
+   ONBOARDING
+═══════════════════════════════════════════════════════════════════════ */
+.ob-page {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+  gap: 24px;
+}
+
+.ob-card {
+  width: 100%; max-width: 480px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 40px 36px;
+  box-shadow: var(--sh-lg);
+  display: flex; flex-direction: column; gap: 28px;
+}
+
+.ob-steps {
+  display: flex; align-items: center; gap: 8px;
+}
+.ob-step-dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--border); transition: all 0.25s;
+  flex-shrink: 0;
+}
+.ob-step-dot.active {
+  background: var(--p); width: 24px;
+}
+.ob-step-dot.done {
+  background: var(--p-hover);
+}
+
+.ob-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--p-light); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 28px;
+}
+
+.ob-heading {
+  font-size: 1.55rem; font-weight: 800;
+  letter-spacing: -0.04em; color: var(--text);
+  line-height: 1.25;
+}
+.ob-sub {
+  font-size: 0.92rem; color: var(--text-muted);
+  line-height: 1.6; margin-top: -12px;
+}
+
+.ob-features {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.ob-feature {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.ob-feature-icon {
+  font-size: 20px; flex-shrink: 0; margin-top: 1px;
+}
+.ob-feature-text strong {
+  display: block; font-size: 0.88rem; font-weight: 700; color: var(--text);
+  margin-bottom: 2px;
+}
+.ob-feature-text span {
+  font-size: 0.82rem; color: var(--text-muted);
+}
+
+/* Plan cards */
+.ob-plans {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ob-plan {
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+  display: flex; align-items: flex-start; gap: 14px;
+  text-align: left;
+  background: var(--bg-card);
+  position: relative;
+}
+.ob-plan:hover { border-color: var(--border-strong); background: var(--bg-subtle); }
+.ob-plan.selected { border-color: var(--p); box-shadow: 0 0 0 3px rgba(234,88,12,.1); }
+.ob-plan-badge {
+  position: absolute; top: -10px; right: 14px;
+  background: var(--p); color: #fff;
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px;
+}
+.ob-plan-icon { font-size: 24px; margin-top: 2px; flex-shrink: 0; }
+.ob-plan-body {}
+.ob-plan-name {
+  font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px;
+}
+.ob-plan-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+.ob-plan-check {
+  margin-left: auto; margin-top: 3px; flex-shrink: 0;
+  width: 20px; height: 20px; border-radius: 999px;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.ob-plan.selected .ob-plan-check {
+  background: var(--p); border-color: var(--p); color: #fff;
+}
+
+.ob-actions {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.ob-btn-skip {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 0.83rem; cursor: pointer; padding: 4px 0;
+  text-align: center;
+  transition: color var(--t-fast);
+}
+.ob-btn-skip:hover { color: var(--text); }
+
+@media (max-width: 520px) {
+  .ob-card { padding: 28px 20px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
    DASHBOARD LAYOUT
 ═══════════════════════════════════════════════════════════════════════ */
 .dash-root {

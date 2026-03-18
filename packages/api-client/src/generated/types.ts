@@ -1,10 +1,22 @@
 export type Role = 'USER' | 'ENTERPRISE_ADMIN' | 'GUEST';
+export type PlanType = 'free' | 'trial' | 'premium';
+export type SubscriptionStatus = 'active' | 'expired' | 'none';
 
 export interface AuthUser {
   id: string;
   email: string;
   role: Role;
   tenantId: string | null;
+  hasCompletedOnboarding: boolean;
+  planType: PlanType;
+  trialEndsAt: string | null;
+  subscriptionStatus: SubscriptionStatus;
+}
+
+export interface SelectPlanResponse {
+  planType: PlanType;
+  subscriptionStatus: SubscriptionStatus;
+  trialEndsAt: string | null;
 }
 
 export interface AuthTokens {

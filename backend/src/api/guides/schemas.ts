@@ -18,6 +18,11 @@ export const searchGuidesSchema = z.object({
   component: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 
+export const askStepSchema = z.object({
+  stepId: z.string().min(1),
+  question: z.string().optional(),
+});
+
 export const createSourceGuideSchema = z.object({
   make: z.string().min(2),
   model: z.string().min(2),

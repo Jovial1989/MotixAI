@@ -21,10 +21,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _bootstrap() async {
     final result = await ref.read(authProvider.notifier).bootstrap();
     if (!mounted) return;
-    if (result == AuthBootResult.hasSession) {
-      context.go('/dashboard');
-    } else {
-      context.go('/login');
+    switch (result) {
+      case AuthBootResult.hasSession:
+        context.go('/dashboard');
+      case AuthBootResult.needsOnboarding:
+        context.go('/onboarding');
+      case AuthBootResult.noSession:
+        context.go('/login');
     }
   }
 

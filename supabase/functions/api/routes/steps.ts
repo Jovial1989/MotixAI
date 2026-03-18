@@ -3,12 +3,14 @@ import { getDb } from "../_lib/db.ts";
 import { buildDrawingSpec, generateIllustrationFromSpec, specToImagePrompt } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 
-// Extended imageStatus values:
-// none | queued | searching_refs | analyzing_refs | generating | ready | failed
+// buildDrawingSpec has a 10s internal timeout with mock fallback (always succeeds).
+// generateIllustrationFromSpec has a 35s internal timeout (throws on failure).
+// Both timeouts are inside gemini.ts — steps.ts just awaits the result.
 
-// Retry backoff delays in ms: attempt 1 → 15s, attempt 2 → 60s, attempt 3 → 180s
-const RETRY_DELAYS = [0, 15_000, 60_000, 180_000];
-const MAX_ATTEMPTS = 3;
+function imageType(url: string | null): "ai" | "fallback" | null {
+  if (!url) return null;
+  return url.startsWith("data:") ? "ai" : "fallback";
+}
 
 export async function handleSteps(
   _req: Request,
@@ -24,7 +26,7 @@ export async function handleSteps(
     const stepId = imgMatch[1];
 
     const steps = await sql`
-      SELECT s.*, g.title as guide_title, g.tools, g."safetyNotes",
+      SELECT s.*, g.tools,
              v.model as vehicle_model, p.name as part_name
       FROM "RepairStep" s
       JOIN "RepairGuide" g ON g.id = s."guideId"
@@ -37,7 +39,6 @@ export async function handleSteps(
 
     const step = steps[0];
 
-    // Check for force flag
     let force = false;
     try {
       const b = await _req.clone().json();
@@ -46,27 +47,36 @@ export async function handleSteps(
 
     console.log(`[steps] generate-image stepId=${stepId} status=${step.imageStatus} force=${force}`);
 
-    // Return cached result if already ready and not forced
+    // Cache hit — return immediately
     if (step.imageStatus === "ready" && step.imageUrl && !force) {
       console.log(`[steps] cache hit stepId=${stepId}`);
-      return json({ imageStatus: "ready", imageUrl: step.imageUrl });
+      return json({ imageStatus: "ready", imageUrl: step.imageUrl, type: imageType(step.imageUrl) });
     }
 
-    // Skip if already in progress (any active phase)
+    // Another request is already running — return current in-progress state,
+    // UNLESS the status is stale (>5 min since last update), which indicates
+    // the old async pipeline timed out without cleaning up.
     const activeStatuses = ["queued", "searching_refs", "analyzing_refs", "generating"];
     if (activeStatuses.includes(step.imageStatus) && !force) {
-      console.log(`[steps] in-progress stepId=${stepId} status=${step.imageStatus}`);
-      return json({ imageStatus: step.imageStatus, imageUrl: step.imageUrl ?? null });
+      const updatedAt = step.updatedAt ? new Date(step.updatedAt).getTime() : 0;
+      const staleMs = 5 * 60 * 1000; // 5 minutes
+      const isStale = Date.now() - updatedAt > staleMs;
+      if (!isStale) {
+        console.log(`[steps] in-progress stepId=${stepId} status=${step.imageStatus}`);
+        return json({ imageStatus: step.imageStatus, imageUrl: step.imageUrl ?? null, type: null });
+      }
+      console.log(`[steps] stale active status stepId=${stepId} status=${step.imageStatus} updatedAt=${step.updatedAt} — restarting pipeline`);
+      // Fall through to restart the pipeline
     }
 
-    // Mark as queued immediately and return — the pipeline runs in background
+    const now = () => new Date().toISOString();
+
     await sql`
       UPDATE "RepairStep"
       SET "imageStatus" = 'queued', "imageError" = null,
-          "imageAttempts" = 0, "updatedAt" = ${new Date().toISOString()}
+          "imageAttempts" = 0, "updatedAt" = ${now()}
       WHERE id = ${stepId}
     `;
-    console.log(`[steps] queued stepId=${stepId}`);
 
     const stepContext = {
       stepOrder: step.stepOrder,
@@ -79,101 +89,68 @@ export async function handleSteps(
       partName: step.part_name,
     };
 
-    // Multi-phase background pipeline with retry
-    const bgWork = (async () => {
-      let lastErr = "Unknown error";
+    // ── Synchronous pipeline — runs within the Edge Function lifetime ──────────
+    // buildDrawingSpec: 10s timeout internally, falls back to mock spec on failure
+    //   → always returns a DrawingSpec (never throws)
+    // generateIllustrationFromSpec: 35s timeout internally, throws on failure
+    //   → outer catch writes 'failed' + fallback placeholder to DB
+    // Total budget: ~45s — within Supabase Edge Function limits.
+    // The frontend gets the FINAL state in the response (no polling required).
 
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        try {
-          // Wait before retry (no wait on first attempt)
-          if (attempt > 1) {
-            const delay = RETRY_DELAYS[attempt] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1];
-            console.log(`[steps] retry delay ${delay}ms stepId=${stepId} attempt=${attempt}`);
-            await new Promise((r) => setTimeout(r, delay));
-          }
-
-          // ── Phase 1: searching_refs ──────────────────────────────────────
-          // Consult Gemini's knowledge of OEM manuals to plan the illustration
-          await sql`
-            UPDATE "RepairStep"
-            SET "imageStatus" = 'searching_refs',
-                "imageAttempts" = ${attempt},
-                "updatedAt" = ${new Date().toISOString()}
-            WHERE id = ${stepId}
-          `;
-          console.log(`[steps] searching_refs stepId=${stepId} attempt=${attempt}`);
-
-          // ── Phase 2: analyzing_refs → DrawingSpec ────────────────────────
-          // Build a structured drawing specification from the reference analysis
-          await sql`
-            UPDATE "RepairStep"
-            SET "imageStatus" = 'analyzing_refs',
-                "updatedAt" = ${new Date().toISOString()}
-            WHERE id = ${stepId}
-          `;
-          console.log(`[steps] analyzing_refs stepId=${stepId}`);
-
-          const spec = await buildDrawingSpec(stepContext);
-          console.log(`[steps] spec built stepId=${stepId} viewType=${spec.viewType} components=${spec.keyComponents.length}`);
-
-          // Store the full rendered image prompt (matches localhost behaviour)
-          const imagePrompt = specToImagePrompt(spec);
-          await sql`
-            UPDATE "RepairStep"
-            SET "imagePrompt" = ${imagePrompt},
-                "updatedAt" = ${new Date().toISOString()}
-            WHERE id = ${stepId}
-          `;
-
-          // ── Phase 3: generating ──────────────────────────────────────────
-          await sql`
-            UPDATE "RepairStep"
-            SET "imageStatus" = 'generating',
-                "updatedAt" = ${new Date().toISOString()}
-            WHERE id = ${stepId}
-          `;
-          console.log(`[steps] generating stepId=${stepId}`);
-
-          const imageUrl = await generateIllustrationFromSpec(spec);
-          console.log(`[steps] image ready stepId=${stepId} urlLen=${imageUrl.length}`);
-
-          // ── Done ─────────────────────────────────────────────────────────
-          await sql`
-            UPDATE "RepairStep"
-            SET "imageStatus" = 'ready', "imageUrl" = ${imageUrl},
-                "imageError" = null, "updatedAt" = ${new Date().toISOString()}
-            WHERE id = ${stepId}
-          `;
-          console.log(`[steps] ready stepId=${stepId}`);
-          return; // success
-
-        } catch (err) {
-          lastErr = err instanceof Error ? err.message : String(err);
-          console.error(`[steps] attempt ${attempt} failed stepId=${stepId} error=${lastErr}`);
-        }
-      }
-
-      // All attempts exhausted
-      const fallbackUrl = "https://placehold.co/1200x800/fef2f2/ef4444?text=Generation+failed";
+    try {
+      // Phase 1+2: spec (10s timeout inside buildDrawingSpec, mock fallback on timeout)
       await sql`
         UPDATE "RepairStep"
-        SET "imageStatus" = 'failed', "imageError" = ${lastErr},
-            "imageUrl" = ${fallbackUrl}, "updatedAt" = ${new Date().toISOString()}
+        SET "imageStatus" = 'analyzing_refs', "updatedAt" = ${now()}
         WHERE id = ${stepId}
       `;
-      console.error(`[steps] all attempts failed stepId=${stepId}`);
-    })();
+      console.log(`[steps] analyzing_refs stepId=${stepId}`);
 
-    // Keep the Edge Function alive while the background pipeline runs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (globalThis as any).EdgeRuntime !== "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).EdgeRuntime.waitUntil(bgWork);
-    } else {
-      await bgWork; // local / non-Supabase fallback: run synchronously
+      const spec = await buildDrawingSpec(stepContext);
+      console.log(`[steps] spec ready stepId=${stepId} viewType=${spec.viewType}`);
+
+      const imagePrompt = specToImagePrompt(spec);
+      await sql`
+        UPDATE "RepairStep"
+        SET "imagePrompt" = ${imagePrompt}, "imageStatus" = 'generating',
+            "updatedAt" = ${now()}
+        WHERE id = ${stepId}
+      `;
+      console.log(`[steps] generating stepId=${stepId}`);
+
+      // Phase 3: image (35s timeout inside generateIllustrationFromSpec, throws on timeout)
+      const imageUrl = await generateIllustrationFromSpec(spec);
+      console.log(`[steps] ready stepId=${stepId} type=${imageType(imageUrl)}`);
+
+      await sql`
+        UPDATE "RepairStep"
+        SET "imageStatus" = 'ready', "imageUrl" = ${imageUrl},
+            "imageError" = null, "updatedAt" = ${now()}
+        WHERE id = ${stepId}
+      `;
+
+      return json({ imageStatus: "ready", imageUrl, type: imageType(imageUrl) });
+
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`[steps] pipeline failed stepId=${stepId} error=${errMsg}`);
+
+      const fallbackLabel = encodeURIComponent((stepContext.title ?? "Step").slice(0, 40));
+      const fallbackUrl = `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${fallbackLabel}`;
+
+      try {
+        await sql`
+          UPDATE "RepairStep"
+          SET "imageStatus" = 'failed', "imageError" = ${errMsg},
+              "imageUrl" = ${fallbackUrl}, "updatedAt" = ${now()}
+          WHERE id = ${stepId}
+        `;
+      } catch (dbErr) {
+        console.error(`[steps] failed to persist failed status stepId=${stepId}: ${dbErr}`);
+      }
+
+      return json({ imageStatus: "failed", imageUrl: fallbackUrl, type: "fallback" });
     }
-
-    return json({ imageStatus: "queued", imageUrl: null });
   }
 
   return errorResponse("Not Found", 404);

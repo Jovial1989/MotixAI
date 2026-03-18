@@ -138,6 +138,25 @@ class ApiClient {
     on DioException catch (e) { return _handleError(e); }
   }
 
+  // ── User / Onboarding ────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> selectPlan(String planType) async {
+    try {
+      final resp = await _dio.post<Map<String, dynamic>>(
+        '/user/select-plan',
+        data: {'planType': planType},
+      );
+      return resp.data!;
+    } on DioException catch (e) { return _handleError(e); }
+  }
+
+  Future<Map<String, dynamic>> completeOnboarding() async {
+    try {
+      final resp = await _dio.post<Map<String, dynamic>>('/user/onboarding-complete');
+      return resp.data!;
+    } on DioException catch (e) { return _handleError(e); }
+  }
+
   // ── Steps ─────────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> generateStepImage(String stepId, {bool force = false}) async {

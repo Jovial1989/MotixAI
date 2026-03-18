@@ -161,7 +161,6 @@ export class IllustrationWorker {
           activeJobs.add(stepId);
 
           try {
-            await rateLimit();
             await this.prisma.repairStep.update({
               where: { id: stepId },
               data: { imageStatus: 'generating' },
@@ -218,6 +217,8 @@ export class IllustrationWorker {
       const label = encodeURIComponent(prompt.slice(0, 50));
       return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${label}`;
     }
+
+    await rateLimit();
 
     const model = (this.imageClient.getGenerativeModel as Function)({
       model: 'gemini-2.0-flash-exp-image-generation',

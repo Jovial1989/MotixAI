@@ -767,7 +767,7 @@ function NewGuideView({
 }: {
   submitting: boolean;
   guideError: string | null;
-  onSubmit: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) => Promise<void>;
+  onSubmit: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string; sourceInput?: { make: string; model: string; year: number; component: string; taskType: import('@motixai/shared').TaskType } }) => Promise<void>;
   onBack: () => void;
   initialQuery?: string;
 }) {

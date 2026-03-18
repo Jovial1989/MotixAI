@@ -243,10 +243,14 @@ export class DomainGuidesService {
   }
 
   async getGuide(guideId: string, userId: string, tenantId: string | null) {
+    // Allow access to guides the user owns (or shares a tenant with), plus
+    // any guide marked 'cached' (a shared knowledge-base hit returned to the
+    // user by findOrCreate / createFromSource).
+    const ownershipFilter = tenantId ? { tenantId } : { userId };
     const guide = await this.prisma.repairGuide.findFirst({
       where: {
         id: guideId,
-        ...(tenantId ? { tenantId } : { userId }),
+        OR: [ownershipFilter, { source: 'cached' }],
       },
       include: {
         steps: { orderBy: { stepOrder: 'asc' } },
@@ -279,6 +283,12 @@ export class DomainGuidesService {
         vehicle: true,
         part: true,
         images: true,
+        // Include minimal step data so the dashboard status dot reflects
+        // the real imageStatus of each step (green / yellow / red).
+        steps: {
+          select: { id: true, imageStatus: true },
+          orderBy: { stepOrder: 'asc' },
+        },
       },
     });
   }

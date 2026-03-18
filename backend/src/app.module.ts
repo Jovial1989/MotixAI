@@ -10,6 +10,7 @@ import { GuideRequestsModule } from './api/requests/requests.module';
 import { AnalyticsModule } from './api/analytics/analytics.module';
 import { VehiclesModule } from './api/vehicles/vehicles.module';
 import { AdminModule } from './api/admin/admin.module';
+import { UserModule } from './api/user/user.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { AiModule } from './ai/ai.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -30,6 +31,7 @@ import { JobsModule } from './jobs/jobs.module';
     AnalyticsModule,
     VehiclesModule,
     AdminModule,
+    UserModule,
   ],
 })
 export class AppModule {}

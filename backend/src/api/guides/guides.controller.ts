@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type AuthUser } from 'src/common/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/jwt-auth.guard';
 import { DomainGuidesService } from 'src/domain/guides/guides.service';
-import { createGuideSchema, createSourceGuideSchema, searchGuidesSchema } from './schemas';
+import { askStepSchema, createGuideSchema, createSourceGuideSchema, searchGuidesSchema } from './schemas';
 
 @ApiTags('guides')
 @ApiBearerAuth()
@@ -46,9 +46,10 @@ export class GuidesController {
   ask(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Body() body: { stepId: string; question?: string },
+    @Body() body: unknown,
   ) {
-    return this.guides.askStep(id, body.stepId, body.question ?? '', user.sub, user.tenantId);
+    const parsed = askStepSchema.parse(body);
+    return this.guides.askStep(id, parsed.stepId, parsed.question ?? '', user.sub, user.tenantId);
   }
 
   /**

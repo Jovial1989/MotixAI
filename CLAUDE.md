@@ -13,8 +13,8 @@ Yarn workspaces monorepo with the following packages:
 | `packages/shared/` | `@motixai/shared` | – |
 | `packages/api-client/` | `@motixai/api-client` | – |
 
-**Mobile**: Flutter app at `mobile_flutter/`. Not a Yarn workspace — use Flutter CLI directly.
-**Legacy**: `mobile_rn_legacy/` contains the deprecated React Native/Expo app. Do not use.
+**Mobile (primary)**: Flutter app at `mobile_flutter/`. Not a Yarn workspace — use Flutter CLI directly.
+**Legacy (do not use)**: `mobile_rn_legacy/` contains the deprecated React Native/Expo app. It is not maintained and not part of any active workflow. Do not add code to it, do not run it in CI, and do not treat it as the mobile app.
 
 All commands can be run from the root or scoped to a workspace with `yarn workspace <name> <script>`.
 
@@ -81,7 +81,7 @@ Next.js 14 App Router with custom CSS.
 - **API calls**: `src/lib/api.ts` — uses `@motixai/api-client`.
 - **Styles**: Custom CSS design system in `src/app/globals.css`.
 
-### Mobile (`mobile_flutter/`)
+### Mobile — Flutter (primary) (`mobile_flutter/`)
 
 Flutter app (iOS + Android). Not part of Yarn workspaces — managed with Flutter CLI.
 
@@ -89,10 +89,22 @@ Flutter app (iOS + Android). Not part of Yarn workspaces — managed with Flutte
 - **Routing**: `lib/app/router.dart` using `go_router`
 - **State**: `flutter_riverpod`
 - **Auth**: `flutter_secure_storage` for token persistence
-- **API**: `dio` HTTP client. Base URL configured via environment.
+- **API**: `dio` HTTP client. Base URL configured via `dart_defines.env`.
 - **Run**: `flutter run` from `mobile_flutter/`
+- **Run iOS Simulator**: `flutter run -d ios` from `mobile_flutter/`
+- **Run Android Emulator**: `flutter run -d android` from `mobile_flutter/`
+- **List devices**: `flutter devices`
 - **Build iOS**: `flutter build ipa` from `mobile_flutter/`
 - **Build Android**: `flutter build apk` from `mobile_flutter/`
+
+### Mobile — React Native / Expo (legacy, deprecated) (`mobile_rn_legacy/`)
+
+**Do not use for new development.** This is a frozen legacy codebase.
+
+- Not a Yarn workspace — has its own `node_modules/` and `package-lock.json`
+- Not deployed or maintained
+- Expo Go / Expo SDK only applies to this directory
+- To run locally for reference: `cd mobile_rn_legacy && npm install && npx expo start`
 
 ### Shared (`@motixai/shared`)
 

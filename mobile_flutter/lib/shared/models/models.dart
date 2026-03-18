@@ -5,14 +5,31 @@ class AuthUser {
   final String email;
   final String role;
   final String? tenantId;
+  final bool hasCompletedOnboarding;
+  final String planType;          // 'free' | 'trial' | 'premium'
+  final String? trialEndsAt;
+  final String subscriptionStatus; // 'active' | 'expired' | 'none'
 
-  const AuthUser({required this.id, required this.email, required this.role, this.tenantId});
+  const AuthUser({
+    required this.id,
+    required this.email,
+    required this.role,
+    this.tenantId,
+    this.hasCompletedOnboarding = false,
+    this.planType = 'free',
+    this.trialEndsAt,
+    this.subscriptionStatus = 'none',
+  });
 
   factory AuthUser.fromJson(Map<String, dynamic> j) => AuthUser(
     id: j['id'] as String,
     email: j['email'] as String,
     role: j['role'] as String,
     tenantId: j['tenantId'] as String?,
+    hasCompletedOnboarding: j['hasCompletedOnboarding'] as bool? ?? false,
+    planType: j['planType'] as String? ?? 'free',
+    trialEndsAt: j['trialEndsAt'] as String?,
+    subscriptionStatus: j['subscriptionStatus'] as String? ?? 'none',
   );
 }
 
@@ -71,9 +88,9 @@ class RepairStep {
 
   factory RepairStep.fromJson(Map<String, dynamic> j) => RepairStep(
     id: j['id'] as String,
-    stepOrder: j['stepOrder'] as int,
-    title: j['title'] as String,
-    instruction: j['instruction'] as String,
+    stepOrder: j['stepOrder'] as int? ?? 0,
+    title: j['title'] as String? ?? '',
+    instruction: j['instruction'] as String? ?? '',
     torqueValue: j['torqueValue'] as String?,
     warningNote: j['warningNote'] as String?,
     imageStatus: _parseImageStatus(j['imageStatus'] as String?),
@@ -101,7 +118,7 @@ class Vehicle {
   final String model;
   const Vehicle({required this.id, required this.model});
   factory Vehicle.fromJson(Map<String, dynamic> j) =>
-      Vehicle(id: j['id'] as String, model: j['model'] as String);
+      Vehicle(id: j['id'] as String, model: j['model'] as String? ?? '');
 }
 
 class Part {
@@ -109,7 +126,28 @@ class Part {
   final String name;
   const Part({required this.id, required this.name});
   factory Part.fromJson(Map<String, dynamic> j) =>
-      Part(id: j['id'] as String, name: j['name'] as String);
+      Part(id: j['id'] as String, name: j['name'] as String? ?? '');
+}
+
+/// A reference to the upstream source document used for source-backed guides.
+class SourceReference {
+  final String title;
+  final String url;
+  final String excerpt;
+
+  const SourceReference({
+    required this.title,
+    required this.url,
+    required this.excerpt,
+  });
+
+  factory SourceReference.fromJson(Map<String, dynamic> j) => SourceReference(
+    title: j['title'] as String? ?? '',
+    url: j['url'] as String? ?? '',
+    excerpt: j['excerpt'] as String? ?? '',
+  );
+
+  Map<String, dynamic> toJson() => {'title': title, 'url': url, 'excerpt': excerpt};
 }
 
 class RepairGuide {
@@ -120,6 +158,20 @@ class RepairGuide {
   final List<String> tools;
   final List<String> safetyNotes;
   final String sourceType;
+
+  /// Source tag: 'source-backed' | 'web-fallback' | null (plain AI).
+  /// Mirrors the web app's guide.source field.
+  final String? source;
+
+  /// Confidence score from backend: 95 for source-backed, 75 for web-fallback.
+  final int? confidence;
+
+  /// Name of upstream source provider, e.g. 'NICOclub' or 'ToyoDIY'.
+  final String? sourceProvider;
+
+  /// Reference documents used for source-backed guides.
+  final List<SourceReference> sourceReferences;
+
   final String createdAt;
   final Vehicle vehicle;
   final Part part;
@@ -133,33 +185,58 @@ class RepairGuide {
     required this.tools,
     required this.safetyNotes,
     required this.sourceType,
+    this.source,
+    this.confidence,
+    this.sourceProvider,
+    this.sourceReferences = const [],
     required this.createdAt,
     required this.vehicle,
     required this.part,
     required this.steps,
   });
 
-  factory RepairGuide.fromJson(Map<String, dynamic> j) => RepairGuide(
-    id: j['id'] as String,
-    title: j['title'] as String,
-    difficulty: j['difficulty'] as String,
-    timeEstimate: j['timeEstimate'] as String,
-    tools: (j['tools'] as List<dynamic>).cast<String>(),
-    safetyNotes: (j['safetyNotes'] as List<dynamic>).cast<String>(),
-    sourceType: j['sourceType'] as String,
-    createdAt: j['createdAt'] as String,
-    vehicle: Vehicle.fromJson(j['vehicle'] as Map<String, dynamic>),
-    part: Part.fromJson(j['part'] as Map<String, dynamic>),
-    steps: (j['steps'] as List<dynamic>)
-        .map((s) => RepairStep.fromJson(s as Map<String, dynamic>))
-        .toList()
-        ..sort((a, b) => a.stepOrder.compareTo(b.stepOrder)),
-  );
+  factory RepairGuide.fromJson(Map<String, dynamic> j) {
+    // sourceReferences may be a JSON-encoded string (stored that way in DB)
+    // or a List directly from the API response.
+    List<SourceReference> refs = const [];
+    final rawRefs = j['sourceReferences'];
+    if (rawRefs is List) {
+      refs = rawRefs
+          .whereType<Map<String, dynamic>>()
+          .map(SourceReference.fromJson)
+          .toList();
+    }
+
+    return RepairGuide(
+      id: j['id'] as String,
+      title: j['title'] as String? ?? '',
+      difficulty: j['difficulty'] as String? ?? 'Intermediate',
+      timeEstimate: j['timeEstimate'] as String? ?? '',
+      tools: (j['tools'] as List<dynamic>?)?.cast<String>() ?? const [],
+      safetyNotes: (j['safetyNotes'] as List<dynamic>?)?.cast<String>() ?? const [],
+      sourceType: j['sourceType'] as String? ?? 'B2C',
+      source: j['source'] as String?,
+      confidence: j['confidence'] as int?,
+      sourceProvider: j['sourceProvider'] as String?,
+      sourceReferences: refs,
+      createdAt: j['createdAt'] as String? ?? '',
+      vehicle: Vehicle.fromJson(j['vehicle'] as Map<String, dynamic>),
+      part: Part.fromJson(j['part'] as Map<String, dynamic>),
+      steps: ((j['steps'] as List<dynamic>?) ?? [])
+          .map((s) => RepairStep.fromJson(s as Map<String, dynamic>))
+          .toList()
+          ..sort((a, b) => a.stepOrder.compareTo(b.stepOrder)),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id, 'title': title, 'difficulty': difficulty,
     'timeEstimate': timeEstimate, 'tools': tools, 'safetyNotes': safetyNotes,
-    'sourceType': sourceType, 'createdAt': createdAt,
+    'sourceType': sourceType,
+    'source': source, 'confidence': confidence,
+    'sourceProvider': sourceProvider,
+    'sourceReferences': sourceReferences.map((r) => r.toJson()).toList(),
+    'createdAt': createdAt,
     'vehicle': {'id': vehicle.id, 'model': vehicle.model},
     'part': {'id': part.id, 'name': part.name},
     'steps': steps.map((s) => {
@@ -175,6 +252,8 @@ class RepairGuide {
   RepairGuide withUpdatedStep(RepairStep updated) => RepairGuide(
     id: id, title: title, difficulty: difficulty, timeEstimate: timeEstimate,
     tools: tools, safetyNotes: safetyNotes, sourceType: sourceType,
+    source: source, confidence: confidence,
+    sourceProvider: sourceProvider, sourceReferences: sourceReferences,
     createdAt: createdAt, vehicle: vehicle, part: part,
     steps: steps.map((s) => s.id == updated.id ? updated : s).toList(),
   );

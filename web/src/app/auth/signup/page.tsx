@@ -23,7 +23,9 @@ export default function SignupPage() {
       localStorage.setItem('motix_access_token',  result.accessToken);
       if (result.refreshToken) localStorage.setItem('motix_refresh_token', result.refreshToken);
       localStorage.setItem('motix_user_role', result.user.role);
-      router.push('/dashboard');
+      localStorage.setItem('motix_onboarding_done', result.user.hasCompletedOnboarding ? 'true' : 'false');
+      // New users always go to onboarding (hasCompletedOnboarding = false on first signup)
+      router.push(result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
     } finally {
@@ -38,6 +40,7 @@ export default function SignupPage() {
       const result = await webApi.guest();
       localStorage.setItem('motix_access_token', result.accessToken);
       localStorage.setItem('motix_user_role', result.user.role);
+      localStorage.setItem('motix_onboarding_done', 'true');
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to continue as guest');

@@ -125,19 +125,29 @@ Open in browser: `https://hxzpbvgwujuisxheykcr.supabase.co/functions/v1/web`
 
 ---
 
-## 7. Mobile app
+## 7. Mobile app (Flutter)
 
-The mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env`.
-It is already set to the Supabase API URL.
+The Flutter app reads `API_BASE_URL` from `mobile_flutter/dart_defines.env`.
+It is already set to the Supabase API URL via `--dart-define`.
 
-For local development with physical device or Android emulator:
-- Android emulator: the env var already points to Supabase, so works out of the box.
-- iOS simulator: same.
-
-To build/run:
+For local development:
 ```bash
-yarn dev:mobile
+cd mobile_flutter
+flutter pub get
+
+# Run on simulator/emulator (reads dart_defines.env automatically)
+flutter run -d ios
+flutter run -d android
 ```
+
+To build for release:
+```bash
+flutter build ipa    # iOS
+flutter build apk    # Android
+```
+
+> **Legacy note:** The React Native / Expo app is in `mobile_rn_legacy/` and is deprecated.
+> It is **not** used in production. See `mobile_rn_legacy/DEPRECATED.md`.
 
 ---
 

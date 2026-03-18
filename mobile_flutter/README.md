@@ -70,18 +70,30 @@ flutter pub get
 
 ### 3. Configure API URL
 
-The API base URL is passed at compile time via `--dart-define`:
+The API base URL is passed at compile time via `--dart-define`.
+Copy `dart_defines.env.example` → `dart_defines.env` and set the value:
 
 ```bash
-# iOS simulator
-flutter run --dart-define=API_BASE_URL=http://localhost:4000
+cp dart_defines.env.example dart_defines.env
+# Edit dart_defines.env and set API_BASE_URL
+```
+
+**Production (Supabase — recommended for simulator too):**
+```bash
+flutter run --dart-define=API_BASE_URL=https://hxzpbvgwujuisxheykcr.supabase.co/functions/v1/api
+```
+
+**Local NestJS dev server:**
+```bash
+# iOS simulator — use your machine's IP, NOT localhost (simulator can't reach localhost:4000)
+flutter run --dart-define=API_BASE_URL=http://192.168.1.x:4000/api/v1
 
 # Android emulator
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000
-
-# Physical device (use your machine's local IP)
-flutter run --dart-define=API_BASE_URL=http://192.168.1.x:4000
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1
 ```
+
+> **Note:** iOS Simulator cannot reach `http://localhost:4000` — the simulator runs in its own
+> network namespace. Use your machine's LAN IP or point directly at the Supabase endpoint.
 
 ### 4. Run
 
@@ -89,8 +101,11 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:4000
 # List available devices
 flutter devices
 
-# Run on a specific device
-flutter run -d <device-id> --dart-define=API_BASE_URL=http://localhost:4000
+# Run on iOS simulator (production API)
+flutter run -d ios --dart-define=API_BASE_URL=https://hxzpbvgwujuisxheykcr.supabase.co/functions/v1/api
+
+# Run on Android emulator (production API)
+flutter run -d android --dart-define=API_BASE_URL=https://hxzpbvgwujuisxheykcr.supabase.co/functions/v1/api
 ```
 
 ## Design System

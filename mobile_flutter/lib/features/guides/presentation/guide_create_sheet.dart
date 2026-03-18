@@ -8,12 +8,10 @@ import '../../../app/theme.dart';
 class GuideFormData {
   final String vehicleModel;
   final String partName;
-  final String? vin;
   final String? oemNumber;
   const GuideFormData({
     required this.vehicleModel,
     required this.partName,
-    this.vin,
     this.oemNumber,
   });
 }
@@ -60,30 +58,7 @@ const _kPopularMakes = [
 
 List<int> get _kYears => List.generate(2026 - 1980 + 1, (i) => 2026 - i);
 
-// ── NHTSA helpers ─────────────────────────────────────────────────────────────
-
-Future<Map<String, String>?> _decodeVin(String vin) async {
-  try {
-    final uri = Uri.parse(
-      'https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${Uri.encodeComponent(vin)}?format=json',
-    );
-    final res = await http.get(uri).timeout(const Duration(seconds: 10));
-    if (res.statusCode != 200) return null;
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final results = (json['Results'] as List?)?.first as Map<String, dynamic>?;
-    if (results == null) return null;
-    final errorCode = results['ErrorCode'] as String? ?? '';
-    if (!errorCode.startsWith('0')) return null;
-    return {
-      'make': results['Make'] as String? ?? '',
-      'model': results['Model'] as String? ?? '',
-      'year': results['ModelYear'] as String? ?? '',
-      'manufacturer': results['Manufacturer'] as String? ?? '',
-    };
-  } catch (_) {
-    return null;
-  }
-}
+// ── NHTSA model lookup ────────────────────────────────────────────────────────
 
 Future<List<String>> _fetchModels(String make) async {
   try {
@@ -129,69 +104,44 @@ class _GuideCreateSheet extends StatefulWidget {
 class _GuideCreateSheetState extends State<_GuideCreateSheet> {
   int _step = 0; // 0 = vehicle, 1 = repair, 2 = confirm
 
-  // Step 0
-  bool _useVin = true;
-  final _vinCtrl = TextEditingController();
-  bool _vinDecoding = false;
-  String? _vinError;
-  Map<String, String>? _decodedVin;
+  // Step 0 — vehicle
   String? _selMake;
   String? _selModel;
   String? _selYear;
   List<String> _models = [];
   bool _loadingModels = false;
+  final _modelCtrl = TextEditingController();
 
-  // Step 1
+  // Step 1 — repair
   final _partCtrl = TextEditingController();
-  final _oemCtrl = TextEditingController();
+  final _oemCtrl  = TextEditingController();
   List<String>? _disambig;
 
   @override
   void dispose() {
-    _vinCtrl.dispose();
+    _modelCtrl.dispose();
     _partCtrl.dispose();
     _oemCtrl.dispose();
     super.dispose();
   }
 
-  String get _vehicleModel {
-    if (_useVin && _decodedVin != null) {
-      final d = _decodedVin!;
-      return '${d['year']} ${d['make']} ${d['model']}'.trim();
-    }
-    return [_selYear, _selMake, _selModel].where((s) => s != null && s.isNotEmpty).join(' ');
-  }
+  String get _vehicleModel =>
+      [_selYear, _selMake, _selModel].where((s) => s != null && s.isNotEmpty).join(' ');
 
-  bool get _step0Valid => _useVin ? _decodedVin != null : (_selMake != null && _selModel != null && _selYear != null);
+  bool get _step0Valid => _selMake != null && _selModel != null && _selModel!.isNotEmpty;
   bool get _step1Valid => _partCtrl.text.trim().length >= 2;
-
-  Future<void> _handleDecodeVin() async {
-    final vin = _vinCtrl.text.trim().toUpperCase();
-    if (vin.length < 11) {
-      setState(() => _vinError = 'Enter at least 11 characters');
-      return;
-    }
-    setState(() { _vinDecoding = true; _vinError = null; });
-    final result = await _decodeVin(vin);
-    setState(() {
-      _vinDecoding = false;
-      if (result == null) {
-        _vinError = 'Could not decode VIN — check the number and try again';
-      } else {
-        _decodedVin = result;
-      }
-    });
-  }
 
   Future<void> _handleMakeChanged(String? make) async {
     setState(() {
       _selMake = make;
       _selModel = null;
       _models = [];
+      _modelCtrl.clear();
       _loadingModels = make != null;
     });
     if (make == null) return;
     final models = await _fetchModels(make);
+    if (!mounted) return;
     setState(() { _models = models; _loadingModels = false; });
   }
 
@@ -210,7 +160,6 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
     Navigator.of(context).pop(GuideFormData(
       vehicleModel: _vehicleModel,
       partName: _partCtrl.text.trim(),
-      vin: _useVin && _vinCtrl.text.isNotEmpty ? _vinCtrl.text.trim().toUpperCase() : null,
       oemNumber: _oemCtrl.text.trim().isNotEmpty ? _oemCtrl.text.trim() : null,
     ));
   }
@@ -229,11 +178,9 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         ),
         child: Column(
           children: [
-            // drag handle
             const SizedBox(height: 12),
             Container(width: 40, height: 4, decoration: BoxDecoration(color: kBorder, borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 16),
-            // step header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _StepHeader(step: _step),
@@ -262,92 +209,58 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
   // ── Step 0: Vehicle ───────────────────────────────────────────────────────
 
   List<Widget> _buildStep0() => [
-    // Mode toggle
-    Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: kBorder),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(children: [
-        _ModeTab(label: 'VIN decode', active: _useVin, onTap: () => setState(() { _useVin = true; _decodedVin = null; _vinError = null; })),
-        _ModeTab(label: 'Manual entry', active: !_useVin, onTap: () => setState(() { _useVin = false; })),
-      ]),
+    _Label('Make', required: true),
+    const SizedBox(height: 6),
+    _DropdownWrap(
+      hint: 'Select make…',
+      value: _selMake,
+      items: _kPopularMakes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+      onChanged: (v) => _handleMakeChanged(v),
     ),
-    const SizedBox(height: 16),
+    const SizedBox(height: 14),
 
-    if (_useVin) ...[
-      _Label('VIN number', required: true),
-      const SizedBox(height: 6),
-      Row(children: [
-        Expanded(
-          child: TextField(
-            controller: _vinCtrl,
-            textCapitalization: TextCapitalization.characters,
-            maxLength: 17,
-            onChanged: (_) => setState(() { _decodedVin = null; _vinError = null; }),
-            decoration: _inputDec('e.g. 1HGBH41JXMN109186', counterText: ''),
-          ),
+    _Label('Model', required: true),
+    const SizedBox(height: 6),
+    if (_loadingModels)
+      Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: kBorder),
         ),
-        const SizedBox(width: 10),
-        FilledButton(
-          onPressed: _vinDecoding || _vinCtrl.text.trim().length < 11 ? null : _handleDecodeVin,
-          style: FilledButton.styleFrom(
-            backgroundColor: kPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: _vinDecoding
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Decode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        ),
-      ]),
-      if (_vinError != null) ...[
-        const SizedBox(height: 6),
-        Text(_vinError!, style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13)),
-      ],
-      if (_decodedVin != null) ...[
-        const SizedBox(height: 12),
-        _DecodedCard(data: _decodedVin!, onClear: () => setState(() { _decodedVin = null; _vinCtrl.clear(); })),
-      ],
-    ] else ...[
-      _Label('Make', required: true),
-      const SizedBox(height: 6),
+        child: const Center(child: SizedBox(
+          width: 18, height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2, color: kPrimary),
+        )),
+      )
+    else if (_models.isNotEmpty)
       _DropdownWrap(
-        hint: 'Select make…',
-        value: _selMake,
-        items: _kPopularMakes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-        onChanged: (v) => _handleMakeChanged(v),
-      ),
-      const SizedBox(height: 12),
-      _Label('Model', required: true),
-      const SizedBox(height: 6),
-      _DropdownWrap(
-        hint: _loadingModels ? 'Loading…' : (_selMake == null ? 'Select make first' : 'Select model…'),
+        hint: 'Select model…',
         value: _selModel,
         items: _models.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-        onChanged: _selMake == null || _loadingModels ? null : (v) => setState(() => _selModel = v),
-      ),
-      const SizedBox(height: 12),
-      _Label('Year', required: true),
-      const SizedBox(height: 6),
-      _DropdownWrap(
-        hint: 'Select year…',
-        value: _selYear,
-        items: _kYears.map((y) => DropdownMenuItem(value: '$y', child: Text('$y'))).toList(),
-        onChanged: (v) => setState(() => _selYear = v),
-      ),
-      const SizedBox(height: 12),
-      _Label('VIN', required: false),
-      const SizedBox(height: 6),
+        onChanged: (v) => setState(() => _selModel = v),
+      )
+    else
       TextField(
-        controller: _vinCtrl,
-        textCapitalization: TextCapitalization.characters,
-        maxLength: 17,
-        decoration: _inputDec('Optional — e.g. 1HGBH41JXMN109186', counterText: ''),
+        controller: _modelCtrl,
+        onChanged: (v) => setState(() => _selModel = v.trim().isEmpty ? null : v.trim()),
+        enabled: _selMake != null,
+        decoration: _inputDec(_selMake == null ? 'Select make first' : 'e.g. Qashqai, F-150…'),
       ),
-    ],
+    const SizedBox(height: 14),
+
+    _Label('Year', required: false),
+    const SizedBox(height: 6),
+    _DropdownWrap(
+      hint: 'Any year (optional)',
+      value: _selYear,
+      items: [
+        const DropdownMenuItem(value: null, child: Text('Any year')),
+        ..._kYears.map((y) => DropdownMenuItem(value: '$y', child: Text('$y'))),
+      ],
+      onChanged: (v) => setState(() => _selYear = v),
+    ),
   ];
 
   // ── Step 1: Repair ────────────────────────────────────────────────────────
@@ -412,10 +325,6 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
       ),
       child: Column(children: [
         _ConfirmRow(label: 'Vehicle', value: _vehicleModel),
-        if (_useVin && _vinCtrl.text.isNotEmpty) ...[
-          const Divider(height: 20),
-          _ConfirmRow(label: 'VIN', value: _vinCtrl.text.trim().toUpperCase(), mono: true),
-        ],
         const Divider(height: 20),
         _ConfirmRow(label: 'Repair', value: _partCtrl.text.trim()),
         if (_oemCtrl.text.isNotEmpty) ...[
@@ -497,7 +406,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
   );
 
-  InputDecoration _inputDec(String hint, {String? counterText}) => InputDecoration(
+  InputDecoration _inputDec(String hint) => InputDecoration(
     hintText: hint,
     hintStyle: const TextStyle(color: kTextMuted, fontSize: 14),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -506,7 +415,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: kPrimary, width: 2)),
-    counterText: counterText,
+    disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder.withOpacity(0.5))),
   );
 }
 
@@ -537,33 +446,6 @@ class _StepHeader extends StatelessWidget {
   }
 }
 
-class _ModeTab extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-  const _ModeTab({required this.label, required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 36,
-        decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: active ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 1))] : null,
-        ),
-        child: Center(child: Text(label,
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-            color: active ? const Color(0xFF0F172A) : kTextMuted),
-        )),
-      ),
-    ),
-  );
-}
-
 class _Label extends StatelessWidget {
   final String text;
   final bool required;
@@ -581,7 +463,7 @@ class _Label extends StatelessWidget {
 class _DropdownWrap extends StatelessWidget {
   final String hint;
   final String? value;
-  final List<DropdownMenuItem<String>> items;
+  final List<DropdownMenuItem<String?>> items;
   final ValueChanged<String?>? onChanged;
   const _DropdownWrap({required this.hint, this.value, required this.items, this.onChanged});
 
@@ -593,7 +475,7 @@ class _DropdownWrap extends StatelessWidget {
       border: Border.all(color: kBorder),
     ),
     padding: const EdgeInsets.symmetric(horizontal: 14),
-    child: DropdownButton<String>(
+    child: DropdownButton<String?>(
       value: value,
       hint: Text(hint, style: const TextStyle(color: kTextMuted, fontSize: 14)),
       isExpanded: true,
@@ -602,35 +484,6 @@ class _DropdownWrap extends StatelessWidget {
       items: items,
       onChanged: onChanged,
     ),
-  );
-}
-
-class _DecodedCard extends StatelessWidget {
-  final Map<String, String> data;
-  final VoidCallback onClear;
-  const _DecodedCard({required this.data, required this.onClear});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF0FDF4),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: const Color(0x4A16A34A)),
-    ),
-    child: Row(children: [
-      const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 20),
-      const SizedBox(width: 10),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${data['year']} ${data['make']} ${data['model']}',
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-        Text(data['manufacturer'] ?? '', style: const TextStyle(fontSize: 12, color: kTextMuted)),
-      ])),
-      GestureDetector(
-        onTap: onClear,
-        child: const Icon(Icons.close, size: 18, color: kTextMuted),
-      ),
-    ]),
   );
 }
 
