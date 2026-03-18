@@ -2,7 +2,7 @@ import bcrypt from "npm:bcryptjs@2";
 import * as jose from "npm:jose@5";
 import { errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
-import { issueTokens, signAccess, TokenPayload, verifyRefresh } from "../_lib/jwt.ts";
+import { issueTokensForUser, signAccess, TokenPayload, verifyRefresh, UserRecord } from "../_lib/jwt.ts";
 import { seedExampleGuides } from "../_lib/seed-guides.ts";
 
 async function body(req: Request): Promise<Record<string, unknown>> {
@@ -11,6 +11,27 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   } catch {
     return {};
   }
+}
+
+/** Fetch all subscription fields for a user by ID. */
+async function fetchUser(sql: ReturnType<typeof getDb>, id: string): Promise<UserRecord | null> {
+  const rows = await sql`
+    SELECT id, email, role, "tenantId",
+           "hasCompletedOnboarding", "planType", "trialEndsAt", "subscriptionStatus"
+    FROM "User" WHERE id = ${id} LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: r.id,
+    email: r.email,
+    role: r.role,
+    tenantId: r.tenantId ?? null,
+    hasCompletedOnboarding: r.hasCompletedOnboarding ?? false,
+    planType: r.planType ?? 'free',
+    trialEndsAt: r.trialEndsAt ? new Date(r.trialEndsAt).toISOString() : null,
+    subscriptionStatus: r.subscriptionStatus ?? 'none',
+  };
 }
 
 export async function handleAuth(
@@ -44,13 +65,9 @@ export async function handleAuth(
     // Seed example guides so new users see content immediately
     await seedExampleGuides(id).catch(() => {});
 
-    const payload: TokenPayload = {
-      sub: id,
-      email: email.toLowerCase(),
-      role: "USER",
-      tenantId: null,
-    };
-    return json(await issueTokens(payload), 201);
+    const user = await fetchUser(sql, id);
+    if (!user) return errorResponse("Failed to create user", 500);
+    return json(await issueTokensForUser(user), 201);
   }
 
   // POST /auth/login
@@ -60,20 +77,15 @@ export async function handleAuth(
       return errorResponse("email and password are required", 400);
 
     const rows =
-      await sql`SELECT id, email, "passwordHash", role, "tenantId" FROM "User" WHERE email = ${email.toLowerCase()} LIMIT 1`;
+      await sql`SELECT id, "passwordHash" FROM "User" WHERE email = ${email.toLowerCase()} LIMIT 1`;
     if (rows.length === 0) return errorResponse("Invalid credentials", 401);
 
-    const user = rows[0];
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(password, rows[0].passwordHash);
     if (!valid) return errorResponse("Invalid credentials", 401);
 
-    const payload: TokenPayload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role as TokenPayload["role"],
-      tenantId: user.tenantId ?? null,
-    };
-    return json(await issueTokens(payload));
+    const user = await fetchUser(sql, rows[0].id);
+    if (!user) return errorResponse("User not found", 404);
+    return json(await issueTokensForUser(user));
   }
 
   // POST /auth/refresh
@@ -84,7 +96,13 @@ export async function handleAuth(
 
     try {
       const decoded = await verifyRefresh(refreshToken);
-      return json(await issueTokens(decoded));
+      if (decoded.sub !== "guest") {
+        const user = await fetchUser(sql, decoded.sub);
+        if (!user) return errorResponse("User not found", 404);
+        return json(await issueTokensForUser(user));
+      }
+      // Guest refresh
+      return json(guestResponse(decoded));
     } catch {
       return errorResponse("Invalid refresh token", 401);
     }
@@ -109,7 +127,16 @@ export async function handleAuth(
     return json({
       accessToken,
       refreshToken: null,
-      user: { id: "guest", email: "guest@motixai.dev", role: "GUEST", tenantId: null },
+      user: {
+        id: "guest",
+        email: "guest@motixai.dev",
+        role: "GUEST",
+        tenantId: null,
+        hasCompletedOnboarding: true,
+        planType: "free",
+        trialEndsAt: null,
+        subscriptionStatus: "none",
+      },
     });
   }
 
@@ -167,4 +194,21 @@ export async function handleAuth(
   }
 
   return errorResponse("Not Found", 404);
+}
+
+function guestResponse(payload: TokenPayload) {
+  return {
+    accessToken: "",
+    refreshToken: null,
+    user: {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      tenantId: payload.tenantId,
+      hasCompletedOnboarding: true,
+      planType: "free",
+      trialEndsAt: null,
+      subscriptionStatus: "none",
+    },
+  };
 }

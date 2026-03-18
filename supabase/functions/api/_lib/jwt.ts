@@ -9,6 +9,17 @@ export interface TokenPayload {
   tenantId: string | null;
 }
 
+export interface UserRecord {
+  id: string;
+  email: string;
+  role: string;
+  tenantId: string | null;
+  hasCompletedOnboarding: boolean;
+  planType: string;
+  trialEndsAt: string | null;
+  subscriptionStatus: string;
+}
+
 const ACCESS_SECRET = new TextEncoder().encode(
   Deno.env.get("JWT_ACCESS_SECRET") ?? "change-me-access",
 );
@@ -43,6 +54,33 @@ export async function verifyRefresh(token: string): Promise<TokenPayload> {
   return payload as unknown as TokenPayload;
 }
 
+/** Issue tokens + build the full user response including subscription fields. */
+export function issueTokensForUser(user: UserRecord) {
+  const payload: TokenPayload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role as TokenRole,
+    tenantId: user.tenantId,
+  };
+  return Promise.all([signAccess(payload), signRefresh(payload)]).then(
+    ([accessToken, refreshToken]) => ({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+        hasCompletedOnboarding: user.hasCompletedOnboarding,
+        planType: user.planType,
+        trialEndsAt: user.trialEndsAt,
+        subscriptionStatus: user.subscriptionStatus,
+      },
+    }),
+  );
+}
+
+/** @deprecated Use issueTokensForUser with a DB-fetched user for subscription fields. */
 export function issueTokens(payload: TokenPayload) {
   return Promise.all([signAccess(payload), signRefresh(payload)]).then(
     ([accessToken, refreshToken]) => ({
@@ -53,6 +91,10 @@ export function issueTokens(payload: TokenPayload) {
         email: payload.email,
         role: payload.role,
         tenantId: payload.tenantId,
+        hasCompletedOnboarding: false,
+        planType: "free",
+        trialEndsAt: null,
+        subscriptionStatus: "none",
       },
     }),
   );

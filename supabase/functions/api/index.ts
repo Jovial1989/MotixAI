@@ -9,6 +9,7 @@ import { handleJobs } from "./routes/jobs.ts";
 import { handleRequests } from "./routes/requests.ts";
 import { handleSteps } from "./routes/steps.ts";
 import { handleVehicles } from "./routes/vehicles.ts";
+import { handleUser } from "./routes/user.ts";
 
 Deno.serve(async (req: Request): Promise<Response> => {
   // CORS preflight
@@ -65,6 +66,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (path.startsWith("/admin")) {
     return handleAdmin(req, method, path.replace("/admin", ""), user);
+  }
+
+  if (path.startsWith("/user")) {
+    return handleUser(req, method, path.replace("/user", ""), user);
   }
 
   return errorResponse("Not Found", 404);
