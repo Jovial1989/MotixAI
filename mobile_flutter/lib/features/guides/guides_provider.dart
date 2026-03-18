@@ -50,14 +50,12 @@ class GuidesNotifier extends StateNotifier<GuidesState> {
   Future<RepairGuide?> create(
     String vehicleModel,
     String partName, {
-    String? vin,
     String? oemNumber,
   }) async {
     try {
       final guide = await _api.createGuide(
         vehicleModel: vehicleModel,
         partName: partName,
-        vin: vin,
         oemNumber: oemNumber,
       );
       await _cache.saveGuide(guide);
@@ -117,9 +115,16 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
   final ApiClient _api;
   final CacheStore _cache;
   final String guideId;
+  bool _alive = true;
 
   GuideDetailNotifier(this._api, this._cache, this.guideId)
       : super(const GuideDetailState());
+
+  @override
+  void dispose() {
+    _alive = false;
+    super.dispose();
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -143,19 +148,58 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
   }
 
   Future<void> _triggerImages(RepairGuide g) async {
-    final noneSteps = g.steps.where((s) => s.imageStatus == ImageStatus.none).toList();
-    if (noneSteps.isEmpty) return;
-    await Future.wait(noneSteps.map((s) async {
-      try { await _api.generateStepImage(s.id); } catch (_) {}
+    // Trigger none, failed, AND stuck pending steps (queued/generating etc.).
+    // For pending steps the backend's 5-minute stale check decides whether to restart;
+    // if still active it returns the current status harmlessly.
+    final toTrigger = g.steps
+        .where((s) =>
+            s.imageStatus == ImageStatus.none ||
+            s.imageStatus == ImageStatus.failed ||
+            s.isPending)
+        .toList();
+    if (toTrigger.isEmpty) return;
+
+    await Future.wait(toTrigger.map((s) async {
+      try {
+        // Force only for failed steps (retry). None and pending use force=false
+        // so the backend stale-check decides whether to restart an in-progress step.
+        final result = await _api.generateStepImage(s.id,
+            force: s.imageStatus == ImageStatus.failed);
+        if (!_alive) return;
+        // Apply the response immediately — avoids a round-trip getGuide for the happy path.
+        final newStatus = _imageStatusFromString(result['imageStatus'] as String?);
+        final newUrl = result['imageUrl'] as String?;
+        final current = state.guide;
+        if (current != null) {
+          state = state.copyWith(
+            guide: current.withUpdatedStep(
+              s.copyWith(imageStatus: newStatus, imageUrl: newUrl),
+            ),
+          );
+        }
+      } catch (_) {}
     }));
-    // Fetch updated guide after triggering
+
+    // Full refresh to pick up any steps that timed out and finished asynchronously.
     try {
+      if (!_alive) return;
       final updated = await _api.getGuide(guideId);
       await _cache.saveGuide(updated);
       state = state.copyWith(guide: updated);
       if (updated.hasInProgress) _startPolling();
     } catch (_) {}
   }
+
+  /// Parses the imageStatus string returned by the generate-image endpoint.
+  ImageStatus _imageStatusFromString(String? s) => switch (s) {
+    'queued'         => ImageStatus.queued,
+    'searching_refs' => ImageStatus.searchingRefs,
+    'analyzing_refs' => ImageStatus.analyzingRefs,
+    'generating'     => ImageStatus.generating,
+    'ready'          => ImageStatus.ready,
+    'failed'         => ImageStatus.failed,
+    _                => ImageStatus.none,
+  };
 
   Future<void> retryStepImage(String stepId) async {
     try {
@@ -170,9 +214,9 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
   }
 
   Future<void> _startPolling() async {
-    while (mounted && state.guide != null && state.guide!.hasInProgress) {
+    while (_alive && state.guide != null && state.guide!.hasInProgress) {
       await Future.delayed(const Duration(seconds: 4));
-      if (!mounted) return;
+      if (!_alive) return;
       try {
         final updated = await _api.getGuide(guideId);
         await _cache.saveGuide(updated);

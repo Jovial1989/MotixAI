@@ -402,7 +402,11 @@ export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<s
   );
 
   const result = await Promise.race([
-    client.models.generateContent({ model: "gemini-2.5-flash-image", contents: prompt }),
+    client.models.generateContent({
+      model: "gemini-2.5-flash-image",
+      contents: prompt,
+      config: { responseModalities: ["IMAGE", "TEXT"] },
+    }),
     imageTimeoutPromise,
   ]);
   console.log("[image-gen] Gemini response received");
@@ -464,7 +468,11 @@ export async function generateStepImage(prompt: string): Promise<string> {
   }
 
   console.log("[image-gen] calling Gemini gemini-2.5-flash-image");
-  const result = await client.models.generateContent({ model: "gemini-2.5-flash-image", contents: prompt });
+  const result = await client.models.generateContent({
+    model: "gemini-2.5-flash-image",
+    contents: prompt,
+    config: { responseModalities: ["IMAGE", "TEXT"] },
+  });
   console.log("[image-gen] Gemini response received");
 
   for (const part of result.candidates?.[0]?.content?.parts ?? []) {

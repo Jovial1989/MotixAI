@@ -119,14 +119,12 @@ class ApiClient {
   }
 
   Future<RepairGuide> createGuide({
-    String? vin,
     String? vehicleModel,
     required String partName,
     String? oemNumber,
   }) async {
     try {
       final resp = await _dio.post<Map<String, dynamic>>('/guides', data: {
-        if (vin != null && vin.isNotEmpty) 'vin': vin,
         if (vehicleModel != null && vehicleModel.isNotEmpty) 'vehicleModel': vehicleModel,
         'partName': partName,
         if (oemNumber != null && oemNumber.isNotEmpty) 'oemNumber': oemNumber,
@@ -144,11 +142,25 @@ class ApiClient {
 
   Future<Map<String, dynamic>> generateStepImage(String stepId, {bool force = false}) async {
     try {
+      // The backend pipeline (spec + image generation) can take up to ~45s.
+      // Override the default 30s receiveTimeout so we get the real final result
+      // instead of timing out early and falling back to polling.
       final resp = await _dio.post<Map<String, dynamic>>(
         '/steps/$stepId/generate-image',
         data: {'force': force},
+        options: Options(receiveTimeout: const Duration(seconds: 60)),
       );
       return resp.data!;
+    } on DioException catch (e) { return _handleError(e); }
+  }
+
+  Future<String> askGuideStep(String guideId, String stepId, String question) async {
+    try {
+      final resp = await _dio.post<Map<String, dynamic>>(
+        '/guides/$guideId/ask',
+        data: {'stepId': stepId, 'question': question},
+      );
+      return resp.data!['answer'] as String? ?? '';
     } on DioException catch (e) { return _handleError(e); }
   }
 }

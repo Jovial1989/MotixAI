@@ -536,28 +536,69 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
     }
 
     if (step.imageStatus == ImageStatus.failed) {
-      return GestureDetector(
-        onTap: widget.onRetry,
-        child: Container(
-          width: double.infinity,
-          height: 72,
-          decoration: BoxDecoration(
-            color: kErrorLight,
-            borderRadius: kRadiusMd,
-            border: Border.all(color: const Color(0xFFFCA5A5)),
+      // Show the fallback image the backend saved (placehold.co or last known URL),
+      // plus a retry button underneath. Never show an empty block.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (step.imageUrl != null)
+            ClipRRect(
+              borderRadius: kRadiusMd,
+              child: Image(
+                image: _resolveImage(step.imageUrl!),
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _placeholder(),
+              ),
+            ),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: widget.onRetry,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: kErrorLight,
+                borderRadius: kRadiusMd,
+                border: Border.all(color: const Color(0xFFFCA5A5)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('⟳', style: TextStyle(fontSize: 16, color: Color(0xFFDC2626))),
+                  const SizedBox(width: 6),
+                  Text('Tap to regenerate', style: tsCaption.copyWith(color: const Color(0xFFDC2626))),
+                ],
+              ),
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('⟳', style: TextStyle(fontSize: 20, color: Color(0xFFDC2626))),
-              Text('Tap to retry', style: tsCaption.copyWith(color: const Color(0xFFDC2626))),
-            ],
-          ),
-        ),
+        ],
       );
     }
 
-    return const SizedBox.shrink();
+    // none state: triggering hasn't completed yet — show a lightweight queued indicator
+    // so the user always sees feedback instead of an empty block.
+    return FadeTransition(
+      opacity: _anim,
+      child: Container(
+        width: double.infinity,
+        height: 100,
+        decoration: BoxDecoration(
+          color: kBorder,
+          borderRadius: kRadiusMd,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: kPrimary, strokeWidth: 2),
+            const SizedBox(height: 8),
+            Text('Preparing illustration…',
+                style: tsCaption.copyWith(fontWeight: FontWeight.w400)),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _placeholder() => Container(
