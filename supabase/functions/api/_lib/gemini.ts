@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24";
+import { GoogleGenAI } from "npm:@google/genai";
 
 export interface GuideStep {
   order: number;
@@ -35,9 +35,9 @@ export interface DrawingSpec {
 
 // ── Gemini client ────────────────────────────────────────────────────────────
 
-function getClient(): GoogleGenerativeAI | null {
+function getClient(): GoogleGenAI | null {
   const key = Deno.env.get("GEMINI_API_KEY");
-  return key && key !== "replace-with-real-key" ? new GoogleGenerativeAI(key) : null;
+  return key && key !== "replace-with-real-key" ? new GoogleGenAI({ apiKey: key }) : null;
 }
 
 // ── Mock fallbacks ───────────────────────────────────────────────────────────
@@ -84,6 +84,120 @@ function mockDrawingSpec(vehicle: string, part: string, stepTitle: string): Draw
     warningCallout: null,
     referenceContext: `Standard OEM workshop diagram for ${part} on ${vehicle}`,
   };
+}
+
+// ── Source-backed synthesis ───────────────────────────────────────────────────
+//
+// Given a SourcePackage (seeded Nissan/Toyota data), uses Gemini to reformat
+// the raw source steps into the standard GeneratedGuide format.
+// Never invents steps or specs — only reformats what the source provides.
+
+import type { SourcePackage } from "./sources/types.ts";
+
+export async function synthesizeFromSource(pkg: SourcePackage): Promise<GeneratedGuide> {
+  const client = getClient();
+
+  // Build structured source text to ground the prompt
+  const stepsText = pkg.steps
+    .map((s) => {
+      const torque = s.torqueSpec ? `\n  Torque spec: ${s.torqueSpec}` : "";
+      const warn = s.warningNote ? `\n  Warning: ${s.warningNote}` : "";
+      return `Step ${s.order} — ${s.title}:\n  ${s.rawText}${torque}${warn}`;
+    })
+    .join("\n\n");
+
+  const sourceLabel = `${pkg.sourceProvider} (${pkg.make} ${pkg.model} ${pkg.year})`;
+
+  // Mock fallback: directly convert source data without Gemini
+  if (!client) {
+    return {
+      title: `${pkg.component} — ${pkg.make} ${pkg.model} ${pkg.year}`,
+      difficulty: pkg.difficulty,
+      timeEstimate: pkg.timeEstimate,
+      tools: pkg.tools,
+      safetyNotes: pkg.safetyNotes,
+      steps: pkg.steps.map((s) => ({
+        order: s.order,
+        title: s.title,
+        instruction: s.rawText,
+        torqueValue: s.torqueSpec ?? null,
+        warningNote: s.warningNote ?? null,
+      })),
+      imagePlan: pkg.steps.map((s) =>
+        `Technical diagram: ${pkg.make} ${pkg.model} — ${s.title}`
+      ),
+    };
+  }
+
+  const prompt = `You are a technical editor reviewing a verified repair procedure sourced from ${sourceLabel}.
+Your task is to restructure the provided source text into a clean, beginner-friendly repair guide.
+
+RULES:
+- Do NOT invent steps, torque values, or specifications not present in the source text.
+- Rephrase each source step into a clear, numbered instruction (2–4 sub-steps per step).
+- Preserve all torque specs and warnings exactly as given.
+- instruction format: "1. Action.\\n2. Action.\\n3. Action." (newlines as \\n)
+- Keep the exact number of steps provided in the source.
+- safetyNotes: use the provided safety notes exactly.
+- tools: use the provided tools list exactly.
+
+SOURCE DATA:
+Vehicle: ${pkg.make} ${pkg.model} ${pkg.year}
+Task: ${pkg.taskType.replace(/_/g, " ")}
+Component: ${pkg.component}
+Difficulty: ${pkg.difficulty}
+Time: ${pkg.timeEstimate}
+Tools: ${pkg.tools.join(", ")}
+Safety notes: ${pkg.safetyNotes.join(" | ")}
+
+SOURCE STEPS:
+${stepsText}
+
+Respond ONLY with valid JSON matching this exact schema:
+{
+  "title": "string",
+  "difficulty": "${pkg.difficulty}",
+  "timeEstimate": "${pkg.timeEstimate}",
+  "tools": ["string"],
+  "safetyNotes": ["string"],
+  "steps": [
+    {
+      "order": 1,
+      "title": "string",
+      "instruction": "string (2–4 numbered lines)",
+      "torqueValue": "string or null",
+      "warningNote": "string or null"
+    }
+  ],
+  "imagePlan": ["string (one brief image description per step)"]
+}`;
+
+  try {
+    const result = await getClient()!.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+    const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+    const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    return JSON.parse(json) as GeneratedGuide;
+  } catch (err) {
+    console.error("[gemini] synthesizeFromSource failed, using direct conversion:", err instanceof Error ? err.message : err);
+    // Direct conversion fallback
+    return {
+      title: `${pkg.component} — ${pkg.make} ${pkg.model} ${pkg.year}`,
+      difficulty: pkg.difficulty,
+      timeEstimate: pkg.timeEstimate,
+      tools: pkg.tools,
+      safetyNotes: pkg.safetyNotes,
+      steps: pkg.steps.map((s) => ({
+        order: s.order,
+        title: s.title,
+        instruction: s.rawText,
+        torqueValue: s.torqueSpec ?? null,
+        warningNote: s.warningNote ?? null,
+      })),
+      imagePlan: pkg.steps.map((s) =>
+        `Technical diagram: ${pkg.make} ${pkg.model} — ${s.title}`
+      ),
+    };
+  }
 }
 
 // ── Guide generation ─────────────────────────────────────────────────────────
@@ -136,9 +250,8 @@ Respond ONLY with valid JSON:
 Generate 8–10 steps. Include real torque specs and clearances where standard specs apply.`;
 
   try {
-    const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const result = await client.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+    const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
     const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     return JSON.parse(json) as GeneratedGuide;
   } catch {
@@ -153,6 +266,10 @@ Generate 8–10 steps. Include real torque specs and clearances where standard s
 // Google Search grounding can be enabled here by adding tools: [{ googleSearch: {} }]
 // when a Search API quota is available — it will ground the response in real
 // OEM diagram references from the web.
+
+// Hard timeout for spec generation — prevents hanging on slow thinking model.
+// On timeout the catch block returns mockDrawingSpec so the pipeline continues.
+const SPEC_TIMEOUT_MS = 10_000;
 
 export async function buildDrawingSpec(step: {
   stepOrder: number;
@@ -201,9 +318,14 @@ Rules:
 - viewType: choose the view that best exposes the action described`;
 
   try {
-    const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`spec timeout after ${SPEC_TIMEOUT_MS}ms`)), SPEC_TIMEOUT_MS),
+    );
+    const result = await Promise.race([
+      client.models.generateContent({ model: "gemini-2.5-flash", contents: prompt }),
+      timeoutPromise,
+    ]);
+    const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
     const cleaned = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
     const parsed = JSON.parse(cleaned);
 
@@ -261,6 +383,9 @@ ABSOLUTE RULES — no exceptions:
 - Directional arrows showing rotation, removal direction, or applied force where relevant`;
 }
 
+// Hard timeout for image generation — Gemini image model can hang for minutes.
+const IMAGE_TIMEOUT_MS = 35_000;
+
 export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<string> {
   const client = getClient();
   if (!client) {
@@ -270,32 +395,64 @@ export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<s
 
   const prompt = specToImagePrompt(spec);
 
-  const model = (client.getGenerativeModel as Function)({
-    model: "gemini-2.0-flash-exp-image-generation",
-  });
-
   console.log(`[image-gen] generating from spec: ${spec.stepTitle} (${spec.viewType} view)`);
-  const result = await (model.generateContent as Function)({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-  });
+
+  const imageTimeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Image generation timed out after ${IMAGE_TIMEOUT_MS}ms`)), IMAGE_TIMEOUT_MS),
+  );
+
+  const result = await Promise.race([
+    client.models.generateContent({ model: "gemini-2.5-flash-image", contents: prompt }),
+    imageTimeoutPromise,
+  ]);
   console.log("[image-gen] Gemini response received");
 
-  const candidates: unknown[] = (result.response.candidates as unknown[]) ?? [];
-  for (const candidate of candidates) {
-    const parts: unknown[] =
-      (candidate as { content?: { parts?: unknown[] } }).content?.parts ?? [];
-    for (const part of parts) {
-      const p = part as { inlineData?: { data?: string; mimeType?: string } };
-      if (p.inlineData?.data) {
-        const mime = p.inlineData.mimeType ?? "image/png";
-        console.log(`[image-gen] image ready mime=${mime}`);
-        return `data:${mime};base64,${p.inlineData.data}`;
-      }
+  for (const part of result.candidates?.[0]?.content?.parts ?? []) {
+    if (part.inlineData?.data) {
+      const mime = part.inlineData.mimeType ?? "image/png";
+      console.log(`[image-gen] image ready mime=${mime}`);
+      return `data:${mime};base64,${part.inlineData.data}`;
     }
   }
 
   throw new Error("No image data returned from Gemini");
+}
+
+// ── Ask AI: step explanation ─────────────────────────────────────────────────
+
+export async function explainStep(
+  stepTitle: string,
+  instruction: string,
+  vehicleModel: string,
+  partName: string,
+  question: string,
+): Promise<string> {
+  const client = getClient();
+
+  if (!client) {
+    // Fallback when no Gemini key: summarise the step text locally
+    const firstLine = instruction.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
+    return `This step (${stepTitle}) involves: ${firstLine}. Ensure all safety precautions are followed and use the specified tools for accurate results.`;
+  }
+
+  try {
+    const prompt = `You are an expert automotive and heavy equipment repair technician.
+A technician is following a repair guide for: ${vehicleModel} — ${partName}
+Current step: "${stepTitle}"
+Instruction: ${instruction}
+
+${question ? `Question: ${question}` : "Explain this step in more detail with practical workshop tips."}
+
+Provide a clear, concise answer (2-4 sentences) focused on practical workshop guidance.`;
+
+    const result = await client.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+    return (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+  } catch (err) {
+    console.error("[gemini] explainStep failed:", err instanceof Error ? err.message : err);
+    // Return a local fallback instead of crashing
+    const firstLine = instruction.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
+    return `This step involves: ${firstLine}. Double-check torque specs and use the correct tools listed in the guide.`;
+  }
 }
 
 // ── Legacy single-call generator (backward compat) ───────────────────────────
@@ -306,28 +463,15 @@ export async function generateStepImage(prompt: string): Promise<string> {
     return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${encodeURIComponent(prompt.slice(0, 50))}`;
   }
 
-  const model = (client.getGenerativeModel as Function)({
-    model: "gemini-2.0-flash-exp-image-generation",
-  });
-
-  console.log("[image-gen] calling Gemini gemini-2.0-flash-exp-image-generation");
-  const result = await (model.generateContent as Function)({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-  });
+  console.log("[image-gen] calling Gemini gemini-2.5-flash-image");
+  const result = await client.models.generateContent({ model: "gemini-2.5-flash-image", contents: prompt });
   console.log("[image-gen] Gemini response received");
 
-  const candidates: unknown[] = (result.response.candidates as unknown[]) ?? [];
-  for (const candidate of candidates) {
-    const parts: unknown[] =
-      (candidate as { content?: { parts?: unknown[] } }).content?.parts ?? [];
-    for (const part of parts) {
-      const p = part as { inlineData?: { data?: string; mimeType?: string } };
-      if (p.inlineData?.data) {
-        const mime = p.inlineData.mimeType ?? "image/png";
-        console.log("[image-gen] got inline image data, mime=" + mime);
-        return `data:${mime};base64,${p.inlineData.data}`;
-      }
+  for (const part of result.candidates?.[0]?.content?.parts ?? []) {
+    if (part.inlineData?.data) {
+      const mime = part.inlineData.mimeType ?? "image/png";
+      console.log("[image-gen] got inline image data, mime=" + mime);
+      return `data:${mime};base64,${part.inlineData.data}`;
     }
   }
 
