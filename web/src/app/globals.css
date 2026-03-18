@@ -2701,77 +2701,210 @@ input, textarea, select { font-family: inherit; outline: none; }
   gap: 24px; text-align: center; width: 100%;
 }
 
-/* Right: phones container */
+/* Right: manual intelligence visual */
 .sh-right {
   display: flex; justify-content: center; align-items: center;
   flex-shrink: 0;
 }
 
-/* ── Dual-phone stage ──────────────────────────────────────────────────
-   Mirrors the .mobile-phones container so .phone--back / .phone--front
-   absolute positioning works correctly without any !important overrides.
- ─────────────────────────────────────────────────────────────────────── */
-.sh-duo {
+/* ═══════════════════════════════════════════════════════════════════════
+   HERO MANUAL INTELLIGENCE VISUAL
+   Layered composition: schematic card + procedure card + floating tags
+═══════════════════════════════════════════════════════════════════════ */
+
+.sh-manual {
   position: relative;
-  width: 340px;
-  height: 540px;
-  /* Subtle float for the whole composition */
-  animation: sh-float 6s ease-in-out infinite;
+  width: 420px;
+  height: 480px;
+  animation: sh-float 7s ease-in-out infinite;
 }
 @keyframes sh-float {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-12px); }
+  50%       { transform: translateY(-10px); }
 }
-@media (prefers-reduced-motion: reduce) { .sh-duo { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .sh-manual { animation: none; } }
 
-/* Warm radial glow that sits behind both phones */
-.sh-duo-glow {
-  position: absolute;
-  bottom: -20px; left: 50%; transform: translateX(-50%);
-  width: 320px; height: 180px;
+/* Soft ambient glow behind the composition */
+.sh-man-glow {
+  position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%);
+  width: 360px; height: 160px;
   background: radial-gradient(ellipse at center,
-    rgba(234,88,12,0.28) 0%,
-    rgba(234,88,12,0.10) 45%,
-    transparent 75%);
-  filter: blur(24px);
+    rgba(234,88,12,0.14) 0%, rgba(234,88,12,0.05) 50%, transparent 75%);
+  filter: blur(28px);
   pointer-events: none; z-index: 0;
 }
 
-/* ── Floating stat badges around the phones ── */
-.sh-badge {
+/* ── Source / manual reference badge ── */
+.sh-man-source {
+  position: absolute; top: 0; right: 0; z-index: 10;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  padding: 5px 12px;
+  font-size: 0.7rem; font-weight: 600; color: var(--text-sub);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  white-space: nowrap;
+  animation: sh-tag-bob 5s 0.8s ease-in-out infinite;
+}
+.sh-man-verified {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #16a34a; font-weight: 700;
+  padding-left: 8px; border-left: 1px solid var(--border);
+  margin-left: 4px;
+}
+
+/* ── Shared card base ── */
+.sh-man-card {
+  position: absolute;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+/* ── Main schematic card ── */
+.sh-man-card--main {
+  top: 36px; left: 0;
+  width: 300px;
+  z-index: 2;
+  transform: rotate(-1.2deg);
+}
+
+/* Card header */
+.sh-man-card-hd {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+.sh-man-card-hd-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--p-light); border: 1px solid var(--p-border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--p); flex-shrink: 0;
+}
+.sh-man-card-hd-text { flex: 1; min-width: 0; }
+.sh-man-vehicle {
+  font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.sh-man-title {
+  font-size: 0.78rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sh-man-view-badge {
+  flex-shrink: 0;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--p);
+  background: var(--p-light); border: 1px solid var(--p-border);
+  border-radius: var(--r-full); padding: 3px 8px;
+}
+
+/* Diagram area */
+.sh-man-diagram {
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  line-height: 0;
+}
+
+/* Chip row */
+.sh-man-chips {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 12px;
+}
+.sh-man-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.68rem; font-weight: 600; color: var(--text-sub);
+  background: var(--bg-subtle); border: 1px solid var(--border);
+  border-radius: var(--r-full); padding: 3px 9px;
+}
+.sh-man-chip--steps { color: var(--p); background: var(--p-light); border-color: var(--p-border); }
+.sh-man-chip--safety { color: #b45309; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+
+/* ── Procedure card ── */
+.sh-man-card--proc {
+  bottom: 10px; right: 0;
+  width: 210px;
+  z-index: 3;
+  transform: rotate(1.5deg);
+  padding: 12px;
+}
+.sh-man-proc-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 2px;
+}
+.sh-man-proc-title {
+  font-size: 0.78rem; font-weight: 700; color: var(--text);
+}
+.sh-man-proc-step {
+  font-size: 0.65rem; font-weight: 700; color: var(--p);
+  background: var(--p-light); border: 1px solid var(--p-border);
+  border-radius: var(--r-full); padding: 2px 7px;
+}
+.sh-man-proc-vehicle {
+  font-size: 0.62rem; color: var(--text-muted); margin-bottom: 10px;
+}
+
+.sh-man-steps { display: flex; flex-direction: column; gap: 5px; }
+.sh-man-step {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.7rem; color: var(--text-sub);
+  padding: 4px 6px; border-radius: 6px;
+}
+.sh-man-step--done { color: var(--text-muted); text-decoration: line-through; }
+.sh-man-step--active {
+  background: var(--p-light); border: 1px solid var(--p-border);
+  color: var(--text); font-weight: 600;
+}
+.sh-man-step--pending { opacity: 0.55; }
+
+.sh-man-proc-footer {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);
+}
+.sh-man-proc-badge {
+  font-size: 0.62rem; font-weight: 600;
+  background: var(--bg-subtle); border: 1px solid var(--border);
+  border-radius: var(--r-full); padding: 2px 8px; color: var(--text-muted);
+}
+.sh-man-proc-badge--ai { color: var(--p); background: var(--p-light); border-color: var(--p-border); }
+
+/* ── Floating detail tags ── */
+.sh-man-tag {
   position: absolute; z-index: 10;
-  display: flex; flex-direction: column; align-items: center; gap: 1px;
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(234,88,12,0.18);
-  border-radius: 12px;
-  padding: 8px 14px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(234,88,12,0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.68rem; font-weight: 700;
+  background: white;
+  border-radius: var(--r-full);
+  padding: 5px 11px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   white-space: nowrap;
 }
-.sh-badge-val {
-  font-size: 0.82rem; font-weight: 800; color: var(--p);
-  letter-spacing: -0.02em;
+.sh-man-tag--torque {
+  bottom: 190px; left: -10px;
+  color: var(--p); border: 1px solid var(--p-border);
+  background: var(--p-light);
+  animation: sh-tag-bob 4.5s 0s ease-in-out infinite;
 }
-.sh-badge-lbl {
-  font-size: 0.65rem; font-weight: 500; color: var(--text-muted);
+.sh-man-tag--verified {
+  top: 158px; right: -4px;
+  color: #16a34a;
+  border: 1px solid rgba(34,197,94,0.3);
+  background: rgba(34,197,94,0.07);
+  animation: sh-tag-bob 4.5s 1.8s ease-in-out infinite;
 }
 
-/* Badge positions */
-.sh-badge--tl { top: 48px;  left: -20px;  animation: sh-badge-bob 4.5s 0.0s ease-in-out infinite; }
-.sh-badge--tr { top: 20px;  right: -16px; animation: sh-badge-bob 4.5s 1.2s ease-in-out infinite; }
-.sh-badge--bl { bottom: 80px; left: -24px; animation: sh-badge-bob 4.5s 2.4s ease-in-out infinite; }
-
-@keyframes sh-badge-bob {
+@keyframes sh-tag-bob {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-5px); }
+  50%       { transform: translateY(-6px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sh-badge--tl, .sh-badge--tr, .sh-badge--bl { animation: none; }
+  .sh-man-tag--torque, .sh-man-tag--verified, .sh-man-source { animation: none; }
 }
 
-/* ── Desktop: two-column side-by-side ── */
+/* ── Desktop: side-by-side ── */
 @media (min-width: 960px) {
   .sh-cols {
     flex-direction: row; align-items: center;
@@ -2784,17 +2917,19 @@ input, textarea, select { font-family: inherit; outline: none; }
   .sh-recent { justify-content: flex-start; }
 }
 
-/* ── Mobile: hide phones, keep badges out of the way ── */
+/* ── Tablet: scale down ── */
 @media (max-width: 959px) {
-  .sh-duo { width: 300px; height: 480px; }
-  .sh-badge--tl { left: -10px; }
-  .sh-badge--bl { left: -10px; }
-}
-@media (max-width: 600px) {
-  .sh-right { display: none; } /* phones hidden on small mobile, keep search primary */
+  .sh-manual { width: 360px; height: 420px; }
+  .sh-man-card--main { width: 260px; }
+  .sh-man-card--proc { width: 188px; }
 }
 
-/* Legacy — kept for any old markup */
+/* ── Mobile: hide visual, keep search primary ── */
+@media (max-width: 600px) {
+  .sh-right { display: none; }
+}
+
+/* Legacy — kept for old markup */
 .sh-hero {
   display: flex; flex-direction: column; align-items: center;
   gap: 24px; text-align: center; width: 100%;
