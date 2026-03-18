@@ -133,6 +133,7 @@ export default function LandingPage() {
           <div className="hero-bg-grid" />
           <div className="hero-bg-orb hero-bg-orb--1" />
           <div className="hero-bg-orb hero-bg-orb--2" />
+          <div className="hero-bg-orb hero-bg-orb--3" />
         </div>
         <SearchHero />
       </section>
