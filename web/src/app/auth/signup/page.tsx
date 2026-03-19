@@ -10,6 +10,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const pendingQuery = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('q')
+    : null;
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -30,7 +34,8 @@ export default function SignupPage() {
         trialEndsAt: result.user.trialEndsAt,
       }));
       // New users always go to onboarding (hasCompletedOnboarding = false on first signup)
-      router.push(result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding');
+      const base = result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding';
+      router.push(pendingQuery ? `${base}?q=${encodeURIComponent(pendingQuery)}` : base);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
     } finally {
@@ -56,7 +61,7 @@ export default function SignupPage() {
 
   return (
     <main className="auth-page">
-      <Link href="/" className="auth-logo">MotixAI</Link>
+      <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="auth-card">
         <h1 className="auth-title">Create account</h1>

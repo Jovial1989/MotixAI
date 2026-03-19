@@ -14,6 +14,7 @@ interface Props {
   view: DashView;
   onView: (v: DashView) => void;
   isEnterprise: boolean;
+  isGuest?: boolean;
   initials: string;
   email: string;
   guideCount: number;
@@ -55,7 +56,7 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 export default function Sidebar({
-  view, onView, isEnterprise, initials, email,
+  view, onView, isEnterprise, isGuest, initials, email,
   guideCount, jobCount, requestCount,
   guidesUsed, guidesLimit,
   mobileOpen, onMobileClose, planType = 'free',
@@ -86,111 +87,126 @@ export default function Sidebar({
         {/* Logo */}
         <div className="sb-logo">
           <div className="sb-logo-mark">M</div>
-          <span className="sb-logo-text">MotixAI</span>
+          <span className="sb-logo-text">Motixi</span>
         </div>
 
-        <nav className="sb-nav">
-          {/* Main */}
-          <NavItem
-            icon={<IconGuides />}
-            label="Guides"
-            active={view === 'guides'}
-            count={guideCount}
-            onClick={() => nav('guides')}
-          />
-          <NavItem
-            icon={<IconGarage />}
-            label="My Garage"
-            active={view === 'garage'}
-            onClick={() => nav('garage')}
-          />
-          <button className="sb-new-btn" onClick={() => nav('new-guide')}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            New Guide
-          </button>
+        {isGuest ? (
+          /* ── Guest: minimal demo sidebar ── */
+          <nav className="sb-nav">
+            <NavItem
+              icon={<IconGuides />}
+              label="Sample Guides"
+              active={view === 'guides'}
+              count={guideCount}
+              onClick={() => nav('guides')}
+            />
+            <div style={{ flex: 1 }} />
+            <a href="/auth/signup" className="sb-new-btn" style={{ textDecoration: 'none', textAlign: 'center' }}>
+              Create free account
+            </a>
+          </nav>
+        ) : (
+          /* ── Authenticated sidebar ── */
+          <nav className="sb-nav">
+            <NavItem
+              icon={<IconGuides />}
+              label="Guides"
+              active={view === 'guides'}
+              count={guideCount}
+              onClick={() => nav('guides')}
+            />
+            <NavItem
+              icon={<IconGarage />}
+              label="Vehicles"
+              active={view === 'garage'}
+              onClick={() => nav('garage')}
+            />
+            <button className="sb-new-btn" onClick={() => nav('new-guide')}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              New Guide
+            </button>
 
-          {/* Workshop — Enterprise only */}
-          {isEnterprise && (
+            {isEnterprise && (
+              <>
+                <SectionLabel>WORKSHOP</SectionLabel>
+                <NavItem
+                  icon={<IconJobs />}
+                  label="Jobs"
+                  active={view === 'jobs'}
+                  count={jobCount}
+                  onClick={() => nav('jobs')}
+                />
+                <NavItem
+                  icon={<IconRequests />}
+                  label="Requests"
+                  active={view === 'requests'}
+                  count={requestCount}
+                  onClick={() => nav('requests')}
+                />
+                <NavItem
+                  icon={<IconAnalytics />}
+                  label="Analytics"
+                  active={view === 'analytics'}
+                  onClick={() => nav('analytics')}
+                />
+              </>
+            )}
+
+            <SectionLabel>ACCOUNT</SectionLabel>
+            <NavItem
+              icon={<IconSettings />}
+              label="Settings"
+              active={view === 'settings'}
+              onClick={() => nav('settings')}
+            />
+          </nav>
+        )}
+
+        {/* Footer */}
+        <div className="sb-footer">
+          {!isGuest && (
             <>
-              <SectionLabel>WORKSHOP</SectionLabel>
-              <NavItem
-                icon={<IconJobs />}
-                label="Jobs"
-                active={view === 'jobs'}
-                count={jobCount}
-                onClick={() => nav('jobs')}
-              />
-              <NavItem
-                icon={<IconRequests />}
-                label="Requests"
-                active={view === 'requests'}
-                count={requestCount}
-                onClick={() => nav('requests')}
-              />
-              {/* Manuals upload hidden — not available in this phase */}
-              <NavItem
-                icon={<IconAnalytics />}
-                label="Analytics"
-                active={view === 'analytics'}
-                onClick={() => nav('analytics')}
-              />
+              <button className="sb-user" onClick={() => nav('settings')}>
+                <div className="sb-avatar">{initials}</div>
+                <div className="sb-user-info">
+                  <span className="sb-user-email">{email}</span>
+                  <span className="sb-user-plan">{planLabel}</span>
+                </div>
+              </button>
+
+              {!isEnterprise && (
+                <div className="sb-usage">
+                  <div className="sb-usage-bar">
+                    <div
+                      className={`sb-usage-fill${guidesUsed >= guidesLimit ? ' sb-usage-fill--full' : ''}`}
+                      style={{ width: `${planPercent}%` }}
+                    />
+                  </div>
+                  {guidesUsed >= guidesLimit && (
+                    <p className="sb-upgrade-hint">
+                      Limit reached —{' '}
+                      <button className="sb-upgrade-link" onClick={() => nav('settings')}>upgrade</button>
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
 
-          {/* Account */}
-          <SectionLabel>ACCOUNT</SectionLabel>
-          <NavItem
-            icon={<IconSettings />}
-            label="Settings"
-            active={view === 'settings'}
-            onClick={() => nav('settings')}
-          />
-        </nav>
-
-        {/* Plan footer */}
-        <div className="sb-footer">
-          {/* Avatar + email */}
-          <button className="sb-user" onClick={() => nav('settings')}>
-            <div className="sb-avatar">{initials}</div>
-            <div className="sb-user-info">
-              <span className="sb-user-email">{email}</span>
-              <span className="sb-user-plan">{planLabel}</span>
-            </div>
-          </button>
-
-          {/* Usage bar — only for free users */}
-          {!isEnterprise && (
-            <div className="sb-usage">
-              <div className="sb-usage-bar">
-                <div
-                  className={`sb-usage-fill${guidesUsed >= guidesLimit ? ' sb-usage-fill--full' : ''}`}
-                  style={{ width: `${planPercent}%` }}
-                />
-              </div>
-              {guidesUsed >= guidesLimit && (
-                <p className="sb-upgrade-hint">
-                  Limit reached —{' '}
-                  <button className="sb-upgrade-link" onClick={() => nav('settings')}>upgrade</button>
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Logout */}
           <button
             className="sb-logout"
             onClick={() => {
               localStorage.removeItem('motix_access_token');
               localStorage.removeItem('motix_refresh_token');
-              location.href = '/auth/login';
+              location.href = isGuest ? '/' : '/auth/login';
             }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Log out
+            {isGuest ? 'Exit demo' : 'Log out'}
           </button>
         </div>
       </aside>

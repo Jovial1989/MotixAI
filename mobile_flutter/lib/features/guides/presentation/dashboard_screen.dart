@@ -25,6 +25,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _openCreateSheet() async {
+    final authState = ref.read(authProvider);
+    final isGuest = authState.tokens?.user.role == 'GUEST';
+    if (isGuest) {
+      _showGuestAuthSheet();
+      return;
+    }
     final data = await showGuideCreateSheet(context);
     if (data == null || !mounted) return;
     setState(() => _creating = true);
@@ -38,22 +44,89 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (guide != null) context.push('/guides/${guide.id}');
   }
 
+  void _showGuestAuthSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 36, height: 4, decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2),
+            )),
+            const SizedBox(height: 24),
+            Container(
+              width: 52, height: 52, decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: const Color(0xFFFDBA74)),
+              ),
+              child: const Center(child: Text('✦', style: TextStyle(fontSize: 22))),
+            ),
+            const SizedBox(height: 16),
+            const Text('Create an account to generate guides',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              textAlign: TextAlign.center),
+            const SizedBox(height: 6),
+            Text('Sign up for free to generate AI repair guides for any vehicle.',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.5),
+              textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () { Navigator.pop(context); context.go('/signup'); },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFEA580C),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Create account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () { Navigator.pop(context); context.go('/login'); },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                child: const Text('Sign in', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0F172A))),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(guidesProvider);
     final authState = ref.watch(authProvider);
+    final isGuest = authState.tokens?.user.role == 'GUEST';
 
     return Scaffold(
       backgroundColor: kBg,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _creating ? null : _openCreateSheet,
-        backgroundColor: kPrimary,
+        backgroundColor: isGuest ? const Color(0xFF64748B) : kPrimary,
         foregroundColor: Colors.white,
         icon: _creating
             ? const SizedBox(width: 18, height: 18,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Icon(Icons.add),
-        label: Text(_creating ? 'Generating…' : 'New guide',
+            : Icon(isGuest ? Icons.lock_outline : Icons.add),
+        label: Text(_creating ? 'Generating…' : (isGuest ? 'Sign up to generate' : 'New guide'),
           style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: SafeArea(
@@ -62,8 +135,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             // ── Top bar ──
             _TopBar(
               email: authState.tokens?.user.email ?? '',
-              onProfile: () => context.push('/profile'),
+              onProfile: isGuest ? null : () => context.push('/profile'),
             ),
+
+            // ── Guest banner ──
+            if (isGuest)
+              Container(
+                margin: const EdgeInsets.fromLTRB(s16, s8, s16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: s12, vertical: s10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.info_outline, size: 15, color: Color(0xFFD97706)),
+                  const SizedBox(width: s8),
+                  Expanded(child: Text(
+                    'Browsing as guest — read-only. ',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                  )),
+                  GestureDetector(
+                    onTap: () => context.go('/signup'),
+                    child: const Text('Sign up', style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFEA580C),
+                      decoration: TextDecoration.underline,
+                    )),
+                  ),
+                ]),
+              ),
 
             // ── Guides list ──
             Expanded(child: _buildBody(state)),
@@ -139,7 +239,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 class _TopBar extends StatelessWidget {
   final String email;
-  final VoidCallback onProfile;
+  final VoidCallback? onProfile;
   const _TopBar({required this.email, required this.onProfile});
 
   @override
@@ -154,7 +254,7 @@ class _TopBar extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('MotixAI', style: tsSubhead.copyWith(color: kPrimary, fontWeight: FontWeight.w800)),
+            Text('Motixi', style: tsSubhead.copyWith(color: kPrimary, fontWeight: FontWeight.w800)),
             if (email.isNotEmpty)
               Text(email, style: tsCaption.copyWith(color: kTextMuted)),
           ],

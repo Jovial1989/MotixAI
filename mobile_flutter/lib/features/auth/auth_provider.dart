@@ -122,6 +122,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  Future<void> loginAsGuest() async {
+    state = state.withLoading();
+    try {
+      final tokens = await _api.guest();
+      await _tokens.save(tokens.accessToken, tokens.refreshToken);
+      await _tokens.saveOnboardingDone(true); // guests skip onboarding
+      await _tokens.savePlan(tokens.user.planType, tokens.user.subscriptionStatus, null);
+      final guestUser = AuthUser(
+        id: tokens.user.id,
+        email: tokens.user.email,
+        role: tokens.user.role,
+        tenantId: tokens.user.tenantId,
+        hasCompletedOnboarding: true,
+        planType: tokens.user.planType,
+        subscriptionStatus: tokens.user.subscriptionStatus,
+        trialEndsAt: null,
+      );
+      state = AuthState(tokens: AuthTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: guestUser,
+      ));
+    } catch (e) {
+      state = state.withError(e.toString());
+    }
+  }
+
   Future<void> logout() async {
     await _tokens.clear();
     await _cache.clearAll();

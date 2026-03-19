@@ -25,6 +25,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _continueAsGuest() async {
+    await ref.read(authProvider.notifier).loginAsGuest();
+    if (!mounted) return;
+    final err = ref.read(authProvider).error;
+    if (err == null) context.go('/dashboard');
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passCtrl.text);
@@ -145,6 +152,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       )),
                     ),
                   ],
+                ),
+                const SizedBox(height: s16),
+
+                // Guest access
+                GestureDetector(
+                  onTap: state.isLoading ? null : _continueAsGuest,
+                  child: Text(
+                    'Continue as guest →',
+                    textAlign: TextAlign.center,
+                    style: tsBody.copyWith(color: kTextMuted, decoration: TextDecoration.underline),
+                  ),
                 ),
               ],
             ),

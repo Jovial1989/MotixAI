@@ -67,7 +67,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 Text('Create account', style: tsTitle.copyWith(textBaseline: null)),
                 const SizedBox(height: s8),
-                Text('Get started with MotixAI', style: tsBody.copyWith(color: kTextMuted)),
+                Text('Get started with Motixi', style: tsBody.copyWith(color: kTextMuted)),
                 const SizedBox(height: s32),
 
                 if (state.error != null) ...[

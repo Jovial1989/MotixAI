@@ -11,14 +11,14 @@ import type { PlanType } from '@motixai/api-client';
 const STEPS = [
   {
     icon: '🔧',
-    heading: 'Welcome to MotixAI',
+    heading: 'Welcome to Motixi',
     sub: 'AI-powered repair guides that know your vehicle, your parts, and your job — all in one place.',
     content: null,
   },
   {
     icon: '⚡',
     heading: 'Everything you need to fix it right',
-    sub: 'From oil changes to timing belts — MotixAI generates precise, step-by-step guides with AI illustrations.',
+    sub: 'From oil changes to timing belts — Motixi generates precise, step-by-step guides with AI illustrations.',
     content: (
       <div className="ob-features">
         {[
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="ob-page">
-      <Link href="/" className="auth-logo">MotixAI</Link>
+      <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="ob-card">
         {/* Progress dots */}

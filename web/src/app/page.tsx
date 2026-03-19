@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import NavAuth from './_nav-auth';
+import MainNav from './_main-nav';
+import Footer from './_footer';
 import SearchHero from './_search-hero';
 
 const features = [
@@ -65,7 +66,7 @@ const features = [
 
 const steps = [
   { n: '01', title: 'Search or ask a question', text: 'Type a vehicle model and repair description — or ask naturally like "bmw e90 oil change".' },
-  { n: '02', title: 'AI searches knowledge base', text: 'MotixAI checks thousands of stored guides before generating anything new.' },
+  { n: '02', title: 'AI searches knowledge base', text: 'Motixi checks thousands of stored guides before generating anything new.' },
   { n: '03', title: 'Instant result or new guide', text: 'Get an existing guide in under a second, or AI generates a new one in under 3 seconds.' },
   { n: '04', title: 'Follow step-by-step', text: 'Open the guide on web or mobile and follow inline with engineering diagrams.' },
 ];
@@ -87,7 +88,7 @@ const plans = [
     period: '/mo',
     desc: 'For working technicians.',
     items: ['Unlimited guides', 'Priority image jobs', 'Web + mobile', 'API access', 'Email support'],
-    cta: 'Start free trial',
+    cta: 'Try for free',
     href: '/auth/signup',
     highlight: true,
   },
@@ -115,17 +116,7 @@ export default function LandingPage() {
     <div className="page">
 
       {/* ─── NAV ─────────────────────────────────────────── */}
-      <header className="nav-wrap">
-        <nav className="nav">
-          <Link href="/" className="nav-logo">MotixAI</Link>
-          <div className="nav-center">
-            <a href="#how" className="nav-link">How it works</a>
-            <a href="#features" className="nav-link">Features</a>
-            <a href="#pricing" className="nav-link">Pricing</a>
-          </div>
-          <NavAuth />
-        </nav>
-      </header>
+      <MainNav />
 
       {/* ─── HERO ────────────────────────────────────────── */}
       <section className="hero">
@@ -344,7 +335,7 @@ export default function LandingPage() {
                   </button>
                   <div className="mp-motix-logo">
                     <div className="mp-motix-mark">M</div>
-                    <span>MotixAI</span>
+                    <span>Motixi</span>
                   </div>
                   <div style={{ width: 40 }} />
                 </div>
@@ -525,23 +516,13 @@ export default function LandingPage() {
         <h2 className="cta-band-h2">Generate your first repair guide free.</h2>
         <p className="cta-band-sub">No credit card. No setup. Just results.</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">Start for free</Link>
+          <Link href="/auth/signup" className="cta-primary">Try for free</Link>
           <Link href="/auth/login" className="cta-band-ghost">Already have an account →</Link>
         </div>
       </section>
 
       {/* ─── FOOTER ──────────────────────────────────────── */}
-      <footer className="footer">
-        <div className="footer-inner">
-          <Link href="/" className="nav-logo">MotixAI</Link>
-          <p className="footer-copy">© 2026 MotixAI. All rights reserved.</p>
-          <div className="footer-links">
-            <a href="#" className="footer-link">Privacy</a>
-            <a href="#" className="footer-link">Terms</a>
-            <a href="mailto:hello@motixai.com" className="footer-link">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

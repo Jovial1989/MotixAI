@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'MotixAI — AI Repair Intelligence',
+  title: 'Motixi — AI Repair Intelligence',
   description: 'Generate workshop-grade repair guides for vehicles and heavy machinery in seconds.',
 };
 

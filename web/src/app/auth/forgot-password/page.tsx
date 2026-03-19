@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
   if (resetToken) {
     return (
       <main className="auth-page">
-        <Link href="/" className="auth-logo">MotixAI</Link>
+        <Link href="/" className="auth-logo">Motixi</Link>
         <div className="auth-card">
           <h1 className="auth-title">Token ready</h1>
           <p className="auth-sub">
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="auth-page">
-      <Link href="/" className="auth-logo">MotixAI</Link>
+      <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="auth-card">
         <h1 className="auth-title">Forgot password?</h1>

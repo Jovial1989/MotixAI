@@ -70,6 +70,11 @@ export class GuidesController {
     return this.guides.searchGuides(parsed);
   }
 
+  @Get('demo')
+  demoGuides() {
+    return this.guides.getDemoGuides();
+  }
+
   @Get(':id')
   getById(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.guides.getGuide(id, user.sub, user.tenantId);

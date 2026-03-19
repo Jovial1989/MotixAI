@@ -152,7 +152,7 @@ export default function ProfilePage() {
   return (
     <div className="dash-root">
       <header className="dash-nav">
-        <Link href="/dashboard" className="dash-logo">MotixAI</Link>
+        <Link href="/dashboard" className="dash-logo">Motixi</Link>
         <div className="dash-nav-right">
           <Link href="/dashboard" className="dash-nav-link">← Dashboard</Link>
           <button

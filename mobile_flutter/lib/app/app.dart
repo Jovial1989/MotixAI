@@ -11,7 +11,7 @@ class MotixApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'MotixAI',
+      title: 'Motixi',
       theme: buildTheme(),
       routerConfig: router,
       debugShowCheckedModeBanner: false,

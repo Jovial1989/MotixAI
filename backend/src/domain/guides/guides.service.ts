@@ -7,6 +7,13 @@ import { SourceAdapterRegistry } from 'src/ai/source-adapters/source-adapter.reg
 import { TaskType } from 'src/ai/source-adapters/source-package.types';
 import { ProviderRegistry } from 'src/providers/provider-registry';
 
+/** Canonical demo guide IDs — from petrov.epay@gmail.com, used in guest mode. */
+const DEMO_GUIDE_IDS = [
+  'cmmd40lbh001n10js9vgydyku', // BMW E90 3-Series Oil Change (Beginner)
+  'cmmitf5zp000vhs3mgt9zbi5p', // Nissan Qashqai J10 Front Brake Service (Intermediate)
+  'cmmd40wtg002f10jsh3jyvkbu', // Toyota Land Cruiser 200 Turbocharger (Advanced)
+];
+
 @Injectable()
 export class DomainGuidesService {
   private readonly imageQueue: Queue | null;
@@ -83,6 +90,13 @@ export class DomainGuidesService {
       include: { vehicle: true, part: true },
       orderBy: { popularity: 'desc' },
       take: 15,
+    });
+  }
+
+  async getDemoGuides() {
+    return this.prisma.repairGuide.findMany({
+      where: { id: { in: DEMO_GUIDE_IDS } },
+      include: { vehicle: true, part: true },
     });
   }
 
@@ -250,7 +264,7 @@ export class DomainGuidesService {
     const guide = await this.prisma.repairGuide.findFirst({
       where: {
         id: guideId,
-        OR: [ownershipFilter, { source: 'cached' }],
+        OR: [ownershipFilter, { source: 'cached' }, { id: { in: DEMO_GUIDE_IDS } }],
       },
       include: {
         steps: { orderBy: { stepOrder: 'asc' } },

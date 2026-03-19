@@ -53,7 +53,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
             ),
             const SizedBox(height: s24),
-            const Text('MotixAI', style: TextStyle(
+            const Text('Motixi', style: TextStyle(
               fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white,
               letterSpacing: -0.5,
             )),

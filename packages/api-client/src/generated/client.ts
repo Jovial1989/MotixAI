@@ -130,6 +130,10 @@ export class MotixApiClient {
     return this.request<RepairGuide[]>('/guides');
   }
 
+  getDemoGuides() {
+    return this.request<RepairGuide[]>('/guides/demo');
+  }
+
   getGuide(id: string) {
     return this.request<RepairGuide>(`/guides/${id}`);
   }

@@ -10,6 +10,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const pendingQuery = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('q')
+    : null;
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -29,7 +33,8 @@ export default function LoginPage() {
         subscriptionStatus: result.user.subscriptionStatus,
         trialEndsAt: result.user.trialEndsAt,
       }));
-      router.push(result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding');
+      const base = result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding';
+      router.push(pendingQuery ? `${base}?q=${encodeURIComponent(pendingQuery)}` : base);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -55,7 +60,7 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      <Link href="/" className="auth-logo">MotixAI</Link>
+      <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="auth-card">
         <h1 className="auth-title">Welcome back</h1>

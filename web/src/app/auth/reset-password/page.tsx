@@ -37,7 +37,7 @@ function ResetPasswordForm() {
 
   return (
     <main className="auth-page">
-      <Link href="/" className="auth-logo">MotixAI</Link>
+      <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="auth-card">
         <h1 className="auth-title">Reset password</h1>

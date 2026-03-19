@@ -26,7 +26,7 @@ class _Feature {
 const _infoSteps = [
   _InfoStep(
     '🔧',
-    'Welcome to MotixAI',
+    'Welcome to Motixi',
     'AI-powered repair guides that know your vehicle, your parts, and your job — all in one place.',
   ),
   _InfoStep(
@@ -131,7 +131,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text('MotixAI', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kText, letterSpacing: -0.4)),
+                const Text('Motixi', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kText, letterSpacing: -0.4)),
               ]),
               const SizedBox(height: s32),
               // Step dots
