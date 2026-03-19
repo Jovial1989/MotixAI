@@ -1028,9 +1028,9 @@ export default function DashboardPage() {
   }
 
   // Guests are locked to guides view — redirect any other view
-  if (isGuest && view !== 'guides') {
-    setView('guides');
-  }
+  useEffect(() => {
+    if (isGuest && view !== 'guides') setView('guides');
+  }, [isGuest, view]);
 
   // Full-screen new guide mode — no sidebar
   if (view === 'new-guide' && !isGuest) {
