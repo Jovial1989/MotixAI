@@ -10,6 +10,7 @@ import type {
   GuideRequest,
   ManualDocument,
   PlanType,
+  RedeemPromoResponse,
   RepairGuide,
   RepairJob,
   SelectPlanResponse,
@@ -101,6 +102,13 @@ export class MotixApiClient {
 
   completeOnboarding() {
     return this.request<{ success: boolean }>('/user/onboarding-complete', { method: 'POST' });
+  }
+
+  redeemPromo(promoCode: string) {
+    return this.request<RedeemPromoResponse>('/user/redeem-promo', {
+      method: 'POST',
+      body: JSON.stringify({ promoCode }),
+    });
   }
 
   // ── Steps ─────────────────────────────────────────────────────────────────

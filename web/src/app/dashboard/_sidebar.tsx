@@ -23,6 +23,7 @@ interface Props {
   guidesLimit: number;
   mobileOpen: boolean;
   onMobileClose: () => void;
+  planType?: string;
 }
 
 function NavItem({
@@ -57,7 +58,7 @@ export default function Sidebar({
   view, onView, isEnterprise, initials, email,
   guideCount, jobCount, requestCount,
   guidesUsed, guidesLimit,
-  mobileOpen, onMobileClose,
+  mobileOpen, onMobileClose, planType = 'free',
 }: Props) {
 
   function nav(v: DashView) {
@@ -65,8 +66,16 @@ export default function Sidebar({
     onMobileClose();
   }
 
-  const planLabel = isEnterprise ? 'Enterprise' : (guidesUsed >= guidesLimit ? 'Free · limit reached' : `Free · ${guidesUsed}/${guidesLimit}`);
-  const planPercent = isEnterprise ? 100 : Math.min(100, Math.round(guidesUsed / guidesLimit * 100));
+  const isPremium = planType === 'premium' || isEnterprise;
+  const isTrial = planType === 'trial';
+  const planLabel = isEnterprise
+    ? 'Enterprise'
+    : isPremium
+    ? 'Pro ✓'
+    : isTrial
+    ? `Trial · ${guidesUsed}/${guidesLimit}`
+    : (guidesUsed >= guidesLimit ? 'Free · limit reached' : `Free · ${guidesUsed}/${guidesLimit}`);
+  const planPercent = isPremium ? 100 : Math.min(100, Math.round(guidesUsed / guidesLimit * 100));
 
   return (
     <>

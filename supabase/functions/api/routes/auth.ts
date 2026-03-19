@@ -13,6 +13,8 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
+const ALWAYS_PREMIUM_EMAIL = 'petrov.epay@gmail.com';
+
 /** Fetch all subscription fields for a user by ID. */
 async function fetchUser(sql: ReturnType<typeof getDb>, id: string): Promise<UserRecord | null> {
   const rows = await sql`
@@ -22,15 +24,26 @@ async function fetchUser(sql: ReturnType<typeof getDb>, id: string): Promise<Use
   `;
   if (rows.length === 0) return null;
   const r = rows[0];
+
+  // Special account: petrov.epay@gmail.com always has premium
+  const forcePremium = r.email === ALWAYS_PREMIUM_EMAIL;
+  if (forcePremium && r.planType !== 'premium') {
+    const now = new Date().toISOString();
+    await sql`
+      UPDATE "User" SET "planType" = 'premium', "subscriptionStatus" = 'active', "updatedAt" = ${now}
+      WHERE id = ${id}
+    `.catch(() => {});
+  }
+
   return {
     id: r.id,
     email: r.email,
     role: r.role,
     tenantId: r.tenantId ?? null,
     hasCompletedOnboarding: r.hasCompletedOnboarding ?? false,
-    planType: r.planType ?? 'free',
+    planType: forcePremium ? 'premium' : (r.planType ?? 'free'),
     trialEndsAt: r.trialEndsAt ? new Date(r.trialEndsAt).toISOString() : null,
-    subscriptionStatus: r.subscriptionStatus ?? 'none',
+    subscriptionStatus: forcePremium ? 'active' : (r.subscriptionStatus ?? 'none'),
   };
 }
 

@@ -211,11 +211,19 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
   List<Widget> _buildStep0() => [
     _Label('Make', required: true),
     const SizedBox(height: 6),
-    _DropdownWrap(
+    _PickerField(
       hint: 'Select make…',
       value: _selMake,
-      items: _kPopularMakes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-      onChanged: (v) => _handleMakeChanged(v),
+      onTap: () async {
+        final picked = await _showMxPicker<String>(
+          context: context,
+          title: 'Select Make',
+          items: _kPopularMakes,
+          label: (m) => m,
+          selected: _selMake,
+        );
+        if (picked != null && picked != _selMake) _handleMakeChanged(picked);
+      },
     ),
     const SizedBox(height: 14),
 
@@ -235,11 +243,19 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         )),
       )
     else if (_models.isNotEmpty)
-      _DropdownWrap(
+      _PickerField(
         hint: 'Select model…',
         value: _selModel,
-        items: _models.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-        onChanged: (v) => setState(() => _selModel = v),
+        onTap: () async {
+          final picked = await _showMxPicker<String>(
+            context: context,
+            title: 'Select Model',
+            items: _models,
+            label: (m) => m,
+            selected: _selModel,
+          );
+          if (picked != null) setState(() => _selModel = picked);
+        },
       )
     else
       TextField(
@@ -252,14 +268,22 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
 
     _Label('Year', required: false),
     const SizedBox(height: 6),
-    _DropdownWrap(
+    _PickerField(
       hint: 'Any year (optional)',
       value: _selYear,
-      items: [
-        const DropdownMenuItem(value: null, child: Text('Any year')),
-        ..._kYears.map((y) => DropdownMenuItem(value: '$y', child: Text('$y'))),
-      ],
-      onChanged: (v) => setState(() => _selYear = v),
+      onTap: () async {
+        final years = ['Any year', ..._kYears.map((y) => '$y')];
+        final picked = await _showMxPicker<String>(
+          context: context,
+          title: 'Select Year',
+          items: years,
+          label: (y) => y,
+          selected: _selYear ?? 'Any year',
+        );
+        if (picked != null) {
+          setState(() => _selYear = picked == 'Any year' ? null : picked);
+        }
+      },
     ),
   ];
 
@@ -419,6 +443,219 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
   );
 }
 
+// ── Picker bottom sheet ───────────────────────────────────────────────────────
+
+Future<T?> _showMxPicker<T>({
+  required BuildContext context,
+  required String title,
+  required List<T> items,
+  required String Function(T) label,
+  T? selected,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _MxPickerSheet<T>(
+      title: title,
+      items: items,
+      label: label,
+      selected: selected,
+    ),
+  );
+}
+
+class _MxPickerSheet<T> extends StatefulWidget {
+  final String title;
+  final List<T> items;
+  final String Function(T) label;
+  final T? selected;
+  const _MxPickerSheet({
+    required this.title,
+    required this.items,
+    required this.label,
+    this.selected,
+  });
+
+  @override
+  State<_MxPickerSheet<T>> createState() => _MxPickerSheetState<T>();
+}
+
+class _MxPickerSheetState<T> extends State<_MxPickerSheet<T>> {
+  final _searchCtrl = TextEditingController();
+  final _searchFocus = FocusNode();
+  List<T> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.items;
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? widget.items
+          : widget.items.where((i) => widget.label(i).toLowerCase().contains(q)).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    return Container(
+      height: mq.size.height * 0.72,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          const SizedBox(height: 12),
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: kBorder, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 14),
+          // Title row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(child: Text(widget.title,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                )),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 30, height: 30,
+                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
+                    child: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchCtrl,
+              focusNode: _searchFocus,
+              autofocus: false,
+              decoration: InputDecoration(
+                hintText: 'Search…',
+                hintStyle: const TextStyle(color: kTextMuted, fontSize: 14),
+                prefixIcon: const Icon(Icons.search, size: 18, color: kTextMuted),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: kPrimary, width: 1.5)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          // List
+          Expanded(
+            child: _filtered.isEmpty
+                ? const Center(child: Text('No results', style: TextStyle(color: kTextMuted, fontSize: 14)))
+                : ListView.builder(
+                    itemCount: _filtered.length,
+                    itemExtent: 52,
+                    itemBuilder: (_, i) {
+                      final item = _filtered[i];
+                      final lbl = widget.label(item);
+                      final isSelected = item == widget.selected;
+                      return InkWell(
+                        onTap: () => Navigator.of(context).pop(item),
+                        child: Container(
+                          color: isSelected ? kPrimary.withOpacity(0.06) : Colors.transparent,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Expanded(child: Text(lbl,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  color: isSelected ? kPrimary : const Color(0xFF0F172A),
+                                ),
+                              )),
+                              if (isSelected)
+                                const Icon(Icons.check, size: 18, color: kPrimary),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          SizedBox(height: mq.padding.bottom),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Picker field button (replaces DropdownWrap) ───────────────────────────────
+
+class _PickerField extends StatelessWidget {
+  final String hint;
+  final String? value;
+  final VoidCallback? onTap;
+  const _PickerField({required this.hint, this.value, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = value != null && value!.isNotEmpty;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        height: 48,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: kBorder),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(
+          children: [
+            Expanded(child: Text(
+              hasValue ? value! : hint,
+              style: TextStyle(
+                fontSize: 14,
+                color: hasValue ? const Color(0xFF0F172A) : kTextMuted,
+                fontWeight: hasValue ? FontWeight.w500 : FontWeight.w400,
+              ),
+              overflow: TextOverflow.ellipsis,
+            )),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 20,
+              color: Color(0xFF94A3B8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Small helper widgets ──────────────────────────────────────────────────────
 
 class _StepHeader extends StatelessWidget {
@@ -460,32 +697,6 @@ class _Label extends StatelessWidget {
   ]);
 }
 
-class _DropdownWrap extends StatelessWidget {
-  final String hint;
-  final String? value;
-  final List<DropdownMenuItem<String?>> items;
-  final ValueChanged<String?>? onChanged;
-  const _DropdownWrap({required this.hint, this.value, required this.items, this.onChanged});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: const Color(0xFFF8FAFC),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: kBorder),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 14),
-    child: DropdownButton<String?>(
-      value: value,
-      hint: Text(hint, style: const TextStyle(color: kTextMuted, fontSize: 14)),
-      isExpanded: true,
-      underline: const SizedBox.shrink(),
-      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-      items: items,
-      onChanged: onChanged,
-    ),
-  );
-}
 
 class _Chip extends StatelessWidget {
   final String label;

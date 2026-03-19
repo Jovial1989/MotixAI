@@ -19,6 +19,12 @@ export interface SelectPlanResponse {
   trialEndsAt: string | null;
 }
 
+export interface RedeemPromoResponse {
+  planType: PlanType;
+  subscriptionStatus: SubscriptionStatus;
+  promoCodeUsed: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string | null;

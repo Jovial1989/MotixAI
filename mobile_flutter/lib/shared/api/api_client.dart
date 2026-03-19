@@ -1,10 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../models/models.dart';
 import '../storage/token_store.dart';
 
 // Compile-time constant — pass via --dart-define=API_BASE_URL=http://...
-const String _kDefaultBase = 'http://localhost:4000';
-const String kApiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: _kDefaultBase);
+// On Android emulator, localhost is unreachable; use 10.0.2.2 instead.
+const String _kEnvBase = String.fromEnvironment('API_BASE_URL');
+String get kApiBaseUrl {
+  if (_kEnvBase.isNotEmpty) return _kEnvBase;
+  if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:4000';
+  return 'http://localhost:4000';
+}
 
 class ApiClient {
   late final Dio _dio;
@@ -153,6 +160,16 @@ class ApiClient {
   Future<Map<String, dynamic>> completeOnboarding() async {
     try {
       final resp = await _dio.post<Map<String, dynamic>>('/user/onboarding-complete');
+      return resp.data!;
+    } on DioException catch (e) { return _handleError(e); }
+  }
+
+  Future<Map<String, dynamic>> redeemPromo(String promoCode) async {
+    try {
+      final resp = await _dio.post<Map<String, dynamic>>(
+        '/user/redeem-promo',
+        data: {'promoCode': promoCode},
+      );
       return resp.data!;
     } on DioException catch (e) { return _handleError(e); }
   }

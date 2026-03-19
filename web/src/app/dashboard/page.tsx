@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import type { AnalyticsData, GuideRequest, ManualDocument, RepairGuide, RepairJob, VehicleWithHistory } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 import SmartGuideForm from './_guide-form';
@@ -692,12 +692,57 @@ function ManualsView() {
 function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
   email: string; isEnterprise: boolean; guidesUsed: number; guidesLimit: number;
 }) {
+  const [planInfo, setPlanInfo] = useState<{ planType: string; subscriptionStatus: string; trialEndsAt: string | null }>({
+    planType: 'free', subscriptionStatus: 'none', trialEndsAt: null,
+  });
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoSuccess, setPromoSuccess] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('motix_user');
+      if (stored) setPlanInfo(JSON.parse(stored) as typeof planInfo);
+    } catch { /* ignore */ }
+  }, []);
+
+  const isPremium = planInfo.planType === 'premium' || isEnterprise;
+  const isTrial = planInfo.planType === 'trial' && planInfo.subscriptionStatus === 'active';
+
+  const trialDaysLeft = isTrial && planInfo.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(planInfo.trialEndsAt).getTime() - Date.now()) / 86400000))
+    : null;
+
+  async function handlePromoRedeem() {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await webApi.redeemPromo(promoCode.trim());
+      const updated = { planType: res.planType, subscriptionStatus: res.subscriptionStatus, trialEndsAt: null };
+      setPlanInfo(updated);
+      localStorage.setItem('motix_user', JSON.stringify(updated));
+      setPromoSuccess(true);
+      setPromoCode('');
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : 'Invalid promo code');
+    } finally {
+      setPromoLoading(false);
+    }
+  }
+
+  const planBadgeLabel = isEnterprise ? 'Enterprise' : isPremium ? 'Pro' : isTrial ? 'Trial' : 'Free';
+  const planBadgeClass = isEnterprise ? 'sett-plan-badge--enterprise' : isPremium ? 'sett-plan-badge--pro' : isTrial ? 'sett-plan-badge--trial' : 'sett-plan-badge--free';
+
   return (
     <div className="dv-guides">
       <div className="dv-header">
         <div><h1 className="dv-title">Settings</h1><p className="dv-sub">Account and billing</p></div>
       </div>
       <div className="settings-grid">
+
+        {/* Account card */}
         <div className="gen-form">
           <div className="gen-form-header">
             <div className="gen-form-icon">
@@ -714,47 +759,80 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
           </div>
           <div className="settings-row">
             <span className="settings-label">Plan</span>
-            <span className="settings-value">{isEnterprise ? 'Enterprise' : 'Free'}</span>
+            <span className={`sett-plan-badge ${planBadgeClass}`}>{planBadgeLabel}</span>
           </div>
-          <Link href="/profile" className="gen-btn" style={{ textDecoration: 'none', textAlign: 'center' }}>
-            Edit profile →
-          </Link>
+          {isTrial && trialDaysLeft !== null && (
+            <div className="sett-trial-notice">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.4"/><path d="M7 4v3.5l2 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+              Trial ends in {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
 
-        {!isEnterprise && (
-          <div className="gen-form">
-            <div className="gen-form-header">
-              <div className="gen-form-icon">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M2 12l3-9 4 6 3-3 4 6" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span className="gen-form-title">Usage</span>
+        {/* Plan / billing card */}
+        <div className="gen-form">
+          <div className="gen-form-header">
+            <div className="gen-form-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M2 12l3-9 4 6 3-3 4 6" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+              </svg>
             </div>
-            <div className="plan-usage-row">
-              <div className="plan-usage-labels">
-                <span>Guides this month</span>
-                <span>{guidesUsed} / {guidesLimit}</span>
-              </div>
-              <div className="plan-usage-track">
-                <div
-                  className={`plan-usage-bar${guidesUsed >= guidesLimit ? ' plan-usage-bar--full' : ''}`}
-                  style={{ width: `${Math.min(100, guidesUsed / guidesLimit * 100)}%` }}
-                />
-              </div>
-            </div>
-            <div className="plan-upgrade-card">
-              <p className="plan-upgrade-title">⚡ Upgrade to Pro — $39/mo</p>
-              <ul className="plan-upgrade-list">
-                <li>Unlimited guides</li>
-                <li>Priority image generation</li>
-                <li>Mobile app access</li>
-                <li>API access</li>
-              </ul>
-              <button className="gen-btn" style={{ marginTop: 12 }}>Upgrade now →</button>
-            </div>
+            <span className="gen-form-title">{isPremium ? 'Plan — Pro' : 'Plan & Usage'}</span>
           </div>
-        )}
+
+          {isPremium ? (
+            <div className="sett-pro-banner">
+              <div className="sett-pro-banner-icon">⚡</div>
+              <div>
+                <p className="sett-pro-banner-title">Pro plan active</p>
+                <p className="sett-pro-banner-sub">Unlimited guides · Priority image generation · API access</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="plan-usage-row">
+                <div className="plan-usage-labels">
+                  <span>Guides this month</span>
+                  <span>{guidesUsed} / {guidesLimit}</span>
+                </div>
+                <div className="plan-usage-track">
+                  <div
+                    className={`plan-usage-bar${guidesUsed >= guidesLimit ? ' plan-usage-bar--full' : ''}`}
+                    style={{ width: `${Math.min(100, guidesUsed / guidesLimit * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {promoSuccess ? (
+                <div className="sett-promo-success">
+                  🎉 Promo applied! You now have Pro access.
+                </div>
+              ) : (
+                <div className="sett-promo-section">
+                  <p className="sett-promo-label">Have a promo code?</p>
+                  <div className="sett-promo-row">
+                    <input
+                      className="gen-input sett-promo-input"
+                      placeholder="Enter code…"
+                      value={promoCode}
+                      onChange={(e) => { setPromoCode(e.target.value); setPromoError(null); }}
+                      onKeyDown={(e) => e.key === 'Enter' && handlePromoRedeem()}
+                    />
+                    <button
+                      className="sett-promo-btn"
+                      onClick={handlePromoRedeem}
+                      disabled={promoLoading || !promoCode.trim()}
+                    >
+                      {promoLoading ? <span className="gen-spinner" /> : 'Apply'}
+                    </button>
+                  </div>
+                  {promoError && <p className="sett-promo-error">{promoError}</p>}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -818,9 +896,19 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Read plan from JWT
+  // Read plan from JWT + localStorage
   const [userInfo, setUserInfo] = useState({ role: 'USER', email: '' });
-  useEffect(() => { setUserInfo(readJwt()); }, []);
+  const [planType, setPlanType] = useState('free');
+  useEffect(() => {
+    setUserInfo(readJwt());
+    try {
+      const stored = localStorage.getItem('motix_user');
+      if (stored) {
+        const u = JSON.parse(stored) as { planType?: string };
+        if (u.planType) setPlanType(u.planType);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   const isEnterprise = userInfo.role === 'ENTERPRISE_ADMIN';
   const email = userInfo.email;
@@ -916,6 +1004,7 @@ export default function DashboardPage() {
         guidesLimit={guidesLimit === Infinity ? 999 : guidesLimit}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
+        planType={planType}
       />
 
       <main className="ds-main">

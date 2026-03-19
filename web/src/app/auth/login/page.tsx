@@ -24,6 +24,11 @@ export default function LoginPage() {
       if (result.refreshToken) localStorage.setItem('motix_refresh_token', result.refreshToken);
       localStorage.setItem('motix_user_role', result.user.role);
       localStorage.setItem('motix_onboarding_done', result.user.hasCompletedOnboarding ? 'true' : 'false');
+      localStorage.setItem('motix_user', JSON.stringify({
+        planType: result.user.planType,
+        subscriptionStatus: result.user.subscriptionStatus,
+        trialEndsAt: result.user.trialEndsAt,
+      }));
       router.push(result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

@@ -54,9 +54,16 @@ async function doRefresh(): Promise<string | null> {
         return null;
       }
 
-      const data = await res.json() as { accessToken: string; refreshToken?: string };
+      const data = await res.json() as { accessToken: string; refreshToken?: string; user?: { planType?: string; subscriptionStatus?: string; trialEndsAt?: string | null } };
       localStorage.setItem('motix_access_token', data.accessToken);
       if (data.refreshToken) localStorage.setItem('motix_refresh_token', data.refreshToken);
+      if (data.user) {
+        localStorage.setItem('motix_user', JSON.stringify({
+          planType: data.user.planType ?? 'free',
+          subscriptionStatus: data.user.subscriptionStatus ?? 'none',
+          trialEndsAt: data.user.trialEndsAt ?? null,
+        }));
+      }
       return data.accessToken;
     } catch {
       // fetch() threw (network unreachable) — keep existing session, do not force logout

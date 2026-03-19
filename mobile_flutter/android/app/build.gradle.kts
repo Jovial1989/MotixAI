@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.motixai.app"
         // flutter_secure_storage requires minSdk 21; photo_view requires 21+
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

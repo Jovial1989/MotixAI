@@ -48,12 +48,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final claims = _decodeJwt(access);
       final onboardingDone = await _tokens.hasCompletedOnboarding();
+      final planType = await _tokens.planType();
+      final subStatus = await _tokens.subStatus();
+      final trialEndsAt = await _tokens.trialEndsAt();
       final user = AuthUser(
         id: claims['sub'] as String? ?? '',
         email: claims['email'] as String? ?? '',
         role: claims['role'] as String? ?? 'USER',
         tenantId: claims['tenantId'] as String?,
         hasCompletedOnboarding: onboardingDone,
+        planType: planType,
+        subscriptionStatus: subStatus,
+        trialEndsAt: trialEndsAt,
       );
       state = AuthState(tokens: AuthTokens(
         accessToken: access, refreshToken: refresh, user: user,
@@ -72,6 +78,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final tokens = await _api.login(email, password);
       await _tokens.save(tokens.accessToken, tokens.refreshToken);
       await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
+      await _tokens.savePlan(tokens.user.planType, tokens.user.subscriptionStatus, tokens.user.trialEndsAt);
       state = AuthState(tokens: tokens);
     } catch (e) {
       state = state.withError(e.toString());
@@ -84,10 +91,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final tokens = await _api.signup(email, password);
       await _tokens.save(tokens.accessToken, tokens.refreshToken);
       await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
+      await _tokens.savePlan(tokens.user.planType, tokens.user.subscriptionStatus, tokens.user.trialEndsAt);
       state = AuthState(tokens: tokens);
     } catch (e) {
       state = state.withError(e.toString());
     }
+  }
+
+  /// Update plan state in-memory and persist it (called after promo redemption).
+  Future<void> updatePlan(String planType, String subStatus) async {
+    final current = state.tokens;
+    if (current == null) return;
+    await _tokens.savePlan(planType, subStatus, null);
+    final updatedUser = AuthUser(
+      id: current.user.id,
+      email: current.user.email,
+      role: current.user.role,
+      tenantId: current.user.tenantId,
+      hasCompletedOnboarding: current.user.hasCompletedOnboarding,
+      planType: planType,
+      trialEndsAt: null,
+      subscriptionStatus: subStatus,
+    );
+    state = state.copyWith(
+      tokens: AuthTokens(
+        accessToken: current.accessToken,
+        refreshToken: current.refreshToken,
+        user: updatedUser,
+      ),
+    );
   }
 
   Future<void> logout() async {
