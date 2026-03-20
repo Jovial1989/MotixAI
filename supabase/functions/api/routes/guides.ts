@@ -369,10 +369,10 @@ export async function handleGuides(
       if (demoGuide) return json(demoGuide);
     }
 
-    // Allow access if: user owns the guide (by userId OR tenantId), or guide is cached
+    // Allow access if: user owns the guide (by userId OR tenantId)
     const where = user.tenantId
-      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub} OR g.source = 'cached')`
-      : sql`g.id = ${guideId} AND (g."userId" = ${user.sub} OR g.source = 'cached')`;
+      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
+      : sql`g.id = ${guideId} AND (g."userId" = ${user.sub})`;
 
     const guides = await sql`
       SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
