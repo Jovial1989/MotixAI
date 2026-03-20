@@ -88,7 +88,7 @@ const plans = [
     period: '/mo',
     desc: 'For working technicians.',
     items: ['Unlimited guides', 'Priority image jobs', 'Web + mobile', 'API access', 'Email support'],
-    cta: 'Try for free',
+    cta: 'Start trial',
     href: '/auth/signup',
     highlight: true,
   },
@@ -98,8 +98,8 @@ const plans = [
     period: '',
     desc: 'For fleets and workshops.',
     items: ['Tenant isolation', 'Custom manual ingestion', 'Admin dashboard', 'SLA guarantee', 'Dedicated support'],
-    cta: 'Contact sales',
-    href: 'mailto:hello@motixai.com',
+    cta: 'Contact us',
+    href: '/contact',
     highlight: false,
   },
 ];
@@ -516,7 +516,7 @@ export default function LandingPage() {
         <h2 className="cta-band-h2">Generate your first repair guide free.</h2>
         <p className="cta-band-sub">No credit card. No setup. Just results.</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">Try for free</Link>
+          <Link href="/auth/signup" className="cta-primary">Start trial</Link>
           <Link href="/auth/login" className="cta-band-ghost">Already have an account →</Link>
         </div>
       </section>

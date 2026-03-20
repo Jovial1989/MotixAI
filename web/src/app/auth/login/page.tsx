@@ -60,7 +60,16 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      <Link href="/" className="auth-logo">Motixi</Link>
+      <div className="auth-top-bar">
+        <Link href="/" className="auth-back-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Back
+        </Link>
+        <Link href="/" className="auth-logo">Motixi</Link>
+        <div style={{ width: 60 }} />
+      </div>
 
       <div className="auth-card">
         <h1 className="auth-title">Welcome back</h1>

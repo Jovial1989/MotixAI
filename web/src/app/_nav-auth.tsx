@@ -73,7 +73,7 @@ export default function NavAuth() {
   return (
     <div className="nav-right">
       <Link href="/auth/login" className="nav-btn-ghost">Log in</Link>
-      <Link href="/auth/signup" className="nav-btn-cta">Try for free</Link>
+      <Link href="/auth/signup" className="nav-btn-cta">Start trial</Link>
     </div>
   );
 }

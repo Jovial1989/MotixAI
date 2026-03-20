@@ -64,7 +64,7 @@ export default function ProductPage() {
             — with torque specs, tools, safety warnings, and engineering diagrams — in under 3 seconds.
           </p>
           <div className="cta-band-actions" style={{ marginTop: '2rem' }}>
-            <Link href="/auth/signup" className="cta-primary">Try for free</Link>
+            <Link href="/auth/signup" className="cta-primary">Start trial</Link>
             <Link href="/contact" className="cta-band-ghost">Talk to founder →</Link>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function ProductPage() {
         <h2 className="cta-band-h2">Generate your first repair guide free.</h2>
         <p className="cta-band-sub">No credit card. No setup. Just results.</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">Try for free</Link>
+          <Link href="/auth/signup" className="cta-primary">Start trial</Link>
           <Link href="/auth/login" className="cta-band-ghost">Already have an account →</Link>
         </div>
       </section>

@@ -125,7 +125,7 @@ export default function MainNav() {
                 className="nav-mobile-auth-cta"
                 onClick={() => setMobileOpen(false)}
               >
-                Try for free
+                Start trial
               </Link>
               <Link
                 href="/auth/login"

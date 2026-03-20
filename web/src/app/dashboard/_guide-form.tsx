@@ -280,7 +280,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
 
   // ALL hooks must be declared at top level before any conditional return.
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [idMode, setIdMode] = useState<'vin' | 'manual'>('vin');
+  const [idMode, setIdMode] = useState<'vin' | 'manual'>('manual');
   const [vinInput, setVinInput] = useState('');
   const [vinDecoding, setVinDecoding] = useState(false);
   const [vinError, setVinError] = useState('');
@@ -357,18 +357,28 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
             <circle cx="12.5" cy="15" r="1" fill="currentColor"/>
           </svg>
         </div>
-        <span className="gen-form-title">Step 1 of 3 — Identify vehicle</span>
+        <span className="gen-form-title">Step 1 of 3 — Choose your vehicle</span>
         <span className="sgf-step-badge">1 / 3</span>
       </div>
 
       <div className="sgf-mode-tabs">
-        <button type="button" className={`sgf-mode-tab${idMode === 'vin' ? ' sgf-mode-tab--active' : ''}`}
-          onClick={() => { setIdMode('vin'); setDecodedVin(null); setVinError(''); }}>VIN decode</button>
         <button type="button" className={`sgf-mode-tab${idMode === 'manual' ? ' sgf-mode-tab--active' : ''}`}
           onClick={() => { setIdMode('manual'); setDecodedVin(null); setVinError(''); }}>Manual entry</button>
+        <button type="button" className={`sgf-mode-tab${idMode === 'vin' ? ' sgf-mode-tab--active' : ''}`}
+          onClick={() => { setIdMode('vin'); setDecodedVin(null); setVinError(''); }}>VIN decode</button>
       </div>
 
-      {idMode === 'vin' ? (
+      {idMode === 'manual' ? (
+        <div className="gen-inputs">
+          <VehicleSelector value={{ make: selMake, model: selModel, year: selYear }}
+            onChange={(next) => { setSelMake(next.make); setSelModel(next.model); setSelYear(next.year); }} required />
+          <div className="gen-input-wrap">
+            <label className="gen-label">VIN <span className="gen-label-or">optional</span></label>
+            <input className="gen-input" value={vinInput} onChange={(e) => setVinInput(e.target.value.toUpperCase())}
+              placeholder="e.g. 1HGBH41JXMN109186" maxLength={17} />
+          </div>
+        </div>
+      ) : (
         <div className="gen-inputs gen-inputs--col">
           <div className="gen-input-wrap">
             <label className="gen-label">VIN number <span className="gen-label-required">*</span></label>
@@ -398,16 +408,6 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
               <button type="button" className="sgf-clear-btn" onClick={() => { setDecodedVin(null); setVinInput(''); }}>✕</button>
             </div>
           )}
-        </div>
-      ) : (
-        <div className="gen-inputs">
-          <VehicleSelector value={{ make: selMake, model: selModel, year: selYear }}
-            onChange={(next) => { setSelMake(next.make); setSelModel(next.model); setSelYear(next.year); }} required />
-          <div className="gen-input-wrap">
-            <label className="gen-label">VIN <span className="gen-label-or">optional</span></label>
-            <input className="gen-input" value={vinInput} onChange={(e) => setVinInput(e.target.value.toUpperCase())}
-              placeholder="e.g. 1HGBH41JXMN109186" maxLength={17} />
-          </div>
         </div>
       )}
 
