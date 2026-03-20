@@ -21,7 +21,7 @@ export async function handleSteps(
   const sql = getDb();
 
   // POST /steps/:stepId/generate-image
-  const imgMatch = subpath.match(/^\/([a-zA-Z0-9]+)\/generate-image$/);
+  const imgMatch = subpath.match(/^\/([a-zA-Z0-9_-]+)\/generate-image$/);
   if (imgMatch && method === "POST") {
     const stepId = imgMatch[1];
 

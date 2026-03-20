@@ -29,9 +29,42 @@ export async function handleGuides(
 ): Promise<Response> {
   const sql = getDb();
 
-  // GET /guides/demo — return 3 canonical demo guides as static data.
-  // No DB dependency — always returns the same 3 guides for guest mode.
+  // GET /guides/demo — return 3 canonical demo guides.
+  // Fetches from DB so step IDs are real (image generation works).
+  // Falls back to static data if DB guides don't exist yet.
   if (subpath === "/demo" && method === "GET") {
+    try {
+      const demoGuides = await sql`
+        SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
+               p.id as pid, p.name as part_name, p."oemNumber" as part_oem
+        FROM "RepairGuide" g
+        JOIN "Vehicle" v ON v.id = g."vehicleId"
+        JOIN "Part" p ON p.id = g."partId"
+        WHERE g.id = ANY(${DEMO_GUIDE_IDS})
+        ORDER BY g."createdAt" ASC
+      `;
+      if (demoGuides.length > 0) {
+        const result = await Promise.all(demoGuides.map(async (g) => {
+          const steps = await sql`
+            SELECT id, "guideId", "stepOrder", title, instruction,
+                   "torqueValue", "warningNote", "imageStatus", "createdAt"
+            FROM "RepairStep"
+            WHERE "guideId" = ${g.id}
+            ORDER BY "stepOrder" ASC
+          `;
+          return {
+            ...g,
+            source: "demo",
+            vehicle: { id: g.vid, model: g.vehicle_model, vin: g.vehicle_vin },
+            part: { id: g.pid, name: g.part_name, oemNumber: g.part_oem },
+            steps,
+          };
+        }));
+        return json(result);
+      }
+    } catch (err) {
+      console.error("[guides] demo DB fetch failed, using static fallback:", err);
+    }
     return json(DEMO_GUIDES_RESPONSE);
   }
 
@@ -310,7 +343,7 @@ export async function handleGuides(
   }
 
   // POST /guides/:id/ask — Ask AI about a specific step
-  const askMatch = subpath.match(/^\/([a-zA-Z0-9]+)\/ask$/);
+  const askMatch = subpath.match(/^\/([a-zA-Z0-9_-]+)\/ask$/);
   if (askMatch && method === "POST") {
     const guideId = askMatch[1];
     const b = await body(req);
@@ -319,28 +352,13 @@ export async function handleGuides(
 
     if (!stepId) return errorResponse("stepId is required", 400);
 
-    // Demo guides: look up step from static data (no DB rows for guest mode)
-    if (DEMO_GUIDE_IDS.includes(guideId)) {
-      const demoGuide = DEMO_GUIDES_RESPONSE.find((g) => g.id === guideId);
-      const demoStep = demoGuide?.steps.find((s) => s.id === stepId);
-      if (!demoGuide || !demoStep) return errorResponse("Step not found", 404);
-
-      console.log(`[guides] ask (demo) guideId=${guideId} stepId=${stepId} question="${question.slice(0, 80)}"`);
-
-      const answer = await explainStep(
-        demoStep.title,
-        demoStep.instruction,
-        demoGuide.vehicle.model,
-        demoGuide.part.name,
-        question,
-      );
-      return json({ answer });
-    }
-
-    // Real guides: fetch from DB (must belong to this user)
-    const guideWhere = user.tenantId
-      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
-      : sql`g.id = ${guideId} AND g."userId" = ${user.sub}`;
+    // Demo guides: skip ownership check (public demo content)
+    const isDemoAsk = DEMO_GUIDE_IDS.includes(guideId);
+    const guideWhere = isDemoAsk
+      ? sql`g.id = ${guideId}`
+      : user.tenantId
+        ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
+        : sql`g.id = ${guideId} AND g."userId" = ${user.sub}`;
 
     const guides = await sql`
       SELECT g.id, v.model as vehicle_model, p.name as part_name
@@ -377,20 +395,19 @@ export async function handleGuides(
   }
 
   // GET /guides/:id — single guide with steps + images
-  const idMatch = subpath.match(/^\/([a-zA-Z0-9]+)$/);
+  const idMatch = subpath.match(/^\/([a-zA-Z0-9_-]+)$/);
   if (idMatch && method === "GET") {
     const guideId = idMatch[1];
 
-    // Demo guides are served from static data — no DB lookup needed
-    if (DEMO_GUIDE_IDS.includes(guideId)) {
-      const demoGuide = DEMO_GUIDES_RESPONSE.find((g) => g.id === guideId);
-      if (demoGuide) return json(demoGuide);
-    }
+    // Demo guides: fetch from DB (no ownership check — public demo content).
+    // This returns real step IDs so the image generation pipeline works.
+    const isDemoGuide = DEMO_GUIDE_IDS.includes(guideId);
 
-    // Allow access if: user owns the guide (by userId OR tenantId)
-    const where = user.tenantId
-      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
-      : sql`g.id = ${guideId} AND (g."userId" = ${user.sub})`;
+    const where = isDemoGuide
+      ? sql`g.id = ${guideId}`
+      : user.tenantId
+        ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
+        : sql`g.id = ${guideId} AND (g."userId" = ${user.sub})`;
 
     const guides = await sql`
       SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
@@ -401,7 +418,14 @@ export async function handleGuides(
       WHERE ${where}
       LIMIT 1
     `;
-    if (guides.length === 0) return errorResponse("Guide not found", 404);
+    if (guides.length === 0) {
+      // Fallback to static data if demo guide isn't in DB yet
+      if (isDemoGuide) {
+        const demoGuide = DEMO_GUIDES_RESPONSE.find((g) => g.id === guideId);
+        if (demoGuide) return json(demoGuide);
+      }
+      return errorResponse("Guide not found", 404);
+    }
 
     const g = guides[0];
     // Exclude imageUrl (can be 1-2 MB base64 per step) and imagePrompt to keep payload small.
@@ -422,6 +446,8 @@ export async function handleGuides(
 
     return json({
       ...g,
+      // Ensure demo guides are tagged so frontend knows to show guest UX
+      ...(isDemoGuide ? { source: "demo" } : {}),
       vehicle: { id: g.vid, model: g.vehicle_model, vin: g.vehicle_vin },
       part: { id: g.pid, name: g.part_name, oemNumber: g.part_oem },
       steps,

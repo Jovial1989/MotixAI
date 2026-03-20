@@ -21,20 +21,9 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
   const [triggered, setTriggered]   = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Demo guides: show a styled illustration card (no API calls, no images in static data)
-  if (isDemo) return (
-    <div className="simg-demo">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <path d="M10 26l-2-2 6-6-6-6 2-2 8 8-8 8z" fill="currentColor" opacity="0.5"/>
-        <path d="M18 26l-2-2 6-6-6-6 2-2 8 8-8 8z" fill="currentColor" opacity="0.3"/>
-      </svg>
-      <span className="simg-demo-label">{step.title}</span>
-      <span className="simg-demo-hint">Sign up to generate AI illustrations</span>
-    </div>
-  );
-
-  // For real guides: the guide detail endpoint omits imageUrl (payload too large),
-  // so we always call generateStepImage() to fetch/trigger the image.
+  // For all guides (including demo): the guide detail endpoint omits imageUrl
+  // (payload too large), so we always call generateStepImage() to fetch/trigger the image.
+  // Demo guides now have real DB step IDs, so Gemini image generation works normally.
   useEffect(() => {
     if (triggered) return;
     setTriggered(true);
@@ -73,16 +62,18 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
           Expand
         </span>
       </button>
-      {illustrationType === 'fallback' && (
+      {!isDemo && illustrationType === 'fallback' && (
         <span className="simg-fallback-badge">Fallback illustration</span>
       )}
-      <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
-        e.stopPropagation();
-        webApi.generateStepImage(step.id, true).then((r) => {
-          setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
-        }).catch(() => {});
-        setStatus('queued');
-      }}>↺ Regenerate</button>
+      {!isDemo && (
+        <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
+          e.stopPropagation();
+          webApi.generateStepImage(step.id, true).then((r) => {
+            setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+          }).catch(() => {});
+          setStatus('queued');
+        }}>↺ Regenerate</button>
+      )}
       {fullscreen && (
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>
