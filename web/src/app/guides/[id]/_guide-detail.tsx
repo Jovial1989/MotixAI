@@ -21,21 +21,25 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
   const [triggered, setTriggered]   = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // For demo guides: images come from static data (always ready), no API calls.
+  // For real guides: the guide detail endpoint omits imageUrl (payload too large),
+  // so we always call generateStepImage() to fetch/trigger the image.
   useEffect(() => {
-    if (isDemo || triggered || status === 'ready') return;
+    if (isDemo || triggered) return;
     setTriggered(true);
     webApi.generateStepImage(step.id, false).then((r) => {
-      setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+      setStatus(r.imageStatus as typeof status);
+      if (r.imageUrl) setUrl(r.imageUrl);
     }).catch(() => {});
-  }, [step.id, triggered, status, isDemo]);
+  }, [step.id, triggered, isDemo]);
 
+  // Poll while image is actively being generated
   useEffect(() => {
+    if (isDemo) return;
     const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
     if (!activeStatuses.includes(status)) {
       if (timerRef.current) clearInterval(timerRef.current); return;
     }
-    // Poll with the lightweight step-image endpoint instead of refetching the
-    // entire guide (which can be 10-30 MB when steps contain base64 images).
     timerRef.current = setInterval(async () => {
       try {
         const r = await webApi.generateStepImage(step.id, false);
@@ -44,10 +48,11 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
       } catch { /* ignore */ }
     }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, step.id]);
+  }, [status, step.id, isDemo]);
 
   const illustrationType = url?.startsWith('data:') ? 'ai' : url ? 'fallback' : null;
 
+  // Ready state — show image with expand/fullscreen
   if (status === 'ready' && url) return (
     <>
       <button className="simg-preview" onClick={() => setFullscreen(true)}>
@@ -58,16 +63,18 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
           Expand
         </span>
       </button>
-      {illustrationType === 'fallback' && (
+      {!isDemo && illustrationType === 'fallback' && (
         <span className="simg-fallback-badge">Fallback illustration</span>
       )}
-      <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
-        e.stopPropagation();
-        webApi.generateStepImage(step.id, true).then((r) => {
-          setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
-        }).catch(() => {});
-        setStatus('queued');
-      }}>↺ Regenerate</button>
+      {!isDemo && (
+        <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
+          e.stopPropagation();
+          webApi.generateStepImage(step.id, true).then((r) => {
+            setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+          }).catch(() => {});
+          setStatus('queued');
+        }}>↺ Regenerate</button>
+      )}
       {fullscreen && (
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>
@@ -77,6 +84,8 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
       )}
     </>
   );
+
+  // In-progress states
   const statusLabel: Record<string, string> = {
     queued:         'Queued…',
     searching_refs: 'Searching references…',
@@ -86,6 +95,8 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
   if (status in statusLabel) return (
     <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{statusLabel[status]}</span></div>
   );
+
+  // Failed state
   if (status === 'failed') return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {url && (
@@ -95,6 +106,8 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
       <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>↺ Retry illustration</button>
     </div>
   );
+
+  // None/loading — show nothing (API call in flight on mount)
   return null;
 }
 
