@@ -313,8 +313,31 @@ export async function handleGuides(
   const askMatch = subpath.match(/^\/([a-zA-Z0-9]+)\/ask$/);
   if (askMatch && method === "POST") {
     const guideId = askMatch[1];
+    const b = await body(req);
+    const stepId = typeof b.stepId === "string" ? b.stepId : null;
+    const question = typeof b.question === "string" ? b.question : "";
 
-    // Fetch the guide (must belong to this user or be a cached/shared guide)
+    if (!stepId) return errorResponse("stepId is required", 400);
+
+    // Demo guides: look up step from static data (no DB rows for guest mode)
+    if (DEMO_GUIDE_IDS.includes(guideId)) {
+      const demoGuide = DEMO_GUIDES_RESPONSE.find((g) => g.id === guideId);
+      const demoStep = demoGuide?.steps.find((s) => s.id === stepId);
+      if (!demoGuide || !demoStep) return errorResponse("Step not found", 404);
+
+      console.log(`[guides] ask (demo) guideId=${guideId} stepId=${stepId} question="${question.slice(0, 80)}"`);
+
+      const answer = await explainStep(
+        demoStep.title,
+        demoStep.instruction,
+        demoGuide.vehicle.model,
+        demoGuide.part.name,
+        question,
+      );
+      return json({ answer });
+    }
+
+    // Real guides: fetch from DB (must belong to this user)
     const guideWhere = user.tenantId
       ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
       : sql`g.id = ${guideId} AND g."userId" = ${user.sub}`;
@@ -330,11 +353,6 @@ export async function handleGuides(
     if (guides.length === 0) return errorResponse("Guide not found", 404);
 
     const guide = guides[0];
-    const b = await body(req);
-    const stepId = typeof b.stepId === "string" ? b.stepId : null;
-    const question = typeof b.question === "string" ? b.question : "";
-
-    if (!stepId) return errorResponse("stepId is required", 400);
 
     const steps = await sql`
       SELECT id, title, instruction
