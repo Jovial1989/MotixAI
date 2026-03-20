@@ -14,7 +14,7 @@ function isMeaningfulString(v: string | null | undefined): v is string {
 }
 
 /* ── Image viewer ─────────────────────────────────────────────────────── */
-function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
+function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: string; isDemo?: boolean }) {
   const [status, setStatus] = useState(step.imageStatus ?? 'none');
   const [url, setUrl]       = useState(step.imageUrl ?? null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -22,12 +22,12 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (triggered || status === 'ready') return;
+    if (isDemo || triggered || status === 'ready') return;
     setTriggered(true);
     webApi.generateStepImage(step.id, false).then((r) => {
       setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
     }).catch(() => {});
-  }, [step.id, triggered, status]);
+  }, [step.id, triggered, status, isDemo]);
 
   useEffect(() => {
     const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
@@ -161,9 +161,9 @@ function AskAiPanel({ step, guideId }: { step: RepairStep; guideId: string }) {
 }
 
 /* ── Step card ────────────────────────────────────────────────────────── */
-function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
+function StepCard({ step, index, active, onActivate, guideId, stepRef, isDemo }: {
   step: RepairStep; index: number; active: boolean; onActivate: () => void; guideId: string;
-  stepRef: React.RefObject<HTMLDivElement>;
+  stepRef: React.RefObject<HTMLDivElement>; isDemo?: boolean;
 }) {
   // Single source of truth: a step is open only when it is the active step.
   return (
@@ -179,7 +179,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef }: {
 
       {active && (
         <div className="sc-bd">
-          <StepImage step={step} guideId={guideId} />
+          <StepImage step={step} guideId={guideId} isDemo={isDemo} />
           <div className="sc-inst">
             {(() => {
               const lines = step.instruction.split('\n').filter(Boolean);
@@ -278,6 +278,7 @@ export default function GuideDetailPage() {
   );
 
   const steps = guide.steps ?? [];
+  const isDemo = guide.source === 'demo';
 
   // Keep stepRefs array in sync with steps length
   if (stepRefs.current.length !== steps.length) {
@@ -337,6 +338,7 @@ export default function GuideDetailPage() {
                 onActivate={() => setActiveStep(i)}
                 guideId={params.id}
                 stepRef={stepRefs.current[i]}
+                isDemo={isDemo}
               />
             ))}
           </div>

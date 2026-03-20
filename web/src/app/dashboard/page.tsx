@@ -36,12 +36,14 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-function guideStatusDot(guide: RepairGuide): 'green' | 'yellow' | 'red' {
+function guideStatusDot(guide: RepairGuide): 'green' | 'yellow' | 'red' | null {
   const steps = (guide.steps ?? []).filter(Boolean);
-  if (steps.length === 0) return 'green';
+  if (steps.length === 0) return null;
   if (steps.some((s) => s?.imageStatus === 'failed')) return 'red';
   if (steps.some((s) => s?.imageStatus !== 'ready' && s?.imageStatus !== 'none' && s?.imageStatus !== 'failed')) return 'yellow';
-  return 'green';
+  // Only show green if at least one step has a ready image
+  if (steps.some((s) => s?.imageStatus === 'ready')) return 'green';
+  return null;
 }
 
 // ── Guide list with search + filter ──────────────────────────────────────────
@@ -239,7 +241,7 @@ function GuidesView({
             const dot = guideStatusDot(guide);
             return (
               <div key={guide.id} className="guide-card guide-card--v2">
-                {!isGuest && (
+                {!isGuest && dot && (
                   <div className={`gcard-dot gcard-dot--${dot}`} title={dot === 'yellow' ? 'Images generating' : dot === 'red' ? 'Image generation failed' : 'Ready'} />
                 )}
                 <Link href={`/guides/${guide.id}`} className="guide-card-main">
