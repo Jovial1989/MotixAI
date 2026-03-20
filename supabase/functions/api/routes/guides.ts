@@ -448,10 +448,7 @@ export async function handleGuides(
 
 // Static demo guides response — returned directly, no DB queries needed.
 function makeDemoStep(id: string, guideId: string, order: number, title: string, instruction: string, torqueValue?: string, warningNote?: string) {
-  // Generate a descriptive placeholder illustration for each demo step
-  const label = encodeURIComponent(title.slice(0, 40));
-  const imageUrl = `https://placehold.co/1200x800/e2e8f0/475569?text=${label}`;
-  return { id, guideId, stepOrder: order, title, instruction, torqueValue: torqueValue ?? null, warningNote: warningNote ?? null, imageStatus: "ready" as const, imageUrl };
+  return { id, guideId, stepOrder: order, title, instruction, torqueValue: torqueValue ?? null, warningNote: warningNote ?? null, imageStatus: "none" as const, imageUrl: null };
 }
 
 const DEMO_GUIDES_RESPONSE = [
