@@ -3640,7 +3640,8 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 
 /* Differentiators */
-.diff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 768px) { .diff-grid { grid-template-columns: 1fr; } }
 .diff-card {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 26px 22px; box-shadow: var(--sh-xs);
@@ -3651,12 +3652,13 @@ input, textarea, select { font-family: inherit; outline: none; }
   display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
 }
 .diff-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: var(--r-sm);
+  display: inline-flex; align-items: center;
+  padding: 4px 10px; border-radius: var(--r-full);
   background: var(--p-light); border: 1px solid var(--p-border); color: var(--p);
-  flex-shrink: 0;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+  white-space: nowrap;
 }
-.diff-title { font-size: 0.93rem; font-weight: 700; color: var(--text); }
+.diff-title { font-size: 0.93rem; font-weight: 700; color: var(--text); margin: 12px 0 6px; }
 .diff-desc { font-size: 0.83rem; color: var(--text-sub); line-height: 1.65; }
 
 /* ── Contact page ──────────────────────────────────────────────────── */
@@ -3807,9 +3809,11 @@ input, textarea, select { font-family: inherit; outline: none; }
 /* Who-it's-for cards — equal height */
 .for-grid-v2 {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px; align-items: stretch;
 }
+@media (max-width: 900px) { .for-grid-v2 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .for-grid-v2 { grid-template-columns: 1fr; } }
 .for-card-v2 {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 28px 22px; text-align: left;
@@ -3827,9 +3831,11 @@ input, textarea, select { font-family: inherit; outline: none; }
 
 /* Guide output items */
 .guide-outputs {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 12px; margin-top: 40px;
 }
+@media (max-width: 900px) { .guide-outputs { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .guide-outputs { grid-template-columns: 1fr; } }
 .guide-output-item {
   display: flex; align-items: center; gap: 12px;
   background: var(--bg-card); border: 1px solid var(--border);

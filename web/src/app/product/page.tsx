@@ -280,7 +280,7 @@ export default function ProductPage() {
             {differentiators.map((d) => (
               <div key={d.vs} className="diff-card">
                 <span className="diff-badge">{d.vs}</span>
-                <h3 className="diff-title" style={{ marginTop: '12px', marginBottom: '8px' }}>{d.title}</h3>
+                <h3 className="diff-title">{d.title}</h3>
                 <p className="diff-desc">{d.desc}</p>
               </div>
             ))}
