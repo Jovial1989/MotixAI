@@ -2389,22 +2389,34 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .guest-upgrade-ghost:hover { background: var(--bg); }
 
-/* Demo step illustration card */
-.simg-demo {
+/* Locked feature block (guest mode) */
+.locked-block {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; padding: 28px 20px;
+  gap: 10px; padding: 32px 20px;
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 50%, #e8edf4 100%);
-  border: 1px solid var(--border);
+  background: var(--bg); border: 1px dashed var(--border);
+}
+.locked-block-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
   color: var(--text-muted);
 }
-.simg-demo-label {
-  font-size: 0.92rem; font-weight: 600; color: var(--text);
-  text-align: center;
+.locked-block-title {
+  font-size: 0.88rem; font-weight: 600; color: var(--text);
+  margin: 0;
 }
-.simg-demo-hint {
-  font-size: 0.78rem; color: var(--text-muted); opacity: 0.7;
+.locked-block-desc {
+  font-size: 0.8rem; color: var(--text-muted); margin: 0;
 }
+.locked-block-cta {
+  display: inline-block; margin-top: 4px;
+  padding: 7px 18px; border-radius: var(--r-md);
+  background: var(--p); color: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  text-decoration: none; transition: opacity .15s;
+}
+.locked-block-cta:hover { opacity: .88; }
 
 .simg-skeleton {
   height: 120px; border-radius: var(--r-md);

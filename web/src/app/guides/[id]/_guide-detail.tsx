@@ -13,17 +13,31 @@ function isMeaningfulString(v: string | null | undefined): v is string {
   return t !== 'null' && t !== 'none' && t !== 'n/a' && t !== '-' && t.length > 0;
 }
 
-/* ── Image viewer ─────────────────────────────────────────────────────── */
-function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: string; isDemo?: boolean }) {
+/* ── Locked image block (guest) ──────────────────────────────────────── */
+function LockedImageBlock() {
+  return (
+    <div className="locked-block">
+      <div className="locked-block-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <p className="locked-block-title">AI illustration</p>
+      <p className="locked-block-desc">Available for registered users</p>
+      <Link href="/auth/signup" className="locked-block-cta">Create free account</Link>
+    </div>
+  );
+}
+
+/* ── Image viewer (authenticated only) ───────────────────────────────── */
+function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
   const [status, setStatus] = useState(step.imageStatus ?? 'none');
   const [url, setUrl]       = useState(step.imageUrl ?? null);
   const [fullscreen, setFullscreen] = useState(false);
   const [triggered, setTriggered]   = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // For all guides (including demo): the guide detail endpoint omits imageUrl
-  // (payload too large), so we always call generateStepImage() to fetch/trigger the image.
-  // Demo guides now have real DB step IDs, so Gemini image generation works normally.
   useEffect(() => {
     if (triggered) return;
     setTriggered(true);
@@ -33,7 +47,6 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
     }).catch(() => {});
   }, [step.id, triggered]);
 
-  // Poll while image is actively being generated
   useEffect(() => {
     const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
     if (!activeStatuses.includes(status)) {
@@ -49,9 +62,6 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [status, step.id]);
 
-  const illustrationType = url?.startsWith('data:') ? 'ai' : url ? 'fallback' : null;
-
-  // Ready state — show image with expand/fullscreen
   if (status === 'ready' && url) return (
     <>
       <button className="simg-preview" onClick={() => setFullscreen(true)}>
@@ -62,18 +72,16 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
           Expand
         </span>
       </button>
-      {!isDemo && illustrationType === 'fallback' && (
+      {!url.startsWith('data:') && (
         <span className="simg-fallback-badge">Fallback illustration</span>
       )}
-      {!isDemo && (
-        <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
-          e.stopPropagation();
-          webApi.generateStepImage(step.id, true).then((r) => {
-            setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
-          }).catch(() => {});
-          setStatus('queued');
-        }}>↺ Regenerate</button>
-      )}
+      <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
+        e.stopPropagation();
+        webApi.generateStepImage(step.id, true).then((r) => {
+          setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+        }).catch(() => {});
+        setStatus('queued');
+      }}>↺ Regenerate</button>
       {fullscreen && (
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>
@@ -84,7 +92,6 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
     </>
   );
 
-  // In-progress states
   const statusLabel: Record<string, string> = {
     queued:         'Queued…',
     searching_refs: 'Searching references…',
@@ -95,7 +102,6 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
     <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{statusLabel[status]}</span></div>
   );
 
-  // Failed state
   if (status === 'failed') return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {url && (
@@ -106,7 +112,6 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
     </div>
   );
 
-  // None/loading — show nothing (API call in flight on mount)
   return null;
 }
 
@@ -117,14 +122,15 @@ function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
       <div className="guest-upgrade-modal" onClick={e => e.stopPropagation()}>
         <button className="guest-upgrade-close" onClick={onClose}>✕</button>
         <div className="guest-upgrade-icon">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <path d="M14 3l2.24 6.88H23L18.44 13.56l1.56 5.44L14 15.12 8 19l1.56-5.44L4 10h6.76L14 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
         <h3 className="guest-upgrade-title">Create an account to continue</h3>
-        <p className="guest-upgrade-desc">Free users can ask follow-up questions, save guides, and unlock full functionality.</p>
+        <p className="guest-upgrade-desc">Ask follow-up questions, save guides, and unlock full functionality.</p>
         <div className="guest-upgrade-actions">
-          <Link href="/auth/signup" className="guest-upgrade-cta">Create account</Link>
+          <Link href="/auth/signup" className="guest-upgrade-cta">Create free account</Link>
           <Link href="/auth/login" className="guest-upgrade-ghost">Sign in</Link>
         </div>
       </div>
@@ -133,10 +139,9 @@ function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
 }
 
 /* ── Ask AI panel ────────────────────────────────────────────────────── */
-// Track guest Ask AI usage per step (persists across re-renders but resets on page reload)
 const guestAskUsed = new Set<string>();
 
-function AskAiPanel({ step, guideId, isDemo }: { step: RepairStep; guideId: string; isDemo?: boolean }) {
+function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: string; isGuest?: boolean }) {
   const [open, setOpen]         = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer]     = useState<string | null>(null);
@@ -145,23 +150,22 @@ function AskAiPanel({ step, guideId, isDemo }: { step: RepairStep; guideId: stri
 
   async function ask() {
     if (loading) return;
+    const q = question.trim();
+    if (!q) return;
 
-    // Guest limit: 1 ask per step
-    if (isDemo) {
-      if (guestAskUsed.has(step.id)) {
-        setShowUpgrade(true);
-        return;
-      }
+    // Guest: block BEFORE API call on second attempt
+    if (isGuest && guestAskUsed.has(step.id)) {
+      setShowUpgrade(true);
+      return;
     }
 
     setLoading(true); setAnswer(null);
     try {
-      const res = await webApi.askGuideStep(guideId, step.id, question);
+      const res = await webApi.askGuideStep(guideId, step.id, q);
       setAnswer(res.answer);
-      if (isDemo) guestAskUsed.add(step.id);
+      if (isGuest) guestAskUsed.add(step.id);
     } catch {
-      if (isDemo) {
-        // Don't show generic error for guests — show upgrade instead
+      if (isGuest) {
         setShowUpgrade(true);
       } else {
         setAnswer('Could not get an AI explanation at this time.');
@@ -217,11 +221,10 @@ function AskAiPanel({ step, guideId, isDemo }: { step: RepairStep; guideId: stri
 }
 
 /* ── Step card ────────────────────────────────────────────────────────── */
-function StepCard({ step, index, active, onActivate, guideId, stepRef, isDemo }: {
+function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }: {
   step: RepairStep; index: number; active: boolean; onActivate: () => void; guideId: string;
-  stepRef: React.RefObject<HTMLDivElement>; isDemo?: boolean;
+  stepRef: React.RefObject<HTMLDivElement>; isGuest?: boolean;
 }) {
-  // Single source of truth: a step is open only when it is the active step.
   return (
     <div ref={stepRef} className={`sc${active ? ' sc--open sc--active' : ''}`}>
       <button className="sc-hd" onClick={onActivate}>
@@ -235,7 +238,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isDemo }:
 
       {active && (
         <div className="sc-bd">
-          <StepImage step={step} guideId={guideId} isDemo={isDemo} />
+          {isGuest ? <LockedImageBlock /> : <StepImage step={step} guideId={guideId} />}
           <div className="sc-inst">
             {(() => {
               const lines = step.instruction.split('\n').filter(Boolean);
@@ -276,7 +279,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isDemo }:
               )}
             </div>
           )}
-          <AskAiPanel step={step} guideId={guideId} isDemo={isDemo} />
+          <AskAiPanel step={step} guideId={guideId} isGuest={isGuest} />
         </div>
       )}
     </div>
@@ -295,8 +298,6 @@ export default function GuideDetailPage() {
 
   useEffect(() => {
     if (!params.id) return;
-    // Clear stale data from any previously-viewed guide immediately so the
-    // wrong vehicle / title never shows while the new fetch is in flight.
     setGuide(null);
     setError(null);
     webApi.getGuide(params.id)
@@ -304,11 +305,9 @@ export default function GuideDetailPage() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load'));
   }, [params.id]);
 
-  // Scroll active step into view whenever it changes
   useEffect(() => {
     const ref = stepRefs.current[activeStep];
     if (!ref?.current) return;
-    // Small delay so the card has time to expand before measuring
     const t = setTimeout(() => {
       ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 50);
@@ -352,9 +351,8 @@ export default function GuideDetailPage() {
   );
 
   const steps = guide.steps ?? [];
-  const isDemo = guide.source === 'demo';
+  const isGuest = guide.source === 'demo';
 
-  // Keep stepRefs array in sync with steps length
   if (stepRefs.current.length !== steps.length) {
     stepRefs.current = steps.map((_, i) => stepRefs.current[i] ?? createRef<HTMLDivElement>());
   }
@@ -366,7 +364,6 @@ export default function GuideDetailPage() {
 
   return (
     <div className="dash-root">
-      {/* Nav */}
       <header className="dash-nav">
         <div className="dash-nav-inner">
           <Link href="/dashboard" className="dash-logo">Motixi</Link>
@@ -379,12 +376,8 @@ export default function GuideDetailPage() {
         </div>
       </header>
 
-      {/* 2-column layout */}
       <div className="gd-layout">
-
-        {/* ═══ LEFT — procedure ═══ */}
         <main className="gd-main">
-          {/* Header (mobile only — hidden on desktop where right col shows it) */}
           <div className="gd-mob-head">
             <div className="gd-chip-row">
               <span className={`badge ${diffColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
@@ -412,16 +405,13 @@ export default function GuideDetailPage() {
                 onActivate={() => setActiveStep(i)}
                 guideId={params.id}
                 stepRef={stepRefs.current[i]}
-                isDemo={isDemo}
+                isGuest={isGuest}
               />
             ))}
           </div>
         </main>
 
-        {/* ═══ RIGHT — sticky sidebar ═══ */}
         <aside className="gd-sidebar">
-
-          {/* Guide card */}
           <div className="gd-sb-card">
             <div className="gd-chip-row">
               <span className={`badge ${diffColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
@@ -457,7 +447,6 @@ export default function GuideDetailPage() {
             <p className="gd-prog-label">Step {activeStep + 1} of {steps.length}</p>
           </div>
 
-          {/* Tools */}
           {guide.tools && guide.tools.length > 0 && (
             <div className="gd-sb-card">
               <p className="gd-sb-section">TOOLS REQUIRED</p>
@@ -473,7 +462,6 @@ export default function GuideDetailPage() {
             </div>
           )}
 
-          {/* Safety */}
           {guide.safetyNotes && guide.safetyNotes.length > 0 && (
             <div className={`gd-safety${safetyOpen ? ' gd-safety--open' : ''}`}>
               <button className="gd-safety-btn" onClick={() => setSafetyOpen(o => !o)}>
@@ -496,7 +484,6 @@ export default function GuideDetailPage() {
             </div>
           )}
 
-          {/* Source References */}
           {guide.sourceReferences && guide.sourceReferences.length > 0 && (
             <div className="gd-sb-card">
               <p className="gd-sb-section">SOURCE REFERENCES</p>
@@ -511,7 +498,6 @@ export default function GuideDetailPage() {
             </div>
           )}
 
-          {/* Step navigator */}
           <div className="gd-sb-card gd-nav">
             <button className="gd-nav-prev" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
