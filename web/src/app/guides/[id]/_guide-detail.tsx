@@ -111,26 +111,68 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
   return null;
 }
 
+/* ── Guest upgrade modal ─────────────────────────────────────────────── */
+function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="simg-modal" onClick={onClose} style={{ zIndex: 9999 }}>
+      <div className="guest-upgrade-modal" onClick={e => e.stopPropagation()}>
+        <button className="guest-upgrade-close" onClick={onClose}>✕</button>
+        <div className="guest-upgrade-icon">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 3l2.24 6.88H23L18.44 13.56l1.56 5.44L14 15.12 8 19l1.56-5.44L4 10h6.76L14 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <h3 className="guest-upgrade-title">Create an account to continue</h3>
+        <p className="guest-upgrade-desc">Free users can ask follow-up questions, save guides, and unlock full functionality.</p>
+        <div className="guest-upgrade-actions">
+          <Link href="/auth/signup" className="guest-upgrade-cta">Create account</Link>
+          <Link href="/auth/login" className="guest-upgrade-ghost">Sign in</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Ask AI panel ────────────────────────────────────────────────────── */
-function AskAiPanel({ step, guideId }: { step: RepairStep; guideId: string }) {
+// Track guest Ask AI usage per step (persists across re-renders but resets on page reload)
+const guestAskUsed = new Set<string>();
+
+function AskAiPanel({ step, guideId, isDemo }: { step: RepairStep; guideId: string; isDemo?: boolean }) {
   const [open, setOpen]         = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer]     = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   async function ask() {
     if (loading) return;
+
+    // Guest limit: 1 ask per step
+    if (isDemo) {
+      if (guestAskUsed.has(step.id)) {
+        setShowUpgrade(true);
+        return;
+      }
+    }
+
     setLoading(true); setAnswer(null);
     try {
       const res = await webApi.askGuideStep(guideId, step.id, question);
       setAnswer(res.answer);
+      if (isDemo) guestAskUsed.add(step.id);
     } catch {
-      setAnswer('Could not get an AI explanation at this time.');
+      if (isDemo) {
+        // Don't show generic error for guests — show upgrade instead
+        setShowUpgrade(true);
+      } else {
+        setAnswer('Could not get an AI explanation at this time.');
+      }
     } finally { setLoading(false); }
   }
 
   return (
     <div className="ask-ai-wrap">
+      {showUpgrade && <GuestUpgradeModal onClose={() => setShowUpgrade(false)} />}
       {!open ? (
         <button className="ask-ai-btn" onClick={() => setOpen(true)}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -235,7 +277,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isDemo }:
               )}
             </div>
           )}
-          <AskAiPanel step={step} guideId={guideId} />
+          <AskAiPanel step={step} guideId={guideId} isDemo={isDemo} />
         </div>
       )}
     </div>
