@@ -34,15 +34,17 @@ function StepImage({ step, guideId, isDemo }: { step: RepairStep; guideId: strin
     if (!activeStatuses.includes(status)) {
       if (timerRef.current) clearInterval(timerRef.current); return;
     }
+    // Poll with the lightweight step-image endpoint instead of refetching the
+    // entire guide (which can be 10-30 MB when steps contain base64 images).
     timerRef.current = setInterval(async () => {
       try {
-        const g = await webApi.getGuide(guideId);
-        const f = g?.steps?.find((s: RepairStep) => s.id === step.id);
-        if (f) { setStatus((f.imageStatus ?? 'none') as typeof status); if (f.imageUrl) setUrl(f.imageUrl); }
+        const r = await webApi.generateStepImage(step.id, false);
+        setStatus(r.imageStatus as typeof status);
+        if (r.imageUrl) setUrl(r.imageUrl);
       } catch { /* ignore */ }
     }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, step.id, guideId]);
+  }, [status, step.id]);
 
   const illustrationType = url?.startsWith('data:') ? 'ai' : url ? 'fallback' : null;
 
@@ -265,8 +267,26 @@ export default function GuideDetailPage() {
 
   if (error) return (
     <div className="dash-root">
-      <header className="dash-nav"><Link href="/dashboard" className="dash-logo">Motixi</Link><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
-      <div className="gd-center"><p className="gd-error-msg">⚠ {error}</p><Link href="/dashboard" className="auth-btn-primary" style={{display:'inline-flex',width:'auto',padding:'0 24px'}}>← Back</Link></div>
+      <header className="dash-nav">
+        <div className="dash-nav-inner">
+          <Link href="/dashboard" className="dash-logo">Motixi</Link>
+          <div className="dash-nav-right">
+            <Link href="/dashboard" className="dash-nav-back">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              All guides
+            </Link>
+          </div>
+        </div>
+      </header>
+      <div className="gd-center" style={{ flexDirection: 'column', gap: 16, textAlign: 'center' }}>
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{ opacity: 0.4 }}>
+          <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2"/>
+          <path d="M24 16v10M24 30v2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+        </svg>
+        <p className="gd-error-msg" style={{ margin: 0 }}>{error}</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>This guide could not be loaded. It may have been deleted or is temporarily unavailable.</p>
+        <Link href="/dashboard" className="auth-btn-primary" style={{ display: 'inline-flex', width: 'auto', padding: '0 24px', marginTop: 8 }}>Back to guides</Link>
+      </div>
     </div>
   );
 

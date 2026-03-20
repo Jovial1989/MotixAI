@@ -251,7 +251,7 @@ export async function handleGuides(
   // GET /guides — history
   if (subpath === "" && method === "GET") {
     const where = user.tenantId
-      ? sql`"tenantId" = ${user.tenantId}`
+      ? sql`("tenantId" = ${user.tenantId} OR "userId" = ${user.sub})`
       : sql`"userId" = ${user.sub}`;
 
     const guides = await sql`
@@ -266,7 +266,7 @@ export async function handleGuides(
 
     // Auto-seed example guides for users who have none yet
     if (guides.length === 0 && user.role !== "GUEST") {
-      await seedExampleGuides(user.sub).catch(() => {});
+      await seedExampleGuides(user.sub, user.tenantId).catch(() => {});
       const seeded = await sql`
         SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
                p.name as part_name, p."oemNumber" as part_oem
@@ -316,7 +316,7 @@ export async function handleGuides(
 
     // Fetch the guide (must belong to this user or be a cached/shared guide)
     const guideWhere = user.tenantId
-      ? sql`g.id = ${guideId} AND g."tenantId" = ${user.tenantId}`
+      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
       : sql`g.id = ${guideId} AND g."userId" = ${user.sub}`;
 
     const guides = await sql`
@@ -369,9 +369,9 @@ export async function handleGuides(
       if (demoGuide) return json(demoGuide);
     }
 
-    // Allow access if: user owns the guide, shares a tenant, or guide is cached
+    // Allow access if: user owns the guide (by userId OR tenantId), or guide is cached
     const where = user.tenantId
-      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g.source = 'cached')`
+      ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub} OR g.source = 'cached')`
       : sql`g.id = ${guideId} AND (g."userId" = ${user.sub} OR g.source = 'cached')`;
 
     const guides = await sql`
@@ -386,10 +386,21 @@ export async function handleGuides(
     if (guides.length === 0) return errorResponse("Guide not found", 404);
 
     const g = guides[0];
-    const steps =
-      await sql`SELECT * FROM "RepairStep" WHERE "guideId" = ${guideId} ORDER BY "stepOrder" ASC`;
-    const images =
-      await sql`SELECT * FROM "GeneratedImage" WHERE "guideId" = ${guideId} ORDER BY "stepOrder" ASC`;
+    // Exclude imageUrl (can be 1-2 MB base64 per step) and imagePrompt to keep payload small.
+    // The frontend fetches full images via POST /steps/:id/generate-image on demand.
+    const steps = await sql`
+      SELECT id, "guideId", "stepOrder", title, instruction,
+             "torqueValue", "warningNote", "imageStatus", "createdAt"
+      FROM "RepairStep"
+      WHERE "guideId" = ${guideId}
+      ORDER BY "stepOrder" ASC
+    `;
+    const images = await sql`
+      SELECT id, "guideId", "stepOrder", prompt, status, "createdAt"
+      FROM "GeneratedImage"
+      WHERE "guideId" = ${guideId}
+      ORDER BY "stepOrder" ASC
+    `;
 
     return json({
       ...g,

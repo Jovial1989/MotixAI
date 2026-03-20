@@ -125,21 +125,22 @@ const EXAMPLE_GUIDES: SeedGuide[] = [
   },
 ];
 
-export async function seedExampleGuides(userId: string): Promise<void> {
+export async function seedExampleGuides(userId: string, tenantId?: string | null): Promise<void> {
   const sql = getDb();
   const now = new Date().toISOString();
+  const tid = tenantId ?? null;
 
   for (const g of EXAMPLE_GUIDES) {
     const vehicleId = newId();
     await sql`
       INSERT INTO "Vehicle" (id, "tenantId", model, "createdAt", "updatedAt")
-      VALUES (${vehicleId}, null, ${g.vehicleModel}, ${now}, ${now})
+      VALUES (${vehicleId}, ${tid}, ${g.vehicleModel}, ${now}, ${now})
     `;
 
     const partId = newId();
     await sql`
       INSERT INTO "Part" (id, "tenantId", name, "createdAt", "updatedAt")
-      VALUES (${partId}, null, ${g.partName}, ${now}, ${now})
+      VALUES (${partId}, ${tid}, ${g.partName}, ${now}, ${now})
     `;
 
     const guideId = newId();
@@ -149,7 +150,7 @@ export async function seedExampleGuides(userId: string): Promise<void> {
         title, difficulty, "timeEstimate", "safetyNotes", tools,
         "inputModel", "inputPart", "sourceType", "createdAt", "updatedAt"
       ) VALUES (
-        ${guideId}, null, ${userId}, ${vehicleId}, ${partId},
+        ${guideId}, ${tid}, ${userId}, ${vehicleId}, ${partId},
         ${g.title}, ${g.difficulty}, ${g.timeEstimate},
         ${g.safetyNotes}, ${g.tools},
         ${g.vehicleModel}, ${g.partName}, ${"B2C"}, ${now}, ${now}
