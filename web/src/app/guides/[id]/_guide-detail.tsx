@@ -14,24 +14,6 @@ function isMeaningfulString(v: string | null | undefined): v is string {
   return t !== 'null' && t !== 'none' && t !== 'n/a' && t !== '-' && t.length > 0;
 }
 
-/* ── Locked image block (guest) ──────────────────────────────────────── */
-function LockedImageBlock() {
-  const t = useT();
-  return (
-    <div className="locked-block">
-      <div className="locked-block-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      </div>
-      <p className="locked-block-title">{t.guideDetail.aiIllustration}</p>
-      <p className="locked-block-desc">{t.guideDetail.availableForRegistered}</p>
-      <Link href="/auth/signup" className="locked-block-cta">{t.guideDetail.createFreeAccount}</Link>
-    </div>
-  );
-}
-
 function difficultyBadgeClass(value: string): string {
   const normalized = value.trim().toLowerCase();
   if (['beginner', 'початковий', 'начинаещ'].includes(normalized)) return 'badge--green';
@@ -42,7 +24,7 @@ function difficultyBadgeClass(value: string): string {
 }
 
 /* ── Image viewer ────────────────────────────────────────────────────── */
-function StepImage({ step, readOnly = false }: { step: RepairStep; readOnly?: boolean }) {
+function StepImage({ step, canRegenerate = true }: { step: RepairStep; canRegenerate?: boolean }) {
   const t = useT();
   const [status, setStatus] = useState(step.imageStatus ?? (step.imageUrl ? 'ready' : 'none'));
   const [url, setUrl]       = useState(step.imageUrl ?? null);
@@ -57,13 +39,15 @@ function StepImage({ step, readOnly = false }: { step: RepairStep; readOnly?: bo
   }, [step.id, step.imageStatus, step.imageUrl]);
 
   useEffect(() => {
-    if (readOnly || triggered || (status === 'ready' && url)) return;
+    if (triggered || (status === 'ready' && url)) return;
     setTriggered(true);
     webApi.generateStepImage(step.id, false).then((r) => {
       setStatus(r.imageStatus as typeof status);
       if (r.imageUrl) setUrl(r.imageUrl);
-    }).catch(() => {});
-  }, [readOnly, status, step.id, triggered, url]);
+    }).catch(() => {
+      setStatus('failed');
+    });
+  }, [status, step.id, triggered, url]);
 
   useEffect(() => {
     const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
@@ -78,29 +62,37 @@ function StepImage({ step, readOnly = false }: { step: RepairStep; readOnly?: bo
       } catch { /* ignore */ }
     }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [readOnly, status, step.id]);
+  }, [status, step.id]);
 
-  const showLoader = !url && (readOnly ? false : ['none', 'queued', 'searching_refs', 'analyzing_refs', 'generating'].includes(status));
+  useEffect(() => {
+    if (status !== 'failed' || url) return;
+    const timer = setTimeout(() => {
+      setStatus('none');
+      setTriggered(false);
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [status, url]);
+
+  const showLoader = !url && ['none', 'queued', 'searching_refs', 'analyzing_refs', 'generating', 'failed'].includes(status);
 
   if (status === 'ready' && url) return (
     <>
       <button className="simg-preview" onClick={() => setFullscreen(true)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt={step.title} className="simg-img simg-img--ready" />
+        <img src={url} alt={step.title} className="simg-img simg-img--ready" loading="lazy" />
         <span className="simg-expand">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 4.5V2h2.5M8.5 2H11v2.5M11 8.5V11H8.5M4.5 11H2V8.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           {t.guideDetail.expand}
         </span>
       </button>
-      {!url.startsWith('data:') && (
-        <span className="simg-fallback-badge">{t.guideDetail.fallbackIllustration}</span>
-      )}
-      {!readOnly && (
+      {canRegenerate && (
         <button className="simg-regen" title={t.guideDetail.regenerate} onClick={(e) => {
           e.stopPropagation();
           webApi.generateStepImage(step.id, true).then((r) => {
             setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
-          }).catch(() => {});
+          }).catch(() => {
+            setStatus('failed');
+          });
           setStatus('queued');
         }}>{`↺ ${t.guideDetail.regenerate}`}</button>
       )}
@@ -108,7 +100,7 @@ function StepImage({ step, readOnly = false }: { step: RepairStep; readOnly?: bo
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt={step.title} className="simg-modal-img" onClick={e => e.stopPropagation()} />
+          <img src={url} alt={step.title} className="simg-modal-img" loading="lazy" onClick={e => e.stopPropagation()} />
         </div>
       )}
     </>
@@ -130,21 +122,21 @@ function StepImage({ step, readOnly = false }: { step: RepairStep; readOnly?: bo
     </div>
   );
 
-  if (status === 'failed') return (
-    <div className="simg-failed-wrap">
-      {url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="Failed illustration" className="simg-img" />
-      )}
-      <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>{`↺ ${t.guideDetail.retryIllustration}`}</button>
-    </div>
-  );
-
   return null;
 }
 
 /* ── Guest upgrade modal ─────────────────────────────────────────────── */
-function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
+function GuestUpgradeModal({
+  onClose,
+  title,
+  description,
+  ctaLabel,
+}: {
+  onClose: () => void;
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+}) {
   const t = useT();
   return (
     <div className="simg-modal" onClick={onClose} style={{ zIndex: 9999 }}>
@@ -156,10 +148,10 @@ function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
             <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
-        <h3 className="guest-upgrade-title">{t.guideDetail.createAccountToContinue}</h3>
-        <p className="guest-upgrade-desc">{t.guideDetail.upgradeDesc}</p>
+        <h3 className="guest-upgrade-title">{title ?? t.guideDetail.createAccountToContinue}</h3>
+        <p className="guest-upgrade-desc">{description ?? t.guideDetail.upgradeDesc}</p>
         <div className="guest-upgrade-actions">
-          <Link href="/auth/signup" className="guest-upgrade-cta">{t.guideDetail.createFreeAccount}</Link>
+          <Link href="/auth/signup" className="guest-upgrade-cta">{ctaLabel ?? t.guideDetail.createFreeAccount}</Link>
           <Link href="/auth/login" className="guest-upgrade-ghost">{t.guideDetail.signIn}</Link>
         </div>
       </div>
@@ -168,8 +160,6 @@ function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
 }
 
 /* ── Ask AI panel ────────────────────────────────────────────────────── */
-const guestAskUsed = new Set<string>();
-
 function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: string; isGuest?: boolean }) {
   const t = useT();
   const [open, setOpen]         = useState(false);
@@ -183,8 +173,7 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
     const q = question.trim();
     if (!q) return;
 
-    // Guest: block BEFORE API call on second attempt
-    if (isGuest && guestAskUsed.has(step.id)) {
+    if (isGuest) {
       setShowUpgrade(true);
       return;
     }
@@ -193,7 +182,6 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
     try {
       const res = await webApi.askGuideStep(guideId, step.id, q, getLocale());
       setAnswer(res.answer);
-      if (isGuest) guestAskUsed.add(step.id);
     } catch {
       if (isGuest) {
         setShowUpgrade(true);
@@ -205,7 +193,14 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
 
   return (
     <div className="ask-ai-wrap">
-      {showUpgrade && <GuestUpgradeModal onClose={() => setShowUpgrade(false)} />}
+      {showUpgrade && (
+        <GuestUpgradeModal
+          onClose={() => setShowUpgrade(false)}
+          title={t.guideDetail.availableInPro}
+          description={t.guideDetail.askAiUpgradeDesc}
+          ctaLabel={t.guideDetail.startFreeTrial}
+        />
+      )}
       {!open ? (
         <button className="ask-ai-btn" onClick={() => setOpen(true)}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -256,7 +251,6 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
   stepRef: React.RefObject<HTMLDivElement>; isGuest?: boolean;
 }) {
   const t = useT();
-  const showLockedIllustration = Boolean(isGuest && !step.imageUrl && step.imageStatus !== 'ready');
   return (
     <div ref={stepRef} className={`sc${active ? ' sc--open sc--active' : ''}`}>
       <button className="sc-hd" onClick={onActivate}>
@@ -270,48 +264,50 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
 
       {active && (
         <div className="sc-bd">
-          {showLockedIllustration ? <LockedImageBlock /> : <StepImage step={step} readOnly={Boolean(isGuest)} />}
-          <div className="sc-inst">
-            {(() => {
-              const lines = step.instruction.split('\n').filter(Boolean);
-              const isNumbered = lines.some((l) => /^\d+\.\s/.test(l));
-              if (isNumbered) {
-                return (
-                  <div className="sc-inst-list">
-                    {lines.map((line, i) => {
-                      const m = line.match(/^(\d+)\.\s+(.*)/);
-                      return m ? (
-                        <div key={i} className="sc-inst-item">
-                          <span className="sc-inst-num">{m[1]}</span>
-                          <span>{m[2]}</span>
-                        </div>
-                      ) : (
-                        <span key={i} style={{ display: 'block' }}>{line}</span>
-                      );
-                    })}
-                  </div>
-                );
-              }
-              return lines.map((line, i) => <span key={i} style={{ display: 'block' }}>{line}</span>);
-            })()}
-          </div>
-          {(isMeaningfulString(step.torqueValue) || isMeaningfulString(step.warningNote)) && (
-            <div className="sc-specs">
-              {isMeaningfulString(step.warningNote) && (
-                <div className="sc-spec sc-spec--warn">
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1L10.5 10H.5L5.5 1Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 4.5v2M5.5 8v.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                  {step.warningNote}
-                </div>
-              )}
-              {isMeaningfulString(step.torqueValue) && (
-                <div className="sc-spec sc-spec--ok">
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                  {t.guideDetail.torque}: {step.torqueValue}
-                </div>
-              )}
+          <div>
+            <StepImage step={step} canRegenerate={!isGuest} />
+            <div className="sc-inst">
+              {(() => {
+                const lines = step.instruction.split('\n').filter(Boolean);
+                const isNumbered = lines.some((l) => /^\d+\.\s/.test(l));
+                if (isNumbered) {
+                  return (
+                    <div className="sc-inst-list">
+                      {lines.map((line, i) => {
+                        const m = line.match(/^(\d+)\.\s+(.*)/);
+                        return m ? (
+                          <div key={i} className="sc-inst-item">
+                            <span className="sc-inst-num">{m[1]}</span>
+                            <span>{m[2]}</span>
+                          </div>
+                        ) : (
+                          <span key={i} style={{ display: 'block' }}>{line}</span>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                return lines.map((line, i) => <span key={i} style={{ display: 'block' }}>{line}</span>);
+              })()}
             </div>
-          )}
-          <AskAiPanel step={step} guideId={guideId} isGuest={isGuest} />
+            {(isMeaningfulString(step.torqueValue) || isMeaningfulString(step.warningNote)) && (
+              <div className="sc-specs">
+                {isMeaningfulString(step.warningNote) && (
+                  <div className="sc-spec sc-spec--warn">
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1L10.5 10H.5L5.5 1Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 4.5v2M5.5 8v.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                    {step.warningNote}
+                  </div>
+                )}
+                {isMeaningfulString(step.torqueValue) && (
+                  <div className="sc-spec sc-spec--ok">
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                    {t.guideDetail.torque}: {step.torqueValue}
+                  </div>
+                )}
+              </div>
+            )}
+            <AskAiPanel step={step} guideId={guideId} isGuest={isGuest} />
+          </div>
         </div>
       )}
     </div>

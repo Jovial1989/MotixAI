@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { AnalyticsData, GuideRequest, ManualDocument, RepairGuide, RepairJob, VehicleWithHistory } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 import { useT, getLocale } from '@/lib/i18n';
@@ -55,6 +56,11 @@ function difficultyBadgeClass(value: string): string {
   if (['advanced', 'просунутий', 'напреднал'].includes(normalized)) return 'badge--orange';
   if (['expert', 'експертний', 'експертно'].includes(normalized)) return 'badge--red';
   return 'badge--yellow';
+}
+
+function isPremiumGuideThumb(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return !url.includes('/demo-guides/') && !url.includes('placehold.co') && !url.includes('fallback-illustration');
 }
 
 // ── Guide list with search + filter ──────────────────────────────────────────
@@ -284,7 +290,7 @@ function GuidesView({
                   </p>
                 </Link>
                 <div className="guide-card-actions">
-                  {isGuest && guide.steps?.[0]?.imageUrl && (
+                  {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
                     <Link href={`/guides/${guide.id}`} className="guide-card-thumb" aria-label={guide.title}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={guide.steps[0].imageUrl ?? ''} alt={guide.title} className="guide-card-thumb-img" />
@@ -1059,6 +1065,7 @@ export default function DashboardPage() {
 function DashboardInner() {
   const t = useT();
   const locale = getLocale();
+  const router = useRouter();
   const [view, setView] = useState<DashView>('guides');
   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
   const [guides, setGuides] = useState<RepairGuide[]>([]);
@@ -1151,6 +1158,22 @@ function DashboardInner() {
       setError(err instanceof Error ? err.message : 'Failed to load');
     }).finally(() => setLoading(false));
   }, [locale]);
+
+  useEffect(() => {
+    if (!isGuest || loading || guides.length === 0) return;
+    router.replace(`/guides/${guides[0].id}?demo=1`);
+  }, [guides, isGuest, loading, router]);
+
+  if (isGuest && !loading && guides.length > 0) {
+    return (
+      <div className="dash-root">
+        <div className="gd-center">
+          <span className="gen-spinner gen-spinner--lg" />
+          <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t.authModal.guestLoadingText}</p>
+        </div>
+      </div>
+    );
+  }
 
   async function createGuide(data: {
     vehicleModel: string;

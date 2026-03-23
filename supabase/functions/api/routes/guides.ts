@@ -22,12 +22,7 @@ const DEMO_GUIDE_IDS = [
 ];
 
 const SUPPORTED_LANGUAGES = new Set(["en", "uk", "bg"]);
-
-const DEMO_IMAGE_PATHS: Record<string, string> = {
-  [DEMO_GUIDE_IDS[0]]: "/demo-guides/bmw-e90-oil-change.svg",
-  [DEMO_GUIDE_IDS[1]]: "/demo-guides/nissan-qashqai-brake-pads.svg",
-  [DEMO_GUIDE_IDS[2]]: "/demo-guides/toyota-land-cruiser-turbo.svg",
-};
+const LEGACY_PLACEHOLDER_IMAGE_MARKERS = ["/demo-guides/", "placehold.co", "Fallback%20illustration", "fallback-illustration"];
 
 function normalizeLanguage(language?: string | null): string {
   if (!language) return "en";
@@ -68,13 +63,20 @@ function guideCanonicalId(guide: Record<string, unknown>): string {
     : String(guide.id);
 }
 
-function hydrateDemoSteps(guideId: string, steps: Array<Record<string, unknown>>) {
-  const imageUrl = DEMO_IMAGE_PATHS[guideId];
-  return steps.map((step) => ({
-    ...step,
-    imageStatus: imageUrl ? "ready" : (step.imageStatus ?? "none"),
-    imageUrl: imageUrl ?? step.imageUrl ?? null,
-  }));
+function isLegacyPlaceholderImageUrl(url: unknown): boolean {
+  if (typeof url !== "string" || !url) return false;
+  return LEGACY_PLACEHOLDER_IMAGE_MARKERS.some((marker) => url.includes(marker));
+}
+
+function sanitizeGuideSteps(steps: Array<Record<string, unknown>>) {
+  return steps.map((step) => {
+    if (!isLegacyPlaceholderImageUrl(step.imageUrl)) return step;
+    return {
+      ...step,
+      imageStatus: "none",
+      imageUrl: null,
+    };
+  });
 }
 
 function formatGuideResponse(
@@ -99,7 +101,7 @@ function formatGuideResponse(
       name: guide.part_name,
       oemNumber: guide.part_oem,
     },
-    steps: isDemoGuide ? hydrateDemoSteps(canonicalId, steps) : steps,
+    steps: sanitizeGuideSteps(steps),
     images,
   };
 }
@@ -212,7 +214,6 @@ async function resolveLocalizedGuide(
 
   for (const [index, step] of localized.steps.entries()) {
     const sourceStep = current.steps[index];
-    const demoImageUrl = DEMO_IMAGE_PATHS[canonicalId] ?? null;
     await sql`
       INSERT INTO "RepairStep" (
         id, "guideId", "stepOrder", title, instruction, "torqueValue", "warningNote",
@@ -220,8 +221,8 @@ async function resolveLocalizedGuide(
       ) VALUES (
         ${newId()}, ${localizedGuideId}, ${step.order}, ${step.title}, ${step.instruction},
         ${step.torqueValue ?? null}, ${step.warningNote ?? null},
-        ${demoImageUrl ? "ready" : (sourceStep.imageStatus ?? "none")},
-        ${demoImageUrl ?? sourceStep.imageUrl ?? null},
+        ${isLegacyPlaceholderImageUrl(sourceStep.imageUrl) ? "none" : (sourceStep.imageStatus ?? "none")},
+        ${isLegacyPlaceholderImageUrl(sourceStep.imageUrl) ? null : (sourceStep.imageUrl ?? null)},
         ${sourceStep.imagePrompt ?? null},
         ${sourceStep.imageError ?? null},
         ${now}
@@ -289,7 +290,7 @@ export async function handleGuides(
       ...guide,
       language,
       canonicalGuideId: guide.id,
-      steps: hydrateDemoSteps(guide.id, guide.steps),
+      steps: guide.steps,
     })));
   }
 
@@ -688,7 +689,7 @@ export async function handleGuides(
             ...demoGuide,
             language,
             canonicalGuideId: demoGuide.id,
-            steps: hydrateDemoSteps(demoGuide.id, demoGuide.steps),
+            steps: demoGuide.steps,
           });
         }
       }

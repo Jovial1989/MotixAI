@@ -380,35 +380,33 @@ Rules:
 export function specToImagePrompt(spec: DrawingSpec): string {
   const componentsStr = spec.keyComponents.join(", ");
   const toolsStr = spec.toolsShown.join(", ") || "standard hand tools";
-  const torqueLine = spec.torqueNote ? `Torque arrow showing: ${spec.torqueNote}` : "";
-  const warningLine = spec.warningCallout ? "Include a warning triangle symbol (no text)." : "";
-  const calloutsNums = spec.callouts.map((c) => String(c.number)).join(", ");
+  const torqueLine = spec.torqueNote ? `Torque reference: ${spec.torqueNote}.` : "";
+  const warningLine = spec.warningCallout ? "Include a subtle warning marker only." : "";
+  const calloutsNums = spec.callouts.map((c) => `(${c.number}) ${c.label}`).join(", ");
   const viewNote =
-    spec.viewType === "exploded" ? "Exploded-view with alignment guidelines." :
-    spec.viewType === "cross-section" ? "Cross-section with hatching on cut surfaces." :
-    spec.viewType === "cutaway" ? "Partial cutaway revealing internal components." : "";
+    spec.viewType === "exploded" ? "Exploded manual view with precise alignment." :
+    spec.viewType === "cross-section" ? "Cross-section service-manual view." :
+    spec.viewType === "cutaway" ? "Cutaway mechanical view." :
+    spec.viewType === "overhead" ? "Overhead service-manual framing." :
+    spec.viewType === "side" ? "Side technical framing." :
+    "Perspective workshop-manual framing.";
 
-  return `Technical workshop manual line drawing. Black ink on white background. Style: Haynes/Chilton service manual.
+  return `Clean technical line drawing of a car maintenance step:
+${spec.referenceContext}. ${spec.stepTitle}. Components visible: ${componentsStr}. Tools visible: ${toolsStr}. ${viewNote} ${torqueLine} ${warningLine}
 
-Subject: ${spec.vehicle} — ${spec.stepTitle}
-View: ${spec.viewType} close-up — ${spec.referenceContext}
-Components: ${componentsStr}
-Tools: ${toolsStr}
-${torqueLine}
-${warningLine}
-${calloutsNums ? `Circled callout numbers ${calloutsNums} with thin leader lines pointing to relevant components.` : ""}
-${viewNote}
+Minimalist, white background, precise mechanical details,
+instructional manual style, no colors except subtle accents,
+high clarity, professional automotive guide illustration.
 
-ABSOLUTE RULES — no exceptions:
-- Show ONLY the relevant component and the immediately surrounding area. Tight close-up framing.
-- NO full human body, NO face, NO person shown. Disembodied hands holding tools are acceptable.
-- NO artistic style, NO manga, NO sketch art, NO painterly effects. Engineering line art ONLY.
-- ZERO text, ZERO letters, ZERO words anywhere — not even partial labels or numbers
-- Only circled numerals (①②③) are permitted as callout markers
-- Black outlines only — NO colour fills, NO grey shading, NO gradients
-- Single diagram — NO split panels, NO multiple views
-- NO title bar, NO border frame, NO watermark, NO background texture
-- Directional arrows showing rotation, removal direction, or applied force where relevant`;
+Consistency requirements:
+- same framing family across steps
+- crisp black line art with light grey structure shading only
+- subtle orange accent only for force direction, highlight, or warning cue
+- no random icons, no emojis, no decorative UI elements
+- no full human figure, no face, no photo-real rendering
+- no text labels, no watermark, no title bar
+- single technical composition only
+${calloutsNums ? `- use discreet numbered callouts for: ${calloutsNums}` : ""}`;
 }
 
 // Hard timeout for image generation — Gemini image model can hang for minutes.
@@ -416,10 +414,7 @@ const IMAGE_TIMEOUT_MS = 35_000;
 
 export async function generateIllustrationFromSpec(spec: DrawingSpec): Promise<string> {
   const client = getClient();
-  if (!client) {
-    const label = encodeURIComponent(`${spec.part} — ${spec.stepTitle}`.slice(0, 50));
-    return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${label}`;
-  }
+  if (!client) throw new Error("Gemini image generation is not configured");
 
   const prompt = specToImagePrompt(spec);
 
@@ -552,9 +547,7 @@ ${JSON.stringify(guide)}`;
 
 export async function generateStepImage(prompt: string): Promise<string> {
   const client = getClient();
-  if (!client) {
-    return `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${encodeURIComponent(prompt.slice(0, 50))}`;
-  }
+  if (!client) throw new Error("Gemini image generation is not configured");
 
   console.log("[image-gen] calling Gemini gemini-2.5-flash-image");
   const result = await client.models.generateContent({

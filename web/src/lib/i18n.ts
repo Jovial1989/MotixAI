@@ -526,6 +526,18 @@ export interface Translations {
     sourceBackedLabel: string;
     webSynthesisLabel: string;
     aiGeneratedLabel: string;
+    demoPaywallBadge: string;
+    continueWithFullGuide: string;
+    demoPaywallSub: string;
+    demoFeatureIllustrations: string;
+    demoFeatureSafety: string;
+    demoFeatureAskAi: string;
+    saveHook: string;
+    startFreeTrial: string;
+    lockedPreviewSub: string;
+    proPreview: string;
+    availableInPro: string;
+    askAiUpgradeDesc: string;
   };
 
   // Profile
@@ -1230,7 +1242,19 @@ const en: Translations = {
     errorLoadMsg: 'This guide could not be loaded. It may have been deleted or is temporarily unavailable.',
     sourceBackedLabel: 'Source-Backed',
     webSynthesisLabel: 'Web Synthesis',
-    aiGeneratedLabel: 'AI Generated',
+    aiGeneratedLabel: 'AI-powered professional repair guide',
+    demoPaywallBadge: 'Demo unlocked',
+    continueWithFullGuide: 'Continue with full guide',
+    demoPaywallSub: 'Unlock the rest of the procedure, keep AI illustrations visible, and move through the full repair with confidence.',
+    demoFeatureIllustrations: 'AI illustrations',
+    demoFeatureSafety: 'Safety notes',
+    demoFeatureAskAi: 'Ask AI',
+    saveHook: 'Save your guide and continue anytime.',
+    startFreeTrial: 'Start free trial',
+    lockedPreviewSub: 'The rest of this guide is ready when you start your trial.',
+    proPreview: 'Preview',
+    availableInPro: 'Available in Pro',
+    askAiUpgradeDesc: 'Start your free trial to ask follow-up questions, get guided explanations, and finish the repair without leaving the guide.',
   },
 
   profilePage: {
@@ -1954,7 +1978,19 @@ const uk: Translations = {
     errorLoadMsg: 'Цю інструкцію не вдалося завантажити. Вона могла бути видалена або тимчасово недоступна.',
     sourceBackedLabel: 'З джерела',
     webSynthesisLabel: 'Веб-синтез',
-    aiGeneratedLabel: 'ШІ генерація',
+    aiGeneratedLabel: 'Професійна ремонтна інструкція з підтримкою ШІ',
+    demoPaywallBadge: 'Демо відкрито',
+    continueWithFullGuide: 'Продовжити з повною інструкцією',
+    demoPaywallSub: 'Відкрийте решту процедури, залиште ШІ-ілюстрації видимими та проходьте весь ремонт упевнено.',
+    demoFeatureIllustrations: 'ШІ-ілюстрації',
+    demoFeatureSafety: 'Примітки безпеки',
+    demoFeatureAskAi: 'Запитати ШІ',
+    saveHook: 'Збережіть інструкцію та продовжуйте будь-коли.',
+    startFreeTrial: 'Почати пробний період',
+    lockedPreviewSub: 'Решта цієї інструкції вже готова, щойно ви почнете пробний період.',
+    proPreview: 'Превʼю',
+    availableInPro: 'Доступно в Pro',
+    askAiUpgradeDesc: 'Почніть пробний період, щоб ставити уточнювальні питання, отримувати пояснення кроків і завершити ремонт без зайвих перемикань.',
   },
 
   profilePage: {
@@ -2678,7 +2714,19 @@ const bg: Translations = {
     errorLoadMsg: 'Това ръководство не може да бъде заредено. Може да е изтрито или временно недостъпно.',
     sourceBackedLabel: 'От източник',
     webSynthesisLabel: 'Уеб синтез',
-    aiGeneratedLabel: 'ИИ генерирано',
+    aiGeneratedLabel: 'Професионално ремонтно ръководство с ИИ',
+    demoPaywallBadge: 'Демо отключено',
+    continueWithFullGuide: 'Продължи с пълното ръководство',
+    demoPaywallSub: 'Отключете останалата част от процедурата, запазете ИИ илюстрациите видими и преминете ремонта уверено до край.',
+    demoFeatureIllustrations: 'ИИ илюстрации',
+    demoFeatureSafety: 'Бележки за безопасност',
+    demoFeatureAskAi: 'Попитай ИИ',
+    saveHook: 'Запазете ръководството и продължете по всяко време.',
+    startFreeTrial: 'Започни безплатен пробен период',
+    lockedPreviewSub: 'Останалата част от това ръководство ви очаква веднага щом стартирате пробния период.',
+    proPreview: 'Преглед',
+    availableInPro: 'Налично в Pro',
+    askAiUpgradeDesc: 'Стартирайте безплатен пробен период, за да задавате уточняващи въпроси, да получавате ясни обяснения и да завършите ремонта в един поток.',
   },
 
   profilePage: {

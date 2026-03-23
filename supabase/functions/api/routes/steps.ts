@@ -2,6 +2,9 @@ import { errorResponse, json } from "../_lib/cors.ts";
 import { getDb } from "../_lib/db.ts";
 import { buildDrawingSpec, generateIllustrationFromSpec, specToImagePrompt } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
+import { uploadGuideImage } from "../_lib/storage.ts";
+
+const LEGACY_PLACEHOLDER_IMAGE_MARKERS = ["/demo-guides/", "placehold.co", "Fallback%20illustration", "fallback-illustration"];
 
 // buildDrawingSpec has a 10s internal timeout with mock fallback (always succeeds).
 // generateIllustrationFromSpec has a 35s internal timeout (throws on failure).
@@ -9,7 +12,12 @@ import type { TokenPayload } from "../_lib/jwt.ts";
 
 function imageType(url: string | null): "ai" | "fallback" | null {
   if (!url) return null;
-  return url.startsWith("data:") ? "ai" : "fallback";
+  return "ai";
+}
+
+function isLegacyPlaceholderImageUrl(url: unknown): boolean {
+  if (typeof url !== "string" || !url) return false;
+  return LEGACY_PLACEHOLDER_IMAGE_MARKERS.some((marker) => url.includes(marker));
 }
 
 export async function handleSteps(
@@ -47,10 +55,35 @@ export async function handleSteps(
 
     console.log(`[steps] generate-image stepId=${stepId} status=${step.imageStatus} force=${force}`);
 
+    if (isLegacyPlaceholderImageUrl(step.imageUrl)) {
+      await sql`
+        UPDATE "RepairStep"
+        SET "imageStatus" = 'none', "imageUrl" = null, "updatedAt" = ${new Date().toISOString()}
+        WHERE id = ${stepId}
+      `;
+      step.imageStatus = "none";
+      step.imageUrl = null;
+    }
+
     // Cache hit — return immediately
-    if (step.imageStatus === "ready" && step.imageUrl && !force) {
+    if (step.imageStatus === "ready" && step.imageUrl && !force && !String(step.imageUrl).startsWith("data:")) {
       console.log(`[steps] cache hit stepId=${stepId}`);
       return json({ imageStatus: "ready", imageUrl: step.imageUrl, type: imageType(step.imageUrl) });
+    }
+
+    // Legacy inline image — persist it to storage once, then reuse the public URL forever.
+    if (step.imageStatus === "ready" && step.imageUrl && String(step.imageUrl).startsWith("data:") && !force) {
+      try {
+        const storedUrl = await uploadGuideImage(step.imageUrl, step.guideId, stepId);
+        await sql`
+          UPDATE "RepairStep"
+          SET "imageUrl" = ${storedUrl}, "updatedAt" = ${new Date().toISOString()}
+          WHERE id = ${stepId}
+        `;
+        return json({ imageStatus: "ready", imageUrl: storedUrl, type: "ai" });
+      } catch (err) {
+        console.error(`[steps] failed to migrate inline image stepId=${stepId}:`, err);
+      }
     }
 
     // Another request is already running — return current in-progress state,
@@ -74,7 +107,7 @@ export async function handleSteps(
     await sql`
       UPDATE "RepairStep"
       SET "imageStatus" = 'queued', "imageError" = null,
-          "imageAttempts" = 0, "updatedAt" = ${now()}
+          "updatedAt" = ${now()}
       WHERE id = ${stepId}
     `;
 
@@ -119,8 +152,9 @@ export async function handleSteps(
       console.log(`[steps] generating stepId=${stepId}`);
 
       // Phase 3: image (35s timeout inside generateIllustrationFromSpec, throws on timeout)
-      const imageUrl = await generateIllustrationFromSpec(spec);
-      console.log(`[steps] ready stepId=${stepId} type=${imageType(imageUrl)}`);
+      let imageUrl = await generateIllustrationFromSpec(spec);
+      imageUrl = await uploadGuideImage(imageUrl, step.guideId, stepId);
+      console.log(`[steps] ready stepId=${stepId} type=ai`);
 
       await sql`
         UPDATE "RepairStep"
@@ -129,27 +163,24 @@ export async function handleSteps(
         WHERE id = ${stepId}
       `;
 
-      return json({ imageStatus: "ready", imageUrl, type: imageType(imageUrl) });
+      return json({ imageStatus: "ready", imageUrl, type: "ai" });
 
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[steps] pipeline failed stepId=${stepId} error=${errMsg}`);
 
-      const fallbackLabel = encodeURIComponent((stepContext.title ?? "Step").slice(0, 40));
-      const fallbackUrl = `https://placehold.co/1200x800/f1f5f9/94a3b8?text=${fallbackLabel}`;
-
       try {
         await sql`
           UPDATE "RepairStep"
           SET "imageStatus" = 'failed', "imageError" = ${errMsg},
-              "imageUrl" = ${fallbackUrl}, "updatedAt" = ${now()}
+              "imageUrl" = null, "updatedAt" = ${now()}
           WHERE id = ${stepId}
         `;
       } catch (dbErr) {
         console.error(`[steps] failed to persist failed status stepId=${stepId}: ${dbErr}`);
       }
 
-      return json({ imageStatus: "failed", imageUrl: fallbackUrl, type: "fallback" });
+      return json({ imageStatus: "failed", imageUrl: null, type: null });
     }
   }
 
