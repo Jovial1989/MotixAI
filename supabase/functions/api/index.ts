@@ -10,6 +10,7 @@ import { handleRequests } from "./routes/requests.ts";
 import { handleSteps } from "./routes/steps.ts";
 import { handleVehicles } from "./routes/vehicles.ts";
 import { handleUser } from "./routes/user.ts";
+import { handleBilling, handleBillingWebhook } from "./routes/billing.ts";
 
 Deno.serve(async (req: Request): Promise<Response> => {
   // CORS preflight
@@ -31,6 +32,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Auth routes — no auth required
     if (path.startsWith("/auth")) {
       return handleAuth(req, method, path.replace("/auth", ""));
+    }
+
+    // Billing webhook — no auth required (uses Stripe signature verification)
+    if (path === "/billing/webhook" && method === "POST") {
+      return handleBillingWebhook(req);
     }
 
     // Protected routes — require valid JWT
@@ -71,6 +77,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (path.startsWith("/user")) {
       return handleUser(req, method, path.replace("/user", ""), user);
+    }
+
+    if (path.startsWith("/billing")) {
+      return handleBilling(req, method, path.replace("/billing", ""), user);
     }
 
     return errorResponse("Not Found", 404);

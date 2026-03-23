@@ -834,14 +834,20 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
 
   async function handleUpgrade(trial: boolean) {
     setBillingLoading(true);
+    setPromoError(null);
     try {
       const { url } = await webApi.createCheckoutSession({
-        successUrl: `${window.location.origin}/dashboard?billing=success`,
+        successUrl: `${window.location.origin}/dashboard?billing=${trial ? 'trial-started' : 'success'}`,
         cancelUrl: `${window.location.origin}/dashboard?billing=cancelled`,
         trial,
       });
-      if (url) window.location.href = url;
-    } catch { /* ignore */ }
+      if (url) {
+        window.location.href = url;
+        return; // navigating away
+      }
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : 'Failed to start checkout');
+    }
     setBillingLoading(false);
   }
 
@@ -1055,16 +1061,48 @@ function DashboardInner() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Handle ?q= URL param — open new guide form for authenticated users only
+  const [billingNotice, setBillingNotice] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
+
+  // Handle URL params (?q= for search, ?billing= for Stripe return)
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    const billing = params.get('billing');
+
     if (q) {
-      // Guests enter predefined demo mode — ignore query params
       if (readJwt().role !== 'GUEST') {
         setInitialQuery(q);
         setView('new-guide');
       }
-      // Clean the URL without reloading
+    }
+
+    if (billing === 'trial-started' || billing === 'success') {
+      setBillingNotice({ type: 'success', message: billing === 'trial-started' ? t.dashboard.trialStartedNotice : t.dashboard.proActivatedNotice });
+      // Refresh user plan state from server via token refresh
+      try {
+        const rt = localStorage.getItem('motix_refresh_token');
+        if (rt) {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: rt }),
+          }).then(r => r.json()).then((data: { accessToken?: string; refreshToken?: string; user?: { planType?: string } }) => {
+            if (data.accessToken) localStorage.setItem('motix_access_token', data.accessToken);
+            if (data.refreshToken) localStorage.setItem('motix_refresh_token', data.refreshToken);
+            if (data.user) {
+              localStorage.setItem('motix_user', JSON.stringify(data.user));
+              if (data.user.planType) setPlanType(data.user.planType);
+            }
+          }).catch(() => {});
+        }
+      } catch { /* ignore */ }
+      setView('settings');
+    } else if (billing === 'cancelled') {
+      setBillingNotice({ type: 'info', message: t.dashboard.billingCancelledNotice });
+    }
+
+    // Clean the URL
+    if (q || billing) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -1187,6 +1225,14 @@ function DashboardInner() {
       />
 
       <main className="ds-main">
+        {billingNotice && (
+          <div className={`ds-billing-notice ds-billing-notice--${billingNotice.type}`}>
+            <span>{billingNotice.message}</span>
+            <button type="button" onClick={() => setBillingNotice(null)} aria-label="Dismiss">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </button>
+          </div>
+        )}
         {view === 'guides' && (
           <GuidesView
             guides={guides}

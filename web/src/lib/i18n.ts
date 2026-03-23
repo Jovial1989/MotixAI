@@ -588,6 +588,13 @@ export interface Translations {
     startTrial: string;
   };
 
+  // Dashboard notices
+  dashboard: {
+    trialStartedNotice: string;
+    proActivatedNotice: string;
+    billingCancelledNotice: string;
+  };
+
   // Vehicle selector
   vehicleSelector: {
     brand: string;
@@ -957,7 +964,7 @@ const en: Translations = {
     feat3title: 'Ask the guide',
     feat3desc: 'Get instant answers to repair questions',
     choosePlanHeading: 'Choose your plan',
-    choosePlanSub: 'Start with a free trial — no credit card required. Upgrade any time.',
+    choosePlanSub: 'Try Pro free for 7 days or start with the free plan.',
     planTrialName: '7-day free trial',
     planTrialDesc: 'Full access — AI illustrations, OEM-backed guides, unlimited repairs.',
     planTrialBadge: 'Recommended',
@@ -1280,6 +1287,12 @@ const en: Translations = {
     logOut: 'Log out',
     logIn: 'Log in',
     startTrial: 'Start trial',
+  },
+
+  dashboard: {
+    trialStartedNotice: 'Your 7-day Pro trial is now active! Enjoy full access.',
+    proActivatedNotice: 'Pro plan activated! You now have unlimited access.',
+    billingCancelledNotice: 'Checkout was cancelled. You can start your trial anytime from Settings.',
   },
 
   vehicleSelector: {
@@ -1673,7 +1686,7 @@ const uk: Translations = {
     feat3title: 'Запитайте інструкцію',
     feat3desc: 'Отримайте миттєві відповіді на питання з ремонту',
     choosePlanHeading: 'Оберіть план',
-    choosePlanSub: 'Почніть з безкоштовного пробного періоду — без кредитної картки. Оновіть у будь-який час.',
+    choosePlanSub: 'Спробуйте Pro безкоштовно 7 днів або почніть з безкоштовного плану.',
     planTrialName: '7-денний пробний період',
     planTrialDesc: 'Повний доступ — ШІ-ілюстрації, інструкції з OEM-даних, необмежені ремонти.',
     planTrialBadge: 'Рекомендовано',
@@ -1996,6 +2009,12 @@ const uk: Translations = {
     logOut: 'Вийти',
     logIn: 'Увійти',
     startTrial: 'Спробувати',
+  },
+
+  dashboard: {
+    trialStartedNotice: 'Ваш 7-денний Pro-тріал активний! Насолоджуйтесь повним доступом.',
+    proActivatedNotice: 'Pro-план активовано! Тепер у вас необмежений доступ.',
+    billingCancelledNotice: 'Оплату скасовано. Ви можете почати тріал у будь-який час у Налаштуваннях.',
   },
 
   vehicleSelector: {
@@ -2389,7 +2408,7 @@ const bg: Translations = {
     feat3title: 'Питайте ръководството',
     feat3desc: 'Получете моментални отговори на ремонтни въпроси',
     choosePlanHeading: 'Изберете план',
-    choosePlanSub: 'Започнете с безплатен пробен период — без кредитна карта. Надградете по всяко време.',
+    choosePlanSub: 'Опитайте Pro безплатно за 7 дни или започнете с безплатния план.',
     planTrialName: '7-дневен безплатен пробен период',
     planTrialDesc: 'Пълен достъп — ИИ илюстрации, OEM-базирани ръководства, неограничени ремонти.',
     planTrialBadge: 'Препоръчано',
@@ -2712,6 +2731,12 @@ const bg: Translations = {
     logOut: 'Излез',
     logIn: 'Влез',
     startTrial: 'Пробен период',
+  },
+
+  dashboard: {
+    trialStartedNotice: 'Вашият 7-дневен Pro пробен период е активен! Наслаждавайте се на пълен достъп.',
+    proActivatedNotice: 'Pro планът е активиран! Вече имате неограничен достъп.',
+    billingCancelledNotice: 'Плащането беше отменено. Можете да започнете пробния период по всяко време от Настройки.',
   },
 
   vehicleSelector: {
