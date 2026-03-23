@@ -115,7 +115,7 @@ function formatGuideResponse(
 ) {
   const canonicalId = guideCanonicalId(guide);
   const isDemoGuide = DEMO_GUIDE_IDS.includes(canonicalId);
-  return {
+  const response = {
     ...guide,
     canonicalGuideId: canonicalId,
     language: normalizeLanguage(typeof guide.language === "string" ? guide.language : "en"),
@@ -133,6 +133,7 @@ function formatGuideResponse(
     steps: sanitizeGuideSteps(steps),
     images,
   };
+  return isDemoGuide ? applyCuratedDemoGuideContent(response) : response;
 }
 
 async function fetchGuideRows(sql: ReturnType<typeof getDb>, guideId: string) {
@@ -761,14 +762,14 @@ const DEMO_GUIDES_RESPONSE = [
     vehicle: { id: "demo-v1", model: "BMW E90 3-Series", vin: null },
     part: { id: "demo-p1", name: "Oil Change", oemNumber: null },
     steps: [
-      makeDemoStep("ds1a", DEMO_GUIDE_IDS[0], 1, "Warm up engine", "Run the engine for 2–3 minutes to warm the oil so it drains completely, then switch off."),
-      makeDemoStep("ds1b", DEMO_GUIDE_IDS[0], 2, "Lift and secure vehicle", "Jack up the car and support it on axle stands. Never work under a car supported only by a jack.", undefined, "Ensure axle stands are on solid ground and rated for the vehicle weight."),
-      makeDemoStep("ds1c", DEMO_GUIDE_IDS[0], 3, "Remove drain plug", "Place the drain pan under the sump. Using a 17mm socket, remove the drain plug and allow oil to drain fully.", "25 Nm on reinstall"),
-      makeDemoStep("ds1d", DEMO_GUIDE_IDS[0], 4, "Remove oil filter", "Using an oil filter wrench, unscrew the cartridge filter housing located on the top of the engine. Remove the old filter element."),
-      makeDemoStep("ds1e", DEMO_GUIDE_IDS[0], 5, "Install new filter", "Insert the new filter element, replace the O-ring with the one supplied, and hand-tighten the housing then torque to spec.", "18 Nm"),
-      makeDemoStep("ds1f", DEMO_GUIDE_IDS[0], 6, "Reinstall drain plug", "Clean the drain plug and install a new sealing washer. Refit and torque the plug.", "25 Nm"),
-      makeDemoStep("ds1g", DEMO_GUIDE_IDS[0], 7, "Add new oil", "Remove the oil filler cap on the valve cover. Using a funnel, add 5.5 L of 5W-30 long-life oil."),
-      makeDemoStep("ds1h", DEMO_GUIDE_IDS[0], 8, "Check level and leaks", "Start the engine and let it idle for 1 minute. Check for leaks around the drain plug and filter. Switch off and check the dipstick — level should read between MIN and MAX."),
+      makeDemoStep("ds1a", DEMO_GUIDE_IDS[0], 1, "Warm up engine", "1. Idle the engine for 2-3 minutes so the oil thins and drains more completely.\n2. Park on level ground, switch the engine off, and apply the parking brake.\n3. Open the bonnet and remove the oil filler cap slightly to help the sump vent while draining."),
+      makeDemoStep("ds1b", DEMO_GUIDE_IDS[0], 2, "Lift and secure vehicle", "1. Chock the rear wheels before lifting the front of the vehicle.\n2. Raise the front using the approved jacking point and position axle stands under the front support locations.\n3. Lower the vehicle gently onto the stands and shake the body lightly to confirm it is stable before going underneath.", undefined, "Ensure axle stands are on solid ground and rated for the vehicle weight."),
+      makeDemoStep("ds1c", DEMO_GUIDE_IDS[0], 3, "Remove drain plug", "1. Position the drain pan directly below the sump plug and keep absorbent rags nearby.\n2. Crack the drain plug loose with a 17 mm socket, then finish removing it by hand to avoid dropping it into the pan.\n3. Let the oil drain until it reduces to a slow drip, then inspect the plug and sealing surface for damage.", "25 Nm on reinstall"),
+      makeDemoStep("ds1d", DEMO_GUIDE_IDS[0], 4, "Remove oil filter", "1. Move to the top of the engine and place rags around the filter housing to catch any spill.\n2. Use the oil filter wrench to loosen the housing cap, then lift out the old filter element and old O-ring.\n3. Wipe the housing clean so the new seal seats on a clean surface without twisting."),
+      makeDemoStep("ds1e", DEMO_GUIDE_IDS[0], 5, "Install new filter", "1. Lightly coat the new O-ring with fresh engine oil before fitting it to the housing groove.\n2. Push the new filter element fully into the cap until it seats squarely.\n3. Thread the housing in by hand first to avoid cross-threading, then tighten evenly to specification.", "18 Nm"),
+      makeDemoStep("ds1f", DEMO_GUIDE_IDS[0], 6, "Reinstall drain plug", "1. Clean the drain plug threads and fit a new sealing washer.\n2. Reinstall the plug by hand until it seats against the sump to avoid thread damage.\n3. Torque the plug correctly and wipe the area clean so any later leak is easy to spot.", "25 Nm"),
+      makeDemoStep("ds1g", DEMO_GUIDE_IDS[0], 7, "Add new oil", "1. Place a clean funnel in the filler neck and add oil in controlled stages rather than all at once.\n2. Pour in approximately 5.0 litres first, pause, then add the remaining amount gradually toward the target fill.\n3. Refit the filler cap securely and wipe any spilled oil from the cover and surrounding trim."),
+      makeDemoStep("ds1h", DEMO_GUIDE_IDS[0], 8, "Check level and leaks", "1. Start the engine and let it idle for about 60 seconds while you inspect the drain plug and filter housing.\n2. Switch off, wait two minutes for the oil to settle, then check the dipstick level on level ground.\n3. Top up if needed so the oil sits between MIN and MAX, then confirm there are no active leaks before closing the bonnet."),
     ],
     createdAt: "2026-03-01T10:00:00.000Z", updatedAt: "2026-03-01T10:00:00.000Z",
   },
@@ -783,16 +784,16 @@ const DEMO_GUIDES_RESPONSE = [
     vehicle: { id: "demo-v2", model: "Nissan Qashqai J10", vin: null },
     part: { id: "demo-p2", name: "Brake Pads", oemNumber: null },
     steps: [
-      makeDemoStep("ds2a", DEMO_GUIDE_IDS[1], 1, "Loosen wheel nuts", "With the vehicle on the ground, crack the wheel nuts loose half a turn on both front wheels."),
-      makeDemoStep("ds2b", DEMO_GUIDE_IDS[1], 2, "Raise and support vehicle", "Jack up the front of the vehicle and secure on axle stands. Remove both front wheels.", undefined, "Use proper axle stand positions as per the vehicle manual."),
-      makeDemoStep("ds2c", DEMO_GUIDE_IDS[1], 3, "Inspect existing pads", "Before removal, note the thickness of the existing pads and confirm they need replacement (less than 3mm is the typical minimum)."),
-      makeDemoStep("ds2d", DEMO_GUIDE_IDS[1], 4, "Remove caliper guide bolts", "Using a 12mm socket, remove the two caliper guide bolts at the back of the caliper. Slide the caliper off the disc.", undefined, "Do not let the caliper hang by the brake hose — support it with a hook or wire."),
-      makeDemoStep("ds2e", DEMO_GUIDE_IDS[1], 5, "Remove old brake pads", "Slide out the old inner and outer brake pads from the caliper bracket. Note which direction they face."),
-      makeDemoStep("ds2f", DEMO_GUIDE_IDS[1], 6, "Clean bracket and hardware", "Use a wire brush and brake cleaner to clean the caliper bracket slide areas. Lightly lubricate slide pins with copper grease."),
-      makeDemoStep("ds2g", DEMO_GUIDE_IDS[1], 7, "Compress caliper piston", "Place a piece of old pad against the piston and use a C-clamp to slowly compress the piston fully into the caliper body. Check the brake fluid reservoir does not overflow."),
-      makeDemoStep("ds2h", DEMO_GUIDE_IDS[1], 8, "Install new pads", "Clip the new inner pad into the piston and the outer pad into the caliper bracket. Ensure anti-squeal shims are correctly seated."),
-      makeDemoStep("ds2i", DEMO_GUIDE_IDS[1], 9, "Refit caliper", "Slide the caliper back over the new pads and start the guide bolts by hand. Torque to specification.", "34 Nm"),
-      makeDemoStep("ds2j", DEMO_GUIDE_IDS[1], 10, "Refit wheels and bed in pads", "Refit wheels and torque wheel nuts. Lower vehicle. Pump brake pedal until firm. Perform 5–10 moderate stops from 40 km/h to bed in the new pads.", "Wheel nuts: 100 Nm"),
+      makeDemoStep("ds2a", DEMO_GUIDE_IDS[1], 1, "Loosen wheel nuts", "1. Before lifting the vehicle, crack each front wheel nut loose by roughly half a turn.\n2. Work in a star pattern so the wheel tension is released evenly.\n3. Leave the nuts threaded on by a few turns so the wheel stays seated until the vehicle is raised."),
+      makeDemoStep("ds2b", DEMO_GUIDE_IDS[1], 2, "Raise and support vehicle", "1. Lift the front of the vehicle using the approved front jacking point.\n2. Place axle stands under the reinforced support locations on both sides and lower the vehicle onto them.\n3. Remove both front wheels and store the nuts where they stay clean for refitting.", undefined, "Use proper axle stand positions as per the vehicle manual."),
+      makeDemoStep("ds2c", DEMO_GUIDE_IDS[1], 3, "Inspect existing pads", "1. Check pad friction material thickness on both inner and outer pads before removal.\n2. Inspect the disc surface for heavy scoring, lips, or blue heat marks that may require additional service.\n3. Confirm the wear pattern is even; uneven wear can indicate seized slide pins or piston issues."),
+      makeDemoStep("ds2d", DEMO_GUIDE_IDS[1], 4, "Remove caliper guide bolts", "1. Locate the upper and lower guide bolts on the rear of the caliper body.\n2. Remove both bolts with a 12 mm socket while supporting the caliper with your free hand.\n3. Slide the caliper away from the disc and suspend it with a hook or wire instead of letting it hang on the hose.", undefined, "Do not let the caliper hang by the brake hose — support it with a hook or wire."),
+      makeDemoStep("ds2e", DEMO_GUIDE_IDS[1], 5, "Remove old brake pads", "1. Withdraw the outer and inner pads from the caliper bracket, noting the location of any shims or clips.\n2. Compare the old pads side by side to check for uneven wear.\n3. Keep the old pad set nearby in case one is needed as a buffer while compressing the piston."),
+      makeDemoStep("ds2f", DEMO_GUIDE_IDS[1], 6, "Clean bracket and hardware", "1. Clean the pad abutment points and hardware seats using brake cleaner and a wire brush.\n2. Remove rust build-up so the new pads can slide freely without binding.\n3. Lightly lubricate the slide pin contact areas with brake-safe grease, keeping lubricant off pad friction surfaces."),
+      makeDemoStep("ds2g", DEMO_GUIDE_IDS[1], 7, "Compress caliper piston", "1. Position an old pad against the piston face to spread the load evenly.\n2. Wind the piston back slowly with a C-clamp or piston tool until it sits fully home in the bore.\n3. Watch the brake fluid reservoir while compressing and remove excess fluid if the level rises too high."),
+      makeDemoStep("ds2h", DEMO_GUIDE_IDS[1], 8, "Install new pads", "1. Fit the new pad hardware and anti-squeal shims exactly as supplied with the pad kit.\n2. Seat the inner pad against the piston and place the outer pad squarely in the bracket.\n3. Confirm both pads move freely by hand before the caliper is refitted."),
+      makeDemoStep("ds2i", DEMO_GUIDE_IDS[1], 9, "Refit caliper", "1. Swing the caliper back over the new pads without disturbing their position.\n2. Start the guide bolts by hand first, then tighten them evenly.\n3. Torque the guide bolts to specification and confirm the caliper slides freely on its pins.", "34 Nm"),
+      makeDemoStep("ds2j", DEMO_GUIDE_IDS[1], 10, "Refit wheels and bed in pads", "1. Refit both wheels and tighten the wheel nuts finger-tight before lowering the vehicle.\n2. Lower the vehicle, torque the wheel nuts, and pump the brake pedal until a firm pedal returns.\n3. Carry out a controlled bedding-in cycle with several moderate stops so the new pads mate evenly to the discs.", "Wheel nuts: 100 Nm"),
     ],
     createdAt: "2026-03-01T11:00:00.000Z", updatedAt: "2026-03-01T11:00:00.000Z",
   },
@@ -807,20 +808,53 @@ const DEMO_GUIDES_RESPONSE = [
     vehicle: { id: "demo-v3", model: "Toyota Land Cruiser 200", vin: null },
     part: { id: "demo-p3", name: "Turbocharger", oemNumber: null },
     steps: [
-      makeDemoStep("ds3a", DEMO_GUIDE_IDS[2], 1, "Prepare and depressurise", "Disconnect the negative battery terminal. Allow the engine to cool for at least 2 hours. Drain engine oil and coolant into appropriate containers."),
-      makeDemoStep("ds3b", DEMO_GUIDE_IDS[2], 2, "Remove engine cover and air intake", "Remove the plastic engine cover (4 bolts). Disconnect the air intake pipe from the turbo inlet and remove the intercooler pipes."),
-      makeDemoStep("ds3c", DEMO_GUIDE_IDS[2], 3, "Disconnect oil feed line", "Using the oil line disconnect tool, remove the banjo bolt on the turbo oil feed line. Cap the feed line to prevent contamination."),
-      makeDemoStep("ds3d", DEMO_GUIDE_IDS[2], 4, "Disconnect oil return line", "Remove the two bolts securing the oil return (drain) line flange at the turbo base. Expect residual oil to drain."),
-      makeDemoStep("ds3e", DEMO_GUIDE_IDS[2], 5, "Disconnect coolant lines (water-cooled turbo)", "Clamp and disconnect both coolant feed and return lines from the turbo centre housing.", undefined, "Have rags ready — residual coolant will spill."),
-      makeDemoStep("ds3f", DEMO_GUIDE_IDS[2], 6, "Disconnect exhaust downpipe", "Remove the three nuts securing the exhaust downpipe to the turbo outlet flange. Support the downpipe."),
-      makeDemoStep("ds3g", DEMO_GUIDE_IDS[2], 7, "Remove turbo-to-manifold mounting nuts", "Remove the four nuts securing the turbo to the exhaust manifold. These are often seized — use penetrating oil and allow 20 minutes to soak.", "Penetrating oil soak required"),
-      makeDemoStep("ds3h", DEMO_GUIDE_IDS[2], 8, "Extract turbocharger", "Carefully manoeuvre the turbo out of the engine bay. The unit is heavy — use an assistant or engine support bar."),
-      makeDemoStep("ds3i", DEMO_GUIDE_IDS[2], 9, "Clean all mating surfaces", "Using a gasket scraper and brake cleaner, clean the manifold flange, oil feed port, and return port. Ensure no old gasket material remains."),
-      makeDemoStep("ds3j", DEMO_GUIDE_IDS[2], 10, "Pre-lubricate new turbo", "Before installation, pour approximately 50ml of clean engine oil into the turbo oil inlet port and rotate the shaft by hand to distribute oil.", undefined, "Never start the engine immediately after turbo installation without pre-lubricating."),
-      makeDemoStep("ds3k", DEMO_GUIDE_IDS[2], 11, "Install new turbocharger", "Fit new manifold-to-turbo gasket and carefully seat the new turbo. Start all four mounting nuts by hand, then torque evenly in a cross pattern.", "43 Nm"),
-      makeDemoStep("ds3l", DEMO_GUIDE_IDS[2], 12, "Reconnect all lines and pipes", "Reconnect oil feed (new sealing washers), oil return (new gasket), coolant lines, exhaust downpipe (new gasket), and intake piping. Torque all fasteners to spec.", "Oil feed banjo bolt: 32 Nm | Downpipe: 43 Nm"),
-      makeDemoStep("ds3m", DEMO_GUIDE_IDS[2], 13, "Refill fluids and verify", "Refill engine oil and coolant. Prime the oil system by cranking (without starting) for 10 seconds. Start and idle for 5 minutes — check for oil or coolant leaks around the turbo."),
+      makeDemoStep("ds3a", DEMO_GUIDE_IDS[2], 1, "Prepare and depressurise", "1. Disconnect the negative battery terminal and allow the engine bay to cool fully before touching the turbo assembly.\n2. Drain engine oil and coolant into clean containers if they are to be reused.\n3. Label nearby hoses and connectors now, because access becomes more restricted once intake and heat shielding are removed."),
+      makeDemoStep("ds3b", DEMO_GUIDE_IDS[2], 2, "Remove engine cover and air intake", "1. Remove the engine cover and any intake ducting blocking access to the turbocharger.\n2. Loosen the turbo inlet and intercooler clamps, then pull the pipework clear without damaging rubber couplers.\n3. Inspect all intake hoses as they come off so split boots can be replaced during reassembly."),
+      makeDemoStep("ds3c", DEMO_GUIDE_IDS[2], 3, "Disconnect oil feed line", "1. Clean around the oil feed fitting before loosening it so no debris enters the new turbo.\n2. Remove the banjo bolt and sealing washers, keeping note of the fitting orientation.\n3. Cap or wrap the open feed line immediately to prevent contamination while the turbo is out."),
+      makeDemoStep("ds3d", DEMO_GUIDE_IDS[2], 4, "Disconnect oil return line", "1. Place absorbent material beneath the turbocharger because the return line will spill residual oil.\n2. Remove the flange fasteners at the turbo base and ease the drain tube away carefully.\n3. Inspect the return hose or pipe for coking, restriction, or hardening before reuse."),
+      makeDemoStep("ds3e", DEMO_GUIDE_IDS[2], 5, "Disconnect coolant lines (water-cooled turbo)", "1. Clamp the coolant hoses if required to limit fluid loss once they are disconnected.\n2. Release both feed and return lines from the turbo centre housing and catch any remaining coolant.\n3. Plug the open line ends so dirt does not enter the cooling circuit during the repair.", undefined, "Have rags ready — residual coolant will spill."),
+      makeDemoStep("ds3f", DEMO_GUIDE_IDS[2], 6, "Disconnect exhaust downpipe", "1. Support the downpipe before loosening the fasteners so its weight does not twist the turbo outlet studs.\n2. Remove the outlet flange nuts evenly and separate the downpipe from the turbo.\n3. Inspect the flange faces and studs now, replacing any heat-damaged hardware before final assembly."),
+      makeDemoStep("ds3g", DEMO_GUIDE_IDS[2], 7, "Remove turbo-to-manifold mounting nuts", "1. Soak the manifold nuts with penetrating oil and let it work before applying force.\n2. Loosen each nut progressively to reduce the risk of snapping a stud in the manifold.\n3. Once all hardware is free, support the turbo body because the unit will shift as the final nut is removed.", "Penetrating oil soak required"),
+      makeDemoStep("ds3h", DEMO_GUIDE_IDS[2], 8, "Extract turbocharger", "1. Lift the turbocharger clear while checking that no hose, bracket, or heat shield is still attached.\n2. Keep the compressor and turbine housings away from surrounding wiring and hard lines during removal.\n3. Set the removed unit on a bench for inspection so you can compare housings, ports, and actuator layout with the replacement."),
+      makeDemoStep("ds3i", DEMO_GUIDE_IDS[2], 9, "Clean all mating surfaces", "1. Remove every trace of the old gasket from the manifold, oil return, and downpipe flange surfaces.\n2. Clean carbon deposits from the flange faces without gouging the mating surfaces.\n3. Blow out or wipe away any debris so nothing enters the oil passages or the new turbocharger on installation."),
+      makeDemoStep("ds3j", DEMO_GUIDE_IDS[2], 10, "Pre-lubricate new turbo", "1. Pour clean engine oil into the turbo oil inlet port before the unit is fitted.\n2. Rotate the turbine shaft by hand several turns to distribute the oil through the bearings.\n3. Keep the inlet protected until final installation so the pre-lubricated assembly stays clean.", undefined, "Never start the engine immediately after turbo installation without pre-lubricating."),
+      makeDemoStep("ds3k", DEMO_GUIDE_IDS[2], 11, "Install new turbocharger", "1. Position the new turbo with a fresh manifold gasket and start all mounting nuts by hand.\n2. Align the housing so the oil drain points correctly downward without stressing attached lines.\n3. Tighten the mounting hardware evenly in a cross pattern to pull the flange down squarely.", "43 Nm"),
+      makeDemoStep("ds3l", DEMO_GUIDE_IDS[2], 12, "Reconnect all lines and pipes", "1. Refit the oil feed with new sealing washers and the return line with a new gasket.\n2. Reconnect coolant lines, the downpipe, intake piping, and intercooler hoses in the reverse order of removal.\n3. Tighten every connection to specification and check that hoses are fully seated with no twist or preload.", "Oil feed banjo bolt: 32 Nm | Downpipe: 43 Nm"),
+      makeDemoStep("ds3m", DEMO_GUIDE_IDS[2], 13, "Refill fluids and verify", "1. Refill engine oil and coolant to the correct capacities before attempting to start the engine.\n2. Prime oil pressure by cranking the engine without starting, then start and let it idle while monitoring the turbo area.\n3. Check carefully for oil, coolant, intake, or exhaust leaks and confirm boost hoses remain seated after the first warm idle."),
     ],
     createdAt: "2026-03-01T12:00:00.000Z", updatedAt: "2026-03-01T12:00:00.000Z",
   },
 ];
+
+function applyCuratedDemoGuideContent(response: Record<string, unknown>) {
+  const language = normalizeLanguage(typeof response.language === "string" ? response.language : "en");
+  if (language !== "en") return response;
+
+  const canonicalId = guideCanonicalId(response);
+  const curated = DEMO_GUIDES_RESPONSE.find((guide) => guide.id === canonicalId);
+  if (!curated) return response;
+
+  const responseSteps = Array.isArray(response.steps) ? response.steps as Array<Record<string, unknown>> : [];
+  return {
+    ...response,
+    title: curated.title,
+    difficulty: curated.difficulty,
+    timeEstimate: curated.timeEstimate,
+    tools: curated.tools,
+    safetyNotes: curated.safetyNotes,
+    inputModel: curated.inputModel,
+    inputPart: curated.inputPart,
+    confidence: curated.confidence,
+    steps: responseSteps.map((step, index) => {
+      const curatedStep = curated.steps[index];
+      if (!curatedStep) return step;
+      return {
+        ...step,
+        title: curatedStep.title,
+        instruction: curatedStep.instruction,
+        torqueValue: curatedStep.torqueValue,
+        warningNote: curatedStep.warningNote,
+      };
+    }),
+  };
+}

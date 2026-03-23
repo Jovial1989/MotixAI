@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { AnalyticsData, GuideRequest, ManualDocument, RepairGuide, RepairJob, VehicleWithHistory } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 import { useT, getLocale } from '@/lib/i18n';
@@ -109,6 +108,10 @@ function GuidesView({
   }, [guides, search, filterDiff, isGuest, sort]);
 
   function clearFilters() { setSearch(''); setFilterDiff(''); }
+  const guideHref = useCallback((guide: RepairGuide) => {
+    if (!isGuest) return `/guides/${guide.id}`;
+    return `/guides/${guide.canonicalGuideId ?? guide.id}?demo=1`;
+  }, [isGuest]);
 
   return (
     <div className="dv-guides">
@@ -265,12 +268,13 @@ function GuidesView({
         ) : (
           filtered.map((guide) => {
             const dot = guideStatusDot(guide);
+            const href = guideHref(guide);
             return (
               <div key={guide.id} className="guide-card guide-card--v2">
                 {!isGuest && dot && (
                   <div className={`gcard-dot gcard-dot--${dot}`} title={dot === 'yellow' ? t.dash.imagesGenerating : dot === 'red' ? t.dash.imagesFailed : t.dash.ready} />
                 )}
-                <Link href={`/guides/${guide.id}`} className="guide-card-main">
+                <Link href={href} className="guide-card-main">
                   <div className="guide-card-meta">
                     <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
                     <span className="guide-card-time">
@@ -291,7 +295,7 @@ function GuidesView({
                 </Link>
                 <div className="guide-card-actions">
                   {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
-                    <Link href={`/guides/${guide.id}`} className="guide-card-thumb" aria-label={guide.title}>
+                    <Link href={href} className="guide-card-thumb" aria-label={guide.title}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={guide.steps[0].imageUrl ?? ''} alt={guide.title} className="guide-card-thumb-img" />
                     </Link>
@@ -310,7 +314,7 @@ function GuidesView({
                       )}
                     </button>
                   )}
-                  <Link href={`/guides/${guide.id}`} className="guide-card-arrow">
+                  <Link href={href} className="guide-card-arrow">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -1065,7 +1069,6 @@ export default function DashboardPage() {
 function DashboardInner() {
   const t = useT();
   const locale = getLocale();
-  const router = useRouter();
   const [view, setView] = useState<DashView>('guides');
   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
   const [guides, setGuides] = useState<RepairGuide[]>([]);
@@ -1159,26 +1162,10 @@ function DashboardInner() {
     }).finally(() => setLoading(false));
   }, [locale]);
 
-  useEffect(() => {
-    if (!isGuest || loading || guides.length === 0) return;
-    router.replace(`/guides/${guides[0].canonicalGuideId ?? guides[0].id}?demo=1`);
-  }, [guides, isGuest, loading, router]);
-
   // Guests are locked to guides view — redirect any other view
   useEffect(() => {
     if (isGuest && view !== 'guides') setView('guides');
   }, [isGuest, view]);
-
-  if (isGuest && !loading && guides.length > 0) {
-    return (
-      <div className="dash-root">
-        <div className="gd-center">
-          <span className="gen-spinner gen-spinner--lg" />
-          <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t.authModal.guestLoadingText}</p>
-        </div>
-      </div>
-    );
-  }
 
   async function createGuide(data: {
     vehicleModel: string;
