@@ -1164,6 +1164,11 @@ function DashboardInner() {
     router.replace(`/guides/${guides[0].id}?demo=1`);
   }, [guides, isGuest, loading, router]);
 
+  // Guests are locked to guides view — redirect any other view
+  useEffect(() => {
+    if (isGuest && view !== 'guides') setView('guides');
+  }, [isGuest, view]);
+
   if (isGuest && !loading && guides.length > 0) {
     return (
       <div className="dash-root">
@@ -1210,11 +1215,6 @@ function DashboardInner() {
       setError(err instanceof Error ? err.message : 'Failed to delete guide');
     } finally { setDeleting(null); }
   }
-
-  // Guests are locked to guides view — redirect any other view
-  useEffect(() => {
-    if (isGuest && view !== 'guides') setView('guides');
-  }, [isGuest, view]);
 
   // Full-screen new guide mode — no sidebar
   if (view === 'new-guide' && !isGuest) {
