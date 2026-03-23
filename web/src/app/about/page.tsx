@@ -27,16 +27,21 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ─── FOUNDER SECTION ─────────────────────────────── */}
+      {/* ─── LEADERSHIP TEAM ──────────────────────────────── */}
       <section className="pg-section pg-section--alt">
         <div className="pg-wrap">
-          <div className="about-founder-v2">
+          <div className="pg-header">
+            <p className="eyebrow-tag">Leadership</p>
+            <h2 className="section-h2">The team behind Motixi</h2>
+          </div>
 
-            {/* Left: photo + name + links */}
-            <div className="founder-card">
+          <div className="team-grid">
+            {/* CEO card */}
+            <div className="team-member-card">
               <FounderImage size="lg" />
               <p className="founder-card-name">{t.aboutPage.founderName}</p>
               <p className="founder-card-role">{t.aboutPage.founderRole}</p>
+              <p className="team-member-bio">{t.aboutPage.bioHeadline}</p>
               <div className="founder-card-links">
                 <a
                   href="https://www.linkedin.com/in/petrovkyrylo/"
@@ -55,33 +60,60 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Right: bio + experience */}
-            <div className="founder-bio-col">
-              <h2 className="bio-headline">
-                {t.aboutPage.bioHeadline}
-              </h2>
-
-              <p className="bio-p">
-                {t.aboutPage.bioP1}
-              </p>
-              <p className="bio-p">
-                {t.aboutPage.bioP2}
-              </p>
-
-              {/* Experience bullets */}
-              <div className="about-exp-block">
-                <p className="about-exp-label">{t.aboutPage.experienceLabel}</p>
-                <ul className="about-exp-list">
-                  {experienceBullets.map((bullet) => (
-                    <li key={bullet} className="about-exp-item">
-                      <span className="about-exp-dot" />
-                      <span>{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
+            {/* CTO card */}
+            <div className="team-member-card">
+              <img
+                src="/cto.jpg"
+                alt={t.aboutPage.ctoName}
+                className="founder-img"
+              />
+              <a
+                href="https://www.linkedin.com/in/mykhailo-s-862ba860/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="founder-card-name team-member-link"
+              >
+                {t.aboutPage.ctoName}
+              </a>
+              <p className="founder-card-role">{t.aboutPage.ctoRole} &middot; {t.aboutPage.ctoTitle}</p>
+              <p className="team-member-bio">{t.aboutPage.ctoBio}</p>
+              <div className="founder-card-links">
+                <a
+                  href="https://www.linkedin.com/in/mykhailo-s-862ba860/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="founder-card-btn founder-card-btn--primary"
+                >
+                  LinkedIn
+                </a>
               </div>
             </div>
+          </div>
 
+          {/* CEO detailed bio below the team grid */}
+          <div className="founder-detail-section">
+            <h2 className="bio-headline">
+              {t.aboutPage.bioHeadline}
+            </h2>
+
+            <p className="bio-p">
+              {t.aboutPage.bioP1}
+            </p>
+            <p className="bio-p">
+              {t.aboutPage.bioP2}
+            </p>
+
+            <div className="about-exp-block">
+              <p className="about-exp-label">{t.aboutPage.experienceLabel}</p>
+              <ul className="about-exp-list">
+                {experienceBullets.map((bullet) => (
+                  <li key={bullet} className="about-exp-item">
+                    <span className="about-exp-dot" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>

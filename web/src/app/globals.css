@@ -3907,6 +3907,35 @@ input, textarea, select { font-family: inherit; outline: none; }
   flex-shrink: 0;
 }
 
+/* ── Team grid ── */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px;
+  margin-bottom: 56px;
+}
+@media (max-width: 640px) {
+  .team-grid { grid-template-columns: 1fr; gap: 32px; }
+}
+.team-member-card {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 40px 28px 32px; box-shadow: var(--sh-xs);
+  transition: box-shadow var(--t-mid), transform var(--t-mid), border-color var(--t-mid);
+}
+.team-member-card:hover { box-shadow: var(--sh-md); transform: translateY(-2px); border-color: var(--p-border); }
+.team-member-bio {
+  font-size: 0.88rem; color: var(--text-sub); line-height: 1.7; max-width: 340px;
+}
+.team-member-link {
+  text-decoration: none; transition: color var(--t-fast);
+}
+.team-member-link:hover { color: var(--p); }
+.founder-detail-section {
+  max-width: 720px; margin: 0 auto;
+}
+
 /* ── About page v2 ── */
 .about-founder-v2 {
   display: grid;

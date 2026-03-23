@@ -641,6 +641,10 @@ export interface Translations {
     bioP2: string;
     experienceLabel: string;
     experienceBullets: string[];
+    ctoName: string;
+    ctoRole: string;
+    ctoTitle: string;
+    ctoBio: string;
     backgroundEyebrow: string;
     backgroundTitle: string;
     credCards: { icon: string; label: string; desc: string }[];
@@ -1314,6 +1318,10 @@ const en: Translations = {
       'Experienced across the full product lifecycle: strategy, roadmap, team structure, and go-to-market',
       'Founded and built multiple technology ventures — hands-on from infrastructure to customer conversations',
     ],
+    ctoName: 'Mykhailo',
+    ctoRole: 'CTO',
+    ctoTitle: 'Full-Stack Architect · Engineering Leader',
+    ctoBio: 'Mykhailo leads Motixi\'s engineering and architecture, bringing over 20 years of experience in building scalable full-stack systems and managing high-performing engineering teams.',
     backgroundEyebrow: 'Background',
     backgroundTitle: 'What I bring to the table',
     credCards: [
@@ -2000,6 +2008,10 @@ const uk: Translations = {
       'Досвід по всьому життєвому циклу продукту: стратегія, дорожня карта, структура команди та вихід на ринок',
       'Заснував та побудував кілька технологічних підприємств — практично від інфраструктури до розмов з клієнтами',
     ],
+    ctoName: 'Михайло',
+    ctoRole: 'CTO',
+    ctoTitle: 'Full-Stack архітектор · Лідер інженерії',
+    ctoBio: 'Михайло керує інженерією та архітектурою Motixi, маючи понад 20 років досвіду у створенні масштабованих full-stack систем та управлінні високоефективними інженерними командами.',
     backgroundEyebrow: 'Бекграунд',
     backgroundTitle: 'Що я привношу',
     credCards: [
@@ -2686,6 +2698,10 @@ const bg: Translations = {
       'Опит в пълния жизнен цикъл на продукта: стратегия, пътна карта, структура на екипа и излизане на пазара',
       'Основал и изградил множество технологични предприятия — практически от инфраструктура до разговори с клиенти',
     ],
+    ctoName: 'Михайло',
+    ctoRole: 'CTO',
+    ctoTitle: 'Full-Stack архитект · Лидер на инженерията',
+    ctoBio: 'Михайло ръководи инженерията и архитектурата на Motixi, с над 20 години опит в изграждането на мащабируеми full-stack системи и управление на високоефективни инженерни екипи.',
     backgroundEyebrow: 'Бекграунд',
     backgroundTitle: 'Какво донасям',
     credCards: [
