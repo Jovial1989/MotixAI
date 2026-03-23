@@ -3,6 +3,7 @@ import { getDb, newId } from "../_lib/db.ts";
 import { explainStep, generateRepairGuide, localizeGuide, synthesizeFromSource } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 import { seedExampleGuides } from "../_lib/seed-guides.ts";
+import { uploadGuideImage } from "../_lib/storage.ts";
 import { getSourcePackage } from "../_lib/sources/registry.ts";
 import type { TaskType } from "../_lib/sources/types.ts";
 
@@ -79,6 +80,34 @@ function sanitizeGuideSteps(steps: Array<Record<string, unknown>>) {
   });
 }
 
+async function persistStepImages(
+  sql: ReturnType<typeof getDb>,
+  steps: Array<Record<string, unknown>>,
+) {
+  const now = new Date().toISOString();
+  const nextSteps: Array<Record<string, unknown>> = [];
+
+  for (const step of steps) {
+    if (typeof step.imageUrl === "string" && step.imageUrl.startsWith("data:")) {
+      try {
+        const storedUrl = await uploadGuideImage(step.imageUrl, String(step.guideId), String(step.id));
+        await sql`
+          UPDATE "RepairStep"
+          SET "imageUrl" = ${storedUrl}, "imageStatus" = 'ready', "updatedAt" = ${now}
+          WHERE id = ${step.id}
+        `;
+        nextSteps.push({ ...step, imageUrl: storedUrl, imageStatus: "ready" });
+        continue;
+      } catch (err) {
+        console.error(`[guides] failed to persist inline step image stepId=${step.id}:`, err);
+      }
+    }
+    nextSteps.push(step);
+  }
+
+  return nextSteps;
+}
+
 function formatGuideResponse(
   guide: Record<string, unknown>,
   steps: Array<Record<string, unknown>>,
@@ -131,7 +160,7 @@ async function fetchGuideRows(sql: ReturnType<typeof getDb>, guideId: string) {
     WHERE "guideId" = ${guideId}
     ORDER BY "stepOrder" ASC
   `;
-  return { guide: guides[0], steps, images };
+  return { guide: guides[0], steps: await persistStepImages(sql, steps), images };
 }
 
 async function resolveLocalizedGuide(
