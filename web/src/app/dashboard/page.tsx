@@ -1161,7 +1161,7 @@ function DashboardInner() {
 
   useEffect(() => {
     if (!isGuest || loading || guides.length === 0) return;
-    router.replace(`/guides/${guides[0].id}?demo=1`);
+    router.replace(`/guides/${guides[0].canonicalGuideId ?? guides[0].id}?demo=1`);
   }, [guides, isGuest, loading, router]);
 
   // Guests are locked to guides view — redirect any other view

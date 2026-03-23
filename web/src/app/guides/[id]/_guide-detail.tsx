@@ -334,7 +334,7 @@ export default function GuideDetailPage() {
     webApi.getGuide(params.id, locale)
       .then((nextGuide) => {
         setGuide(nextGuide);
-        if (nextGuide.id && nextGuide.id !== params.id) {
+        if (nextGuide.source !== 'demo' && nextGuide.id && nextGuide.id !== params.id) {
           router.replace(`/guides/${nextGuide.id}`);
         }
       })
