@@ -686,7 +686,9 @@ export interface Translations {
     title: string;
     sub: string;
     startTrial: string;
+    tryDemo: string;
     talkToFounder: string;
+    guestAuthFailed: string;
     walkthroughEyebrow: string;
     walkthroughTitle: string;
     walkthroughSub: string;
@@ -1400,7 +1402,9 @@ const en: Translations = {
     title: 'AI repair guides.\nInstant. Structured. Accurate.',
     sub: 'Type a vehicle model and repair description. Get a complete step-by-step procedure — with torque specs, tools, safety warnings, and engineering diagrams — in under 3 seconds.',
     startTrial: 'Start trial',
+    tryDemo: 'Try demo',
     talkToFounder: 'Talk to founder →',
+    guestAuthFailed: 'Could not open demo access. Please try again.',
     walkthroughEyebrow: 'Product walkthrough',
     walkthroughTitle: 'Search to guide in three steps',
     walkthroughSub: 'Available on web and mobile — same AI, same accuracy, any device.',
@@ -2122,7 +2126,9 @@ const uk: Translations = {
     title: 'ШІ інструкції з ремонту.\nМиттєво. Структуровано. Точно.',
     sub: 'Введіть модель транспорту та опис ремонту. Отримайте повну покрокову процедуру — з моментами затяжки, інструментами, попередженнями безпеки та інженерними схемами — менш ніж за 3 секунди.',
     startTrial: 'Почати пробний період',
+    tryDemo: 'Спробувати демо',
     talkToFounder: 'Поговорити із засновником →',
+    guestAuthFailed: 'Не вдалося відкрити демо-доступ. Спробуйте ще раз.',
     walkthroughEyebrow: 'Огляд продукту',
     walkthroughTitle: 'Від пошуку до інструкції за три кроки',
     walkthroughSub: 'Доступно на вебі та мобільному — той самий ШІ, та сама точність, будь-який пристрій.',
@@ -2844,7 +2850,9 @@ const bg: Translations = {
     title: 'ИИ ръководства за ремонт.\nМигновено. Структурирано. Точно.',
     sub: 'Въведете модел на превозно средство и описание на ремонта. Получете пълна стъпка по стъпка процедура — с моменти на затягане, инструменти, предупреждения за безопасност и инженерни диаграми — за по-малко от 3 секунди.',
     startTrial: 'Пробен период',
+    tryDemo: 'Пробвай демо',
     talkToFounder: 'Говорете с основателя →',
+    guestAuthFailed: 'Демо достъпът не можа да бъде отворен. Моля, опитайте отново.',
     walkthroughEyebrow: 'Преглед на продукта',
     walkthroughTitle: 'От търсене до ръководство в три стъпки',
     walkthroughSub: 'Достъпно на уеб и мобилно — същият ИИ, същата точност, всяко устройство.',

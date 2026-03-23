@@ -4,6 +4,7 @@ import Link from 'next/link';
 import MainNav from '../_main-nav';
 import Footer from '../_footer';
 import { useT } from '@/lib/i18n';
+import ProductHeroActions from './_product-hero-actions';
 
 export default function ProductPage() {
   const t = useT();
@@ -24,10 +25,7 @@ export default function ProductPage() {
           <p className="inner-hero-sub">
             {t.productPage.sub}
           </p>
-          <div className="cta-band-actions" style={{ marginTop: '2rem' }}>
-            <Link href="/auth/signup" className="cta-primary">{t.productPage.startTrial}</Link>
-            <Link href="/contact" className="cta-band-ghost">{t.productPage.talkToFounder}</Link>
-          </div>
+          <ProductHeroActions />
         </div>
       </section>
 

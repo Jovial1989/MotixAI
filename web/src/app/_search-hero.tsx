@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { env } from '@/lib/env';
+import { ensureAppSession, hasValidStoredSession } from '@/lib/guest-access';
 import { useT } from '@/lib/i18n';
 
 const EXAMPLE_QUERIES = [
@@ -34,15 +34,6 @@ function saveRecent(q: string) {
   } catch { /* ignore */ }
 }
 
-function isAuthenticated(): boolean {
-  try {
-    const token = localStorage.getItem('motix_access_token');
-    if (!token) return false;
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return payload.exp && Date.now() / 1000 < payload.exp;
-  } catch { return false; }
-}
-
 export default function SearchHero() {
   const router = useRouter();
   const t = useT();
@@ -56,7 +47,7 @@ export default function SearchHero() {
   function handleSearch(q: string) {
     const trimmed = q.trim();
     if (!trimmed) return;
-    if (isAuthenticated()) {
+    if (hasValidStoredSession()) {
       saveRecent(trimmed);
       setRecent(getRecent());
       router.push(`/dashboard?q=${encodeURIComponent(trimmed)}`);
@@ -69,16 +60,25 @@ export default function SearchHero() {
     if (!authModal) return;
     setGuestLoading(true);
     try {
-      const res = await fetch(`${env.apiUrl}/auth/guest`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-      if (res.ok) {
-        const data = await res.json() as { accessToken: string };
-        localStorage.setItem('motix_access_token', data.accessToken);
-        // Guest enters predefined demo mode — no query forwarding
-        router.push('/dashboard');
-      }
+      await ensureAppSession();
+      // Guest enters predefined demo mode — no query forwarding
+      router.push('/app');
     } catch { /* ignore */ } finally {
       setGuestLoading(false);
       setAuthModal(null);
+    }
+  }
+
+  async function handleTryDemo() {
+    if (guestLoading) return;
+    setGuestLoading(true);
+    try {
+      if (!hasValidStoredSession()) await ensureAppSession();
+      router.push('/app');
+    } catch {
+      // Keep landing hero silent; modal path still exists as fallback.
+    } finally {
+      setGuestLoading(false);
     }
   }
 
@@ -168,6 +168,20 @@ export default function SearchHero() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
+              </button>
+            </div>
+
+            <div className="hero-actions sh-actions">
+              <Link href="/auth/signup" className="cta-primary">
+                {t.nav.startTrial}
+              </Link>
+              <button
+                type="button"
+                className="cta-secondary cta-secondary--orange"
+                onClick={handleTryDemo}
+                disabled={guestLoading}
+              >
+                {guestLoading ? t.authModal.guestLoadingText : t.productPage.tryDemo}
               </button>
             </div>
 

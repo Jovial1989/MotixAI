@@ -279,6 +279,23 @@ input, textarea, select { font-family: inherit; outline: none; }
   transition: all var(--t-mid) var(--ease);
 }
 .cta-secondary:hover { border-color: var(--border-strong); color: var(--text); transform: translateY(-1px); }
+.cta-secondary--orange {
+  justify-content: center;
+  background: transparent;
+  color: var(--p);
+  border-color: var(--p);
+  box-shadow: none;
+}
+.cta-secondary--orange:hover {
+  background: rgba(234, 88, 12, 0.08);
+  border-color: var(--p);
+  color: var(--p);
+}
+.cta-secondary--orange:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
 .hero-trust {
   display: flex; align-items: center; gap: 10px;
   font-size: 0.8rem; color: var(--text-muted);
@@ -425,6 +442,7 @@ input, textarea, select { font-family: inherit; outline: none; }
   .hero-content { gap: 60px; flex-direction: row; text-align: left; }
   .hero-inner { align-items: flex-start; }
   .hero-actions { justify-content: flex-start; }
+  .sh-actions { justify-content: flex-start; }
   .hero-card { margin-top: 0; flex-shrink: 0; }
 }
 .hero-card-topbar {
@@ -3413,6 +3431,10 @@ input, textarea, select { font-family: inherit; outline: none; }
   transition: background var(--t-fast), transform var(--t-fast);
 }
 .sh-btn:hover { background: var(--p-hover); transform: translateX(1px); }
+.sh-actions {
+  margin-top: 16px;
+  justify-content: center;
+}
 
 /* Example chips */
 .sh-chips {
@@ -3777,6 +3799,34 @@ input, textarea, select { font-family: inherit; outline: none; }
 .inner-hero-sub {
   font-size: 1.05rem; color: var(--text-sub);
   max-width: 540px; margin: 0 auto; line-height: 1.75;
+}
+.product-hero-actions-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 2rem;
+}
+.product-hero-actions {
+  gap: 14px;
+}
+.product-hero-link {
+  color: var(--text-sub);
+  font-weight: 600;
+  transition: color var(--t-fast);
+}
+.product-hero-link:hover {
+  color: var(--p);
+}
+.product-hero-toast {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(234, 88, 12, 0.2);
+  background: rgba(255, 247, 237, 0.98);
+  color: #9a3412;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 /* ── About page ────────────────────────────────────────────────────── */
