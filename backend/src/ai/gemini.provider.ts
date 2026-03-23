@@ -3,6 +3,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AIProvider, ExplainStepInput, GeneratedGuide, GuideGenerationInput } from './ai-provider.interface';
 import { SourcePackage } from './source-adapters/source-package.types';
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  uk: 'Ukrainian',
+  bg: 'Bulgarian',
+  en: 'English',
+};
+
 @Injectable()
 export class GeminiProvider implements AIProvider {
   private readonly logger = new Logger(GeminiProvider.name);
@@ -35,11 +41,16 @@ export class GeminiProvider implements AIProvider {
     try {
       const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+      const languageName = input.language ? LANGUAGE_NAMES[input.language] || input.language : undefined;
+      const languageInstruction = languageName && input.language !== 'en'
+        ? `\nIMPORTANT: Generate ALL text output (title, steps, tools, safety notes, instructions) in ${languageName}. Do NOT use English.\n`
+        : '';
+
       const prompt = `You are an expert automotive and heavy equipment repair technician.
 Generate a detailed repair guide for:
 - Vehicle: ${input.vehicle}
 - Part: ${input.part}
-${input.context ? `- Manual context: ${input.context}` : ''}
+${input.context ? `- Manual context: ${input.context}` : ''}${languageInstruction}
 
 WRITING RULES:
 - title: short action phrase (e.g. "Loosen wheel nuts", "Remove caliper bracket")
@@ -87,11 +98,16 @@ Generate 8-10 steps. Include torque values where relevant. imagePlan should have
     }
     try {
       const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const languageName = input.language ? LANGUAGE_NAMES[input.language] || input.language : undefined;
+      const languageInstruction = languageName && input.language !== 'en'
+        ? `\nRespond in ${languageName}.\n`
+        : '';
+
       const prompt = `You are an expert automotive and heavy equipment repair technician.
 A technician is following a repair guide for: ${input.vehicleModel} — ${input.partName}
 Current step: "${input.stepTitle}"
 Instruction: ${input.instruction}
-
+${languageInstruction}
 ${input.question ? `Question: ${input.question}` : 'Explain this step in more detail with practical workshop tips.'}
 
 Provide a clear, concise answer (2-4 sentences) focused on practical workshop guidance.`;

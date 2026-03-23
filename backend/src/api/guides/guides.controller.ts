@@ -39,6 +39,7 @@ export class GuidesController {
       partName: parsed.partName,
       oemNumber: parsed.oemNumber,
       sourceType: user.role === 'ENTERPRISE_ADMIN' ? 'ENTERPRISE' : 'B2C',
+      language: parsed.language,
     });
   }
 
@@ -49,7 +50,7 @@ export class GuidesController {
     @Body() body: unknown,
   ) {
     const parsed = askStepSchema.parse(body);
-    return this.guides.askStep(id, parsed.stepId, parsed.question ?? '', user.sub, user.tenantId);
+    return this.guides.askStep(id, parsed.stepId, parsed.question ?? '', user.sub, user.tenantId, parsed.language);
   }
 
   /**

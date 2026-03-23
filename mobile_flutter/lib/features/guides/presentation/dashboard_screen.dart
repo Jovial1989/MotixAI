@@ -35,10 +35,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final data = await showGuideCreateSheet(context);
     if (data == null || !mounted) return;
     setState(() => _creating = true);
+    final locale = Localizations.localeOf(context).languageCode;
     final guide = await ref.read(guidesProvider.notifier).create(
       data.vehicleModel,
       data.partName,
       oemNumber: data.oemNumber,
+      language: locale,
     );
     setState(() => _creating = false);
     if (!mounted) return;

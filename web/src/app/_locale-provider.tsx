@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { I18nContext, dictionaries, getLocale, type Locale, type Translations } from '@/lib/i18n';
+import { I18nContext, dictionaries, getLocale, getLocalePrefix, type Locale, type Translations } from '@/lib/i18n';
 
 export default function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [t, setT] = useState<Translations>(dictionaries.en);
@@ -14,7 +14,18 @@ export default function LocaleProvider({ children }: { children: React.ReactNode
     function onStorage(e: StorageEvent) {
       if (e.key === 'motix_locale') {
         const next = (e.newValue as Locale) || 'en';
-        if (next in dictionaries) setT(dictionaries[next]);
+        if (next in dictionaries) {
+          setT(dictionaries[next]);
+          // Navigate to the correct locale-prefixed URL
+          const prefix = getLocalePrefix(next);
+          const pathWithoutLocale = window.location.pathname
+            .replace(/^\/(ua|bg)(\/|$)/, '/')
+            .replace(/\/+$/, '') || '/';
+          const target = prefix + pathWithoutLocale;
+          if (window.location.pathname !== target) {
+            window.location.href = target;
+          }
+        }
       }
     }
     window.addEventListener('storage', onStorage);

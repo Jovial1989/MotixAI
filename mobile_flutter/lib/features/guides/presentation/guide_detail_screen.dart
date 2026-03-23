@@ -767,41 +767,15 @@ class _SourceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = S.of(context)!;
-    final isSourceBacked = guide.source == 'source-backed';
-    final isWebFallback  = guide.source == 'web-fallback';
 
-    final Color bg     = isSourceBacked ? const Color(0xFFF0FDF4)
-                       : isWebFallback  ? const Color(0xFFFFFBEB)
-                       : kPrimaryLight;
-    final Color border = isSourceBacked ? const Color(0xFF86EFAC)
-                       : isWebFallback  ? const Color(0xFFFCD34D)
-                       : kPrimaryBorder;
-    final Color text   = isSourceBacked ? const Color(0xFF16A34A)
-                       : isWebFallback  ? const Color(0xFFB45309)
-                       : kPrimaryDark;
-    final String label = isSourceBacked
-        ? '📄 ${l.sourceBacked(guide.sourceProvider ?? "Source")}'
-        : isWebFallback
-            ? '🌐 ${l.webSynthesis}'
-            : '⚡ ${l.aiGenerated}';
-
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: s8, vertical: s4),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: kRadiusFull,
-            border: Border.all(color: border),
-          ),
-          child: Text(label, style: tsCaption.copyWith(color: text, fontWeight: FontWeight.w600)),
-        ),
-        if (guide.confidence != null) ...[
-          const SizedBox(width: s8),
-          Text('${guide.confidence}% confidence',
-            style: tsCaption.copyWith(color: kTextMuted, fontWeight: FontWeight.w500)),
-        ],
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: s8, vertical: s4),
+      decoration: BoxDecoration(
+        color: kPrimaryLight,
+        borderRadius: kRadiusFull,
+        border: Border.all(color: kPrimaryBorder),
+      ),
+      child: Text('⚡ ${l.aiGenerated}', style: tsCaption.copyWith(color: kPrimaryDark, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -836,7 +810,8 @@ class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
     setState(() { _loading = true; _error = null; _answer = null; });
     try {
       final api = ref.read(apiClientProvider);
-      final answer = await api.askGuideStep(widget.guideId, widget.step.id, q);
+      final locale = Localizations.localeOf(context).languageCode;
+      final answer = await api.askGuideStep(widget.guideId, widget.step.id, q, language: locale);
       if (mounted) setState(() { _answer = answer; _loading = false; });
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });

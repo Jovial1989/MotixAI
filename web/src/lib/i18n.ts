@@ -2821,13 +2821,35 @@ export function useT(): Translations {
 
 export function getLocale(): Locale {
   if (typeof window === 'undefined') return 'en';
+  // 1. localStorage (primary, client-side)
   const stored = localStorage.getItem(LOCALE_KEY);
   if (stored === 'en' || stored === 'uk' || stored === 'bg') return stored;
+  // 2. cookie fallback (set by middleware for SSR sync)
+  const cookie = document.cookie
+    .split('; ')
+    .find((c) => c.startsWith('motix_locale='));
+  if (cookie) {
+    const val = cookie.split('=')[1];
+    if (val === 'en' || val === 'uk' || val === 'bg') return val;
+  }
   return 'en';
+}
+
+const LOCALE_PREFIX_MAP: Record<Locale, string> = {
+  en: '',
+  uk: '/ua',
+  bg: '/bg',
+};
+
+/** Returns the URL prefix for a given locale ('' for English). */
+export function getLocalePrefix(locale?: Locale): string {
+  return LOCALE_PREFIX_MAP[locale ?? getLocale()];
 }
 
 export function setLocale(locale: Locale): void {
   localStorage.setItem(LOCALE_KEY, locale);
+  // Sync to cookie so middleware picks it up on next navigation
+  document.cookie = `motix_locale=${locale}; path=/; max-age=${60 * 60 * 24 * 365}`;
 }
 
 export function getCountry(): Country | null {

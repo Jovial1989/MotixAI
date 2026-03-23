@@ -51,12 +51,14 @@ class GuidesNotifier extends StateNotifier<GuidesState> {
     String vehicleModel,
     String partName, {
     String? oemNumber,
+    String? language,
   }) async {
     try {
       final guide = await _api.createGuide(
         vehicleModel: vehicleModel,
         partName: partName,
         oemNumber: oemNumber,
+        language: language,
       );
       await _cache.saveGuide(guide);
       state = state.copyWith(guides: [guide, ...state.guides]);

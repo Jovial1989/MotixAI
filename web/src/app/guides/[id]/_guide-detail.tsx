@@ -438,20 +438,7 @@ export default function GuideDetailPage() {
             <h2 className="gd-sb-title">{guide.title}</h2>
             <p className="gd-sb-sub">{guide.part.name} · {steps.length} {t.common.steps}</p>
             <div className="gd-ai-meta">
-              {guide.source === 'source-backed' ? (
-                <span className="ai-source-chip ai-source-chip--sourced">
-                  📄 {guide.sourceProvider ?? t.guideDetail.sourceBackedLabel}
-                </span>
-              ) : guide.source === 'web-fallback' ? (
-                <span className="ai-source-chip ai-source-chip--fallback">
-                  🌐 {t.guideDetail.webSynthesisLabel}
-                </span>
-              ) : (
-                <span className="ai-source-chip">⚡ {t.guideDetail.aiGeneratedLabel}</span>
-              )}
-              {guide.confidence != null && guide.source === 'source-backed' && (
-                <span className="ai-confidence">{guide.confidence}% {t.guideDetail.confidence}</span>
-              )}
+              <span className="ai-source-chip">{t.guideDetail.aiGeneratedLabel}</span>
             </div>
             <div className="gd-prog-track">
               <div className="gd-prog-fill" style={{ width: `${pct}%` }} />
@@ -493,20 +480,6 @@ export default function GuideDetailPage() {
                   {guide.safetyNotes.map((n, i) => <li key={i} className="gd-safety-item">{n}</li>)}
                 </ul>
               )}
-            </div>
-          )}
-
-          {guide.sourceReferences && guide.sourceReferences.length > 0 && (
-            <div className="gd-sb-card">
-              <p className="gd-sb-section">{t.guideDetail.sourceReferences}</p>
-              <div className="gd-sources">
-                {guide.sourceReferences.map((ref, i) => (
-                  <div key={i} className="gd-source-item">
-                    <a href={ref.url} target="_blank" rel="noopener noreferrer" className="gd-source-title">{ref.title}</a>
-                    <p className="gd-source-excerpt">{ref.excerpt}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 

@@ -1,28 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import VehicleSelector from '../_vehicle-selector';
 import { useT } from '@/lib/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-export type TaskType =
-  | 'oil_change'
-  | 'brake_pad_replacement'
-  | 'brake_fluid_flush';
 
 export interface GuideFormData {
   vehicleModel: string;
   vin?: string;
   partName: string;
   oemNumber?: string;
-  sourceInput?: {
-    make: string;
-    model: string;
-    year: number;
-    component: string;
-    taskType: TaskType;
-  };
 }
 
 interface Props {
@@ -30,207 +18,6 @@ interface Props {
   submitting: boolean;
   error: string | null;
   initialQuery?: string;
-}
-
-// ── Source catalog ────────────────────────────────────────────────────────────
-// yearRange must match the backend year-range validation in nissan.ts / toyota.ts.
-// Only models with actual seeded data are listed here.
-
-interface CatalogModel { name: string; yearRange: [number, number]; }
-
-const SOURCE_CATALOG: Record<string, {
-  models: CatalogModel[];
-  tasks: { label: string; value: TaskType }[];
-}> = {
-  Nissan: {
-    models: [
-      { name: 'Micra',   yearRange: [2002, 2010] }, // K12 — NICOclub FSM
-      { name: 'Navara',  yearRange: [2005, 2015] }, // D40 YD25DDTi — NICOclub FSM
-      { name: 'Qashqai', yearRange: [2007, 2013] }, // J10 HR16DE — NICOclub FSM
-    ],
-    tasks: [
-      { label: 'Engine oil & filter change', value: 'oil_change' },
-      { label: 'Brake pad replacement', value: 'brake_pad_replacement' },
-      { label: 'Brake fluid flush', value: 'brake_fluid_flush' },
-    ],
-  },
-  Toyota: {
-    models: [
-      { name: 'Corolla', yearRange: [2013, 2019] }, // E170 2ZR-FE — ToyoDIY FSM
-      { name: 'Hilux',   yearRange: [2015, 2023] }, // AN120/AN130 1GD-FTV — ToyoDIY FSM
-      { name: 'Camry',   yearRange: [2012, 2017] }, // XV50 2AR-FE — ToyoDIY FSM
-    ],
-    tasks: [
-      { label: 'Engine oil & filter change', value: 'oil_change' },
-      { label: 'Brake pad replacement', value: 'brake_pad_replacement' },
-      { label: 'Brake fluid flush', value: 'brake_fluid_flush' },
-    ],
-  },
-};
-
-// ── Source-backed form ────────────────────────────────────────────────────────
-
-function SourceGuideForm({
-  onSubmit, submitting, error,
-}: {
-  onSubmit: (data: GuideFormData) => Promise<void>;
-  submitting: boolean;
-  error: string | null;
-}) {
-  const t = useT();
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [taskType, setTaskType] = useState<TaskType | ''>('');
-  const [component, setComponent] = useState('');
-  const [suppressError, setSuppressError] = useState(true);
-  const prevErrorRef = useRef(error);
-
-  const localizedTasks: Record<string, string> = {
-    oil_change: t.guideForm.taskOilChange,
-    brake_pad_replacement: t.guideForm.taskBrakePad,
-    brake_fluid_flush: t.guideForm.taskBrakeFluid,
-  };
-
-  const catalog = make ? SOURCE_CATALOG[make] : null;
-  const selectedTask = catalog?.tasks.find((task) => task.value === taskType);
-  const selectedModelEntry = catalog?.models.find((m) => m.name === model) ?? null;
-  const supportedYears = selectedModelEntry
-    ? Array.from(
-        { length: selectedModelEntry.yearRange[1] - selectedModelEntry.yearRange[0] + 1 },
-        (_, i) => selectedModelEntry.yearRange[1] - i,
-      )
-    : [];
-
-  useEffect(() => {
-    if (error !== prevErrorRef.current) {
-      prevErrorRef.current = error;
-      setSuppressError(error === null);
-    }
-  }, [error]);
-  useEffect(() => { setSuppressError(true); }, [make, model, year, taskType, component]);
-  useEffect(() => { if (selectedTask) setComponent(selectedTask.label); }, [taskType, selectedTask]);
-  useEffect(() => { setModel(''); setTaskType(''); setComponent(''); }, [make]);
-  useEffect(() => { setTaskType(''); setComponent(''); }, [model]);
-
-  const isValid = !!(make && model && year && taskType && component.trim().length >= 2);
-
-  async function handleSubmit() {
-    if (!isValid) return;
-    await onSubmit({
-      vehicleModel: `${year} ${make} ${model}`,
-      partName: component,
-      sourceInput: { make, model, year: Number(year), component, taskType: taskType as TaskType },
-    });
-  }
-
-  return (
-    <div className="gen-form">
-      <div className="gen-form-header">
-        <div className="gen-form-icon">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 14l3-8h6l3 8" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-            <circle cx="9" cy="4" r="2" stroke="currentColor" strokeWidth="1.4"/>
-          </svg>
-        </div>
-        <div>
-          <span className="gen-form-title">{t.guideForm.sourceTitle}</span>
-          <span className="sgf-src-badge">{t.guideForm.sourceBadge}</span>
-        </div>
-      </div>
-
-      <p className="sgf-src-desc">
-        {t.guideForm.sourceDesc}
-      </p>
-
-      <div className="gen-inputs gen-inputs--col">
-        {/* Make */}
-        <div className="gen-input-wrap">
-          <label className="gen-label">{t.guideForm.make} <span className="gen-label-required">*</span></label>
-          <div className="sgf-make-row">
-            {Object.keys(SOURCE_CATALOG).map((m) => (
-              <button
-                key={m}
-                type="button"
-                className={`sgf-make-btn${make === m ? ' sgf-make-btn--active' : ''}`}
-                onClick={() => setMake(m)}
-              >{m}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Model */}
-        {catalog && (
-          <div className="gen-input-wrap">
-            <label className="gen-label">{t.guideForm.model} <span className="gen-label-required">*</span></label>
-            <select className="gen-input gen-input--select" value={model} onChange={(e) => setModel(e.target.value)}>
-              <option value="">{t.guideForm.selectModel}</option>
-              {catalog.models.map((m) => <option key={m.name} value={m.name}>{m.name}</option>)}
-            </select>
-          </div>
-        )}
-
-        {/* Year — restricted to the covered generation for the selected model */}
-        {model && selectedModelEntry && (
-          <div className="gen-input-wrap">
-            <label className="gen-label">
-              {t.guideForm.year} <span className="gen-label-required">*</span>
-              <span className="gen-label-hint">{selectedModelEntry.yearRange[0]}–{selectedModelEntry.yearRange[1]}</span>
-            </label>
-            <select className="gen-input gen-input--select" value={year} onChange={(e) => setYear(e.target.value)}>
-              <option value="">{t.guideForm.selectYear}</option>
-              {supportedYears.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-            </select>
-          </div>
-        )}
-
-        {/* Task */}
-        {year && catalog && (
-          <div className="gen-input-wrap">
-            <label className="gen-label">{t.guideForm.task} <span className="gen-label-required">*</span></label>
-            <select className="gen-input gen-input--select" value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)}>
-              <option value="">{t.guideForm.selectTask}</option>
-              {catalog.tasks.map((task) => <option key={task.value} value={task.value}>{task.label}</option>)}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Source reference preview */}
-      {make && taskType && (
-        <div className="sgf-src-preview">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
-            <path d="M3 5.5h5M3 3.5h5M3 7.5h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
-          </svg>
-          {t.guideForm.source} {make === 'Nissan' ? t.guideForm.sourceNissan : t.guideForm.sourceToyota}
-        </div>
-      )}
-
-      {error && !suppressError && (
-        <div className="dash-error">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          {error}
-        </div>
-      )}
-
-      <button type="button" className="gen-btn" disabled={!isValid || submitting} onClick={handleSubmit}>
-        {submitting ? (
-          <><span className="gen-spinner" /> {t.guideForm.synthesisingFromSource}</>
-        ) : (
-          <>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M13 8H3M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            {t.guideForm.generateFromSource}
-          </>
-        )}
-      </button>
-    </div>
-  );
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -288,7 +75,6 @@ async function decodeVin(vin: string): Promise<NHTSAVinResult | null> {
 
 export default function SmartGuideForm({ onSubmit, submitting, error, initialQuery }: Props) {
   const t = useT();
-  const [formMode, setFormMode] = useState<'standard' | 'source'>('standard');
 
   // ALL hooks must be declared at top level before any conditional return.
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -315,23 +101,6 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
     setDisambigOptions(partName.length >= 2 ? getDisambiguation(partName) : null);
   }, [partName]);
 
-  // Safe to conditionally return here — all hooks declared above
-  if (formMode === 'source') {
-    return (
-      <div>
-        <div className="sgf-mode-tabs sgf-mode-tabs--top">
-          <button type="button" className="sgf-mode-tab" onClick={() => setFormMode('standard')}>
-            {`← ${t.guideForm.aiGenerated}`}
-          </button>
-          <button type="button" className="sgf-mode-tab sgf-mode-tab--active sgf-mode-tab--src">
-            {t.guideForm.sourceBacked}
-          </button>
-        </div>
-        <SourceGuideForm onSubmit={onSubmit} submitting={submitting} error={error} />
-      </div>
-    );
-  }
-
   async function handleVinDecode() {
     const vin = vinInput.trim().toUpperCase();
     if (vin.length < 11) { setVinError(t.guideForm.vinError11); return; }
@@ -352,14 +121,6 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
 
   if (step === 1) return (
     <div className="gen-form">
-      {/* Top-level form mode switcher */}
-      <div className="sgf-mode-tabs sgf-mode-tabs--top">
-        <button type="button" className="sgf-mode-tab sgf-mode-tab--active">{t.guideForm.aiGenerated}</button>
-        <button type="button" className="sgf-mode-tab sgf-mode-tab--src" onClick={() => setFormMode('source')}>
-          {t.guideForm.sourceBacked}
-        </button>
-      </div>
-
       <div className="gen-form-header">
         <div className="gen-form-icon">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

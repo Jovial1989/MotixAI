@@ -129,12 +129,14 @@ class ApiClient {
     String? vehicleModel,
     required String partName,
     String? oemNumber,
+    String? language,
   }) async {
     try {
       final resp = await _dio.post<Map<String, dynamic>>('/guides', data: {
         if (vehicleModel != null && vehicleModel.isNotEmpty) 'vehicleModel': vehicleModel,
         'partName': partName,
         if (oemNumber != null && oemNumber.isNotEmpty) 'oemNumber': oemNumber,
+        if (language != null && language.isNotEmpty) 'language': language,
       });
       return RepairGuide.fromJson(resp.data!);
     } on DioException catch (e) { return _handleError(e); }
@@ -212,11 +214,15 @@ class ApiClient {
     } on DioException catch (e) { return _handleError(e); }
   }
 
-  Future<String> askGuideStep(String guideId, String stepId, String question) async {
+  Future<String> askGuideStep(String guideId, String stepId, String question, {String? language}) async {
     try {
       final resp = await _dio.post<Map<String, dynamic>>(
         '/guides/$guideId/ask',
-        data: {'stepId': stepId, 'question': question},
+        data: {
+          'stepId': stepId,
+          'question': question,
+          if (language != null && language.isNotEmpty) 'language': language,
+        },
       );
       return resp.data!['answer'] as String? ?? '';
     } on DioException catch (e) { return _handleError(e); }

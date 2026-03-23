@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import type { AnalyticsData, GuideRequest, ManualDocument, RepairGuide, RepairJob, VehicleWithHistory } from '@motixai/shared';
 import { webApi } from '@/lib/api';
-import { useT } from '@/lib/i18n';
+import { useT, getLocale } from '@/lib/i18n';
 import AuthGuard from '@/app/_auth-guard';
 import SmartGuideForm from './_guide-form';
 import Sidebar, { type DashView } from './_sidebar';
@@ -943,7 +943,7 @@ function NewGuideView({
 }: {
   submitting: boolean;
   guideError: string | null;
-  onSubmit: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string; sourceInput?: { make: string; model: string; year: number; component: string; taskType: import('@motixai/shared').TaskType } }) => Promise<void>;
+  onSubmit: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) => Promise<void>;
   onBack: () => void;
   initialQuery?: string;
 }) {
@@ -1047,18 +1047,16 @@ function DashboardInner() {
     vin?: string;
     partName: string;
     oemNumber?: string;
-    sourceInput?: { make: string; model: string; year: number; component: string; taskType: import('@motixai/shared').TaskType };
   }) {
     setSubmitting(true);
     setGuideError(null);
     try {
-      const created = data.sourceInput
-        ? await webApi.createSourceGuide(data.sourceInput)
-        : await webApi.createGuide({
+      const created = await webApi.createGuide({
             vin: data.vin ?? '',
             vehicleModel: data.vehicleModel,
             partName: data.partName,
             oemNumber: data.oemNumber ?? '',
+            language: getLocale(),
           });
       setGuides((prev) => [created, ...prev]);
       webApi.listVehicles().then(setVehicles).catch(() => {});

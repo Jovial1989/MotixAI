@@ -3681,6 +3681,25 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .nav-mobile-auth-ghost:hover { border-color: var(--p); color: var(--p); }
 
+/* Language switcher */
+.lang-switcher {
+  display: flex; align-items: center; gap: 0; margin-right: 8px;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em;
+}
+.lang-sep { color: var(--text-sub); opacity: 0.35; margin: 0 1px; user-select: none; }
+.lang-btn {
+  border: none; background: none; cursor: pointer;
+  color: var(--text-sub); padding: 4px 5px; border-radius: var(--r-sm);
+  font-size: inherit; font-weight: inherit; letter-spacing: inherit;
+  transition: color var(--t-fast), background var(--t-fast);
+  line-height: 1;
+}
+.lang-btn:hover { color: var(--text); background: var(--bg); }
+.lang-btn--active { color: var(--p); }
+.nav-mobile-lang { padding: 8px 14px; margin-top: 8px; }
+.nav-mobile-lang .lang-switcher { margin-right: 0; font-size: 0.9rem; gap: 2px; }
+.nav-mobile-lang .lang-btn { padding: 6px 8px; }
+
 /* ── Inner page hero ───────────────────────────────────────────────── */
 .inner-hero {
   padding: 72px 24px 64px; text-align: center;

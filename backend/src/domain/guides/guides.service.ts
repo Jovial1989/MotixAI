@@ -108,6 +108,7 @@ export class DomainGuidesService {
     partName: string;
     oemNumber?: string;
     sourceType: 'B2C' | 'ENTERPRISE';
+    language?: string;
   }) {
     const vehicleModel = (input.vehicleModel || input.vin || 'Unknown vehicle').trim();
     const partNorm = input.partName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
@@ -146,7 +147,7 @@ export class DomainGuidesService {
     });
   }
 
-  async askStep(guideId: string, stepId: string, question: string, userId: string, tenantId: string | null) {
+  async askStep(guideId: string, stepId: string, question: string, userId: string, tenantId: string | null, language?: string) {
     const guide = await this.getGuide(guideId, userId, tenantId);
     const step = (guide.steps as Array<{ id: string; title: string; instruction: string }>)
       .find(s => s.id === stepId);
@@ -158,6 +159,7 @@ export class DomainGuidesService {
       vehicleModel: guide.vehicle.model,
       partName: guide.part.name,
       question,
+      language,
     });
     return { answer };
   }
@@ -172,6 +174,7 @@ export class DomainGuidesService {
     manualText?: string;
     sourceType: 'B2C' | 'ENTERPRISE';
     manualId?: string;
+    language?: string;
   }) {
     const normalizedVehicle = (input.vehicleModel || input.vin || 'Unknown vehicle').trim();
     const normalizedPart = `${input.partName}${input.oemNumber ? ` (${input.oemNumber})` : ''}`.trim();
@@ -180,6 +183,7 @@ export class DomainGuidesService {
       vehicle: normalizedVehicle,
       part: normalizedPart,
       context: input.manualText,
+      language: input.language,
     });
 
     const vehicle = await this.prisma.vehicle.create({

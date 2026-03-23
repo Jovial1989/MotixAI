@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { COUNTRIES, setCountry, type Country, dictionaries, COUNTRY_LOCALE_MAP, setLocale } from '@/lib/i18n';
+import { COUNTRIES, setCountry, type Country, dictionaries, COUNTRY_LOCALE_MAP, setLocale, getLocalePrefix } from '@/lib/i18n';
 
 interface Props {
   onDone: () => void;
@@ -13,8 +13,13 @@ export default function CountrySelector({ onDone }: Props) {
   function handleConfirm() {
     if (!selected) return;
     setCountry(selected);
-    // Force page reload to apply new locale everywhere
-    window.location.reload();
+    // Navigate to the locale-prefixed URL
+    const locale = COUNTRY_LOCALE_MAP[selected];
+    const prefix = getLocalePrefix(locale);
+    const pathWithoutLocale = window.location.pathname
+      .replace(/^\/(ua|bg)(\/|$)/, '/')
+      .replace(/\/+$/, '') || '/';
+    window.location.href = prefix + pathWithoutLocale;
   }
 
   // Use English for the selector since user hasn't chosen yet

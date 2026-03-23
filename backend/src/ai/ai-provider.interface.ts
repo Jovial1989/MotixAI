@@ -2,6 +2,7 @@ export interface GuideGenerationInput {
   vehicle: string;
   part: string;
   context?: string;
+  language?: string;
 }
 
 export interface GeneratedStep {
@@ -28,6 +29,7 @@ export interface ExplainStepInput {
   vehicleModel: string;
   partName: string;
   question: string;
+  language?: string;
 }
 
 export interface AIProvider {

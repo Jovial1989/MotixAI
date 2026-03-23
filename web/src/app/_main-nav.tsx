@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import NavAuth from './_nav-auth';
+import LangSwitcher from './_lang-switcher';
 import { useT } from '@/lib/i18n';
 
 type NavItemDef = { label: string; anchor?: string; href?: string };
@@ -52,9 +53,10 @@ export default function MainNav() {
             })}
           </div>
 
-          {/* Right: desktop auth + mobile hamburger */}
+          {/* Right: lang switcher + desktop auth + mobile hamburger */}
           <div className="nav-auth-wrap">
             <div className="nav-auth-inner">
+              <LangSwitcher />
               <NavAuth />
             </div>
             <button
@@ -116,6 +118,10 @@ export default function MainNav() {
                 );
               })}
             </nav>
+
+            <div className="nav-mobile-lang">
+              <LangSwitcher />
+            </div>
 
             <div className="nav-mobile-auth">
               <Link

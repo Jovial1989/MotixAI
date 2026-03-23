@@ -7,6 +7,7 @@ export const createGuideSchema = z.object({
   vehicleModel: z.preprocess(emptyToUndefined, z.string().min(2).optional()),
   partName: z.string().min(2),
   oemNumber: z.preprocess(emptyToUndefined, z.string().optional()),
+  language: z.string().optional(),
 }).refine((value) => value.vin || value.vehicleModel, {
   message: 'vin or vehicleModel is required',
 });
@@ -21,6 +22,7 @@ export const searchGuidesSchema = z.object({
 export const askStepSchema = z.object({
   stepId: z.string().min(1),
   question: z.string().optional(),
+  language: z.string().optional(),
 });
 
 export const createSourceGuideSchema = z.object({

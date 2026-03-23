@@ -163,6 +163,7 @@ export interface CreateGuideInput {
   vehicleModel?: string;
   partName: string;
   oemNumber?: string;
+  language?: string;
 }
 
 export interface CreateJobInput {
