@@ -77,9 +77,9 @@ export default function Sidebar({
     : isPremium
     ? t.sidebar.pro
     : isTrial
-    ? `${t.sidebar.trial} · ${guidesUsed}/${guidesLimit}`
+    ? t.sidebar.trial
     : (guidesUsed >= guidesLimit ? `${t.sidebar.free} · ${t.sidebar.limitReached}` : `${t.sidebar.free} · ${guidesUsed}/${guidesLimit}`);
-  const planPercent = isPremium ? 100 : Math.min(100, Math.round(guidesUsed / guidesLimit * 100));
+  const planPercent = isPremium || isTrial ? 100 : Math.min(100, Math.round(guidesUsed / guidesLimit * 100));
 
   return (
     <>
@@ -179,7 +179,7 @@ export default function Sidebar({
                 </div>
               </button>
 
-              {!isEnterprise && (
+              {!isEnterprise && !isTrial && !isPremium && (
                 <div className="sb-usage">
                   <div className="sb-usage-bar">
                     <div

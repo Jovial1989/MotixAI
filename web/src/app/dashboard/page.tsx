@@ -797,6 +797,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -807,6 +808,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
 
   const isPremium = planInfo.planType === 'premium' || isEnterprise;
   const isTrial = planInfo.planType === 'trial' && planInfo.subscriptionStatus === 'active';
+  const isFree = !isPremium && !isTrial;
 
   const trialDaysLeft = isTrial && planInfo.trialEndsAt
     ? Math.max(0, Math.ceil((new Date(planInfo.trialEndsAt).getTime() - Date.now()) / 86400000))
@@ -830,7 +832,31 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     }
   }
 
-  const planBadgeLabel = isEnterprise ? 'Enterprise' : isPremium ? 'Pro' : isTrial ? 'Trial' : 'Free';
+  async function handleUpgrade(trial: boolean) {
+    setBillingLoading(true);
+    try {
+      const { url } = await webApi.createCheckoutSession({
+        successUrl: `${window.location.origin}/dashboard?billing=success`,
+        cancelUrl: `${window.location.origin}/dashboard?billing=cancelled`,
+        trial,
+      });
+      if (url) window.location.href = url;
+    } catch { /* ignore */ }
+    setBillingLoading(false);
+  }
+
+  async function handleManageBilling() {
+    setBillingLoading(true);
+    try {
+      const { url } = await webApi.createPortalSession({
+        returnUrl: `${window.location.origin}/dashboard`,
+      });
+      if (url) window.location.href = url;
+    } catch { /* ignore */ }
+    setBillingLoading(false);
+  }
+
+  const planBadgeLabel = isEnterprise ? 'Enterprise' : isPremium ? 'Pro' : isTrial ? 'Pro Trial' : 'Free';
   const planBadgeClass = isEnterprise ? 'sett-plan-badge--enterprise' : isPremium ? 'sett-plan-badge--pro' : isTrial ? 'sett-plan-badge--trial' : 'sett-plan-badge--free';
 
   return (
@@ -875,17 +901,45 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
                 <path d="M2 12l3-9 4 6 3-3 4 6" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span className="gen-form-title">{isPremium ? t.settingsView.planPro : t.settingsView.planAndUsage}</span>
+            <span className="gen-form-title">{isPremium || isTrial ? t.settingsView.planPro : t.settingsView.planAndUsage}</span>
           </div>
 
           {isPremium ? (
-            <div className="sett-pro-banner">
-              <div className="sett-pro-banner-icon">⚡</div>
-              <div>
-                <p className="sett-pro-banner-title">{t.settingsView.proActive}</p>
-                <p className="sett-pro-banner-sub">{t.settingsView.proActiveDesc}</p>
+            <>
+              <div className="sett-pro-banner">
+                <div className="sett-pro-banner-icon">⚡</div>
+                <div>
+                  <p className="sett-pro-banner-title">{t.settingsView.proActive}</p>
+                  <p className="sett-pro-banner-sub">{t.settingsView.proActiveDesc}</p>
+                </div>
               </div>
-            </div>
+              <button
+                className="sett-billing-btn"
+                onClick={handleManageBilling}
+                disabled={billingLoading}
+              >
+                {t.settingsView.manageSubscription}
+              </button>
+            </>
+          ) : isTrial ? (
+            <>
+              <div className="sett-pro-banner sett-pro-banner--trial">
+                <div className="sett-pro-banner-icon">🚀</div>
+                <div>
+                  <p className="sett-pro-banner-title">{t.settingsView.trialActive}</p>
+                  <p className="sett-pro-banner-sub">
+                    {t.settingsView.trialRenewsAs}
+                  </p>
+                </div>
+              </div>
+              <button
+                className="sett-billing-btn"
+                onClick={handleManageBilling}
+                disabled={billingLoading}
+              >
+                {t.settingsView.manageSubscription}
+              </button>
+            </>
           ) : (
             <>
               <div className="plan-usage-row">
@@ -900,6 +954,14 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
                   />
                 </div>
               </div>
+
+              <button
+                className="sett-upgrade-btn"
+                onClick={() => handleUpgrade(true)}
+                disabled={billingLoading}
+              >
+                {t.settingsView.startTrialCta}
+              </button>
 
               {promoSuccess ? (
                 <div className="sett-promo-success">

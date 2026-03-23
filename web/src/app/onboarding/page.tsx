@@ -7,12 +7,9 @@ import { webApi } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import type { PlanType } from '@motixai/api-client';
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function OnboardingPage() {
   const t = useT();
 
-  // ── Step content ──────────────────────────────────────────────────────────
   const STEPS = [
     {
       icon: '🔧',
@@ -44,13 +41,14 @@ export default function OnboardingPage() {
     },
   ];
 
-  const PLANS: Array<{ id: PlanType; icon: string; name: string; desc: string; badge?: string }> = [
+  const PLANS: Array<{ id: PlanType; icon: string; name: string; desc: string; badge?: string; note?: string }> = [
     {
       id: 'trial',
       icon: '🚀',
       name: t.onboarding.planTrialName,
       desc: t.onboarding.planTrialDesc,
       badge: t.onboarding.planTrialBadge,
+      note: t.onboarding.planTrialNote,
     },
     {
       id: 'free',
@@ -60,22 +58,41 @@ export default function OnboardingPage() {
     },
   ];
 
-  const [step, setStep] = useState(0); // 0 and 1 are info screens, 2 is plan selection
+  const [step, setStep] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('trial');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const totalSteps = 3; // 2 info + 1 plan
+  const totalSteps = 3;
 
   async function handleFinish() {
     setLoading(true);
     setError(null);
     try {
-      await webApi.selectPlan(selectedPlan);
-      await webApi.completeOnboarding();
-      localStorage.setItem('motix_onboarding_done', 'true');
-      router.push('/dashboard');
+      if (selectedPlan === 'trial') {
+        // Trial path: complete onboarding first, then redirect to Stripe Checkout
+        await webApi.completeOnboarding();
+        localStorage.setItem('motix_onboarding_done', 'true');
+
+        const { url } = await webApi.createCheckoutSession({
+          successUrl: `${window.location.origin}/dashboard?billing=trial-started`,
+          cancelUrl: `${window.location.origin}/dashboard?billing=cancelled`,
+          trial: true,
+        });
+        if (url) {
+          window.location.href = url;
+          return; // Don't setLoading(false) — navigating away
+        }
+        // Fallback: if no URL returned, go to dashboard anyway
+        router.push('/dashboard');
+      } else {
+        // Free path: select plan and go to dashboard
+        await webApi.selectPlan(selectedPlan);
+        await webApi.completeOnboarding();
+        localStorage.setItem('motix_onboarding_done', 'true');
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t.onboarding.somethingWentWrong);
       setLoading(false);
@@ -148,6 +165,16 @@ export default function OnboardingPage() {
                 </button>
               ))}
             </div>
+
+            {selectedPlan === 'trial' && (
+              <p className="ob-trial-note">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+                  <path d="M1 7a6 6 0 1112 0A6 6 0 011 7z" stroke="currentColor" strokeWidth="1.3"/>
+                  <path d="M7 4.5v3M7 9.5v.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+                {t.onboarding.planTrialNote}
+              </p>
+            )}
 
             {error && (
               <div className="auth-error">

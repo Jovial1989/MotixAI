@@ -245,6 +245,7 @@ export interface Translations {
     planTrialName: string;
     planTrialDesc: string;
     planTrialBadge: string;
+    planTrialNote: string;
     planPremiumName: string;
     planPremiumDesc: string;
     planFreeName: string;
@@ -385,6 +386,10 @@ export interface Translations {
     planPro: string;
     proActive: string;
     proActiveDesc: string;
+    trialActive: string;
+    trialRenewsAs: string;
+    manageSubscription: string;
+    startTrialCta: string;
     guidesThisMonth: string;
     havePromoCode: string;
     enterCode: string;
@@ -645,10 +650,12 @@ export interface Translations {
     leadershipTitle: string;
     ceoName: string;
     ceoRole: string;
-    ceoBio: string;
+    ceoIntro: string;
+    ceoBullets: string[];
     ctoName: string;
     ctoRole: string;
-    ctoBio: string;
+    ctoIntro: string;
+    ctoBullets: string[];
     linkedinLabel: string;
     emailLabel: string;
     // Why We Build
@@ -952,8 +959,9 @@ const en: Translations = {
     choosePlanHeading: 'Choose your plan',
     choosePlanSub: 'Start with a free trial — no credit card required. Upgrade any time.',
     planTrialName: '7-day free trial',
-    planTrialDesc: 'Full access — AI illustrations, OEM-backed guides, unlimited repairs. No card required.',
+    planTrialDesc: 'Full access — AI illustrations, OEM-backed guides, unlimited repairs.',
     planTrialBadge: 'Recommended',
+    planTrialNote: 'Card required. No charge today — cancel anytime before trial ends. Renews at $39/mo.',
     planPremiumName: 'Premium',
     planPremiumDesc: 'Full access immediately. Best for shops and serious techs.',
     planFreeName: 'Free (limited)',
@@ -1083,6 +1091,10 @@ const en: Translations = {
     planPro: 'Plan — Pro',
     proActive: 'Pro plan active',
     proActiveDesc: 'Unlimited guides · Priority image generation · API access',
+    trialActive: 'Pro trial active',
+    trialRenewsAs: 'Renews as Pro ($39/mo) after trial unless canceled.',
+    manageSubscription: 'Manage subscription',
+    startTrialCta: 'Start 7-day free trial — $39/mo after',
     guidesThisMonth: 'Guides this month',
     havePromoCode: 'Have a promo code?',
     enterCode: 'Enter code…',
@@ -1105,7 +1117,7 @@ const en: Translations = {
     logOut: 'Log out',
     enterprise: 'Enterprise',
     pro: 'Pro ✓',
-    trial: 'Trial',
+    trial: 'Pro Trial',
     free: 'Free',
     limitReached: 'limit reached',
     upgrade: 'upgrade',
@@ -1326,10 +1338,22 @@ const en: Translations = {
     leadershipTitle: 'The team behind Motixi',
     ceoName: 'Kyrylo Petrov',
     ceoRole: 'Founder & CEO',
-    ceoBio: 'Serial entrepreneur with a background in enterprise consulting, product strategy, and digital transformation. Spent years building platforms for large organizations before founding Motixi to close the tooling gap in automotive repair.',
+    ceoIntro: 'Product-focused entrepreneur building AI-driven platforms for real-world industries.',
+    ceoBullets: [
+      '10+ years in enterprise consulting and digital transformation',
+      'Built platforms for large-scale organizations across finance and retail',
+      'Strong focus on product strategy and execution',
+      'Founder of Motixi — solving real problems in automotive repair',
+    ],
     ctoName: 'Mykhailo',
     ctoRole: 'CTO & Co-Founder',
-    ctoBio: '20+ years building scalable full-stack systems and leading engineering teams. Architects Motixi\'s AI pipeline, infrastructure, and mobile platforms from the ground up.',
+    ctoIntro: 'Full-stack architect with 20+ years building scalable systems and leading engineering teams.',
+    ctoBullets: [
+      'Designed and delivered large-scale distributed systems',
+      'Deep expertise in backend architecture and system reliability',
+      'Leads engineering at Motixi from infrastructure to product delivery',
+      'Strong experience in managing and scaling engineering teams',
+    ],
     linkedinLabel: 'LinkedIn',
     emailLabel: 'Email',
 
@@ -1651,8 +1675,9 @@ const uk: Translations = {
     choosePlanHeading: 'Оберіть план',
     choosePlanSub: 'Почніть з безкоштовного пробного періоду — без кредитної картки. Оновіть у будь-який час.',
     planTrialName: '7-денний пробний період',
-    planTrialDesc: 'Повний доступ — ШІ-ілюстрації, інструкції з OEM-даних, необмежені ремонти. Без картки.',
+    planTrialDesc: 'Повний доступ — ШІ-ілюстрації, інструкції з OEM-даних, необмежені ремонти.',
     planTrialBadge: 'Рекомендовано',
+    planTrialNote: 'Потрібна картка. Без оплати сьогодні — скасуйте будь-коли до закінчення пробного періоду. Поновлення за $39/міс.',
     planPremiumName: 'Преміум',
     planPremiumDesc: 'Повний доступ одразу. Найкраще для майстерень та серйозних техніків.',
     planFreeName: 'Безкоштовний (обмежений)',
@@ -1782,6 +1807,10 @@ const uk: Translations = {
     planPro: 'План — Pro',
     proActive: 'Pro план активний',
     proActiveDesc: 'Безлімітні інструкції · Пріоритетна генерація зображень · Доступ до API',
+    trialActive: 'Pro пробний період активний',
+    trialRenewsAs: 'Поновлюється як Pro ($39/міс) після пробного періоду, якщо не скасувати.',
+    manageSubscription: 'Керувати підпискою',
+    startTrialCta: '7 днів безкоштовно — потім $39/міс',
     guidesThisMonth: 'Інструкції цього місяця',
     havePromoCode: 'Маєте промокод?',
     enterCode: 'Введіть код…',
@@ -1804,7 +1833,7 @@ const uk: Translations = {
     logOut: 'Вийти',
     enterprise: 'Enterprise',
     pro: 'Pro ✓',
-    trial: 'Пробний',
+    trial: 'Pro Trial',
     free: 'Безкоштовний',
     limitReached: 'ліміт вичерпано',
     upgrade: 'оновити',
@@ -2025,10 +2054,22 @@ const uk: Translations = {
     leadershipTitle: 'Люди за Motixi',
     ceoName: 'Кирило Петров',
     ceoRole: 'Засновник та CEO',
-    ceoBio: 'Серійний підприємець з досвідом у корпоративному консалтингу, продуктовій стратегії та цифровій трансформації. Роками будував платформи для великих організацій, перш ніж заснувати Motixi, щоб закрити прогалину в інструментах для автомобільного ремонту.',
+    ceoIntro: 'Продуктовий підприємець, який будує AI-платформи для реальних індустрій.',
+    ceoBullets: [
+      '10+ років у корпоративному консалтингу та цифровій трансформації',
+      'Створював платформи для великих організацій у фінансах та ритейлі',
+      'Сильний фокус на продуктовій стратегії та реалізації',
+      'Засновник Motixi — вирішує реальні проблеми в автомобільному ремонті',
+    ],
     ctoName: 'Михайло',
     ctoRole: 'CTO та співзасновник',
-    ctoBio: '20+ років створення масштабованих full-stack систем та керування інженерними командами. Будує ШІ-пайплайн, інфраструктуру та мобільні платформи Motixi з нуля.',
+    ctoIntro: 'Full-stack архітектор з 20+ роками досвіду в масштабованих системах та керуванні командами.',
+    ctoBullets: [
+      'Проєктував та запускав великомасштабні розподілені системи',
+      'Глибока експертиза в бекенд-архітектурі та надійності систем',
+      'Очолює інженерію в Motixi від інфраструктури до продукту',
+      'Великий досвід у менеджменті та масштабуванні інженерних команд',
+    ],
     linkedinLabel: 'LinkedIn',
     emailLabel: 'Email',
 
@@ -2350,8 +2391,9 @@ const bg: Translations = {
     choosePlanHeading: 'Изберете план',
     choosePlanSub: 'Започнете с безплатен пробен период — без кредитна карта. Надградете по всяко време.',
     planTrialName: '7-дневен безплатен пробен период',
-    planTrialDesc: 'Пълен достъп — ИИ илюстрации, OEM-базирани ръководства, неограничени ремонти. Без карта.',
+    planTrialDesc: 'Пълен достъп — ИИ илюстрации, OEM-базирани ръководства, неограничени ремонти.',
     planTrialBadge: 'Препоръчано',
+    planTrialNote: 'Необходима е карта. Без таксуване днес — отменете по всяко време преди края на пробния период. Подновяване за $39/мес.',
     planPremiumName: 'Премиум',
     planPremiumDesc: 'Пълен достъп веднага. Най-доброто за сервизи и сериозни техници.',
     planFreeName: 'Безплатен (ограничен)',
@@ -2481,6 +2523,10 @@ const bg: Translations = {
     planPro: 'План — Pro',
     proActive: 'Pro план активен',
     proActiveDesc: 'Неограничени ръководства · Приоритетно генериране на изображения · Достъп до API',
+    trialActive: 'Pro пробен период активен',
+    trialRenewsAs: 'Подновява се като Pro ($39/мес) след пробния период, освен ако не бъде отменен.',
+    manageSubscription: 'Управление на абонамента',
+    startTrialCta: '7 дни безплатно — след това $39/мес',
     guidesThisMonth: 'Ръководства този месец',
     havePromoCode: 'Имате промо код?',
     enterCode: 'Въведете код…',
@@ -2503,7 +2549,7 @@ const bg: Translations = {
     logOut: 'Излез',
     enterprise: 'Enterprise',
     pro: 'Pro ✓',
-    trial: 'Пробен',
+    trial: 'Pro Trial',
     free: 'Безплатен',
     limitReached: 'лимитът е достигнат',
     upgrade: 'надградете',
@@ -2724,10 +2770,22 @@ const bg: Translations = {
     leadershipTitle: 'Хората зад Motixi',
     ceoName: 'Кирило Петров',
     ceoRole: 'Основател и CEO',
-    ceoBio: 'Сериен предприемач с опит в корпоративен консултинг, продуктова стратегия и дигитална трансформация. Години наред изграждал платформи за големи организации, преди да основе Motixi, за да запълни празнината в инструментите за автомобилен ремонт.',
+    ceoIntro: 'Продуктов предприемач, изграждащ AI платформи за реални индустрии.',
+    ceoBullets: [
+      '10+ години в корпоративен консултинг и дигитална трансформация',
+      'Изграждал платформи за големи организации във финанси и ритейл',
+      'Силен фокус върху продуктова стратегия и изпълнение',
+      'Основател на Motixi — решава реални проблеми в автомобилния ремонт',
+    ],
     ctoName: 'Михайло',
     ctoRole: 'CTO и съосновател',
-    ctoBio: '20+ години опит в изграждането на мащабируеми full-stack системи и ръководене на инженерни екипи. Проектира ИИ пайплайна, инфраструктурата и мобилните платформи на Motixi от нулата.',
+    ctoIntro: 'Full-stack архитект с 20+ години опит в мащабируеми системи и ръководене на екипи.',
+    ctoBullets: [
+      'Проектирал и доставял мащабни разпределени системи',
+      'Дълбока експертиза в бекенд архитектура и надеждност на системи',
+      'Ръководи инженерията в Motixi от инфраструктура до продукт',
+      'Богат опит в управление и мащабиране на инженерни екипи',
+    ],
     linkedinLabel: 'LinkedIn',
     emailLabel: 'Email',
 

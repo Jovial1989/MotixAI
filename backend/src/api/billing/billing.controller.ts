@@ -18,7 +18,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   async createCheckoutSession(
     @CurrentUser() user: AuthUser,
-    @Body() body: { successUrl?: string; cancelUrl?: string },
+    @Body() body: { successUrl?: string; cancelUrl?: string; trial?: boolean },
   ) {
     const successUrl = body.successUrl || 'https://www.motixi.com/dashboard?billing=success';
     const cancelUrl = body.cancelUrl || 'https://www.motixi.com/dashboard?billing=cancelled';
@@ -28,6 +28,7 @@ export class BillingController {
       user.email,
       successUrl,
       cancelUrl,
+      body.trial ?? false,
     );
   }
 

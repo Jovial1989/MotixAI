@@ -21,9 +21,9 @@ export class BillingService {
   /**
    * Create a Stripe Checkout session for Pro subscription.
    */
-  async createCheckoutSession(userId: string, email: string, successUrl: string, cancelUrl: string) {
+  async createCheckoutSession(userId: string, email: string, successUrl: string, cancelUrl: string, trial = false) {
     // Find or create Stripe customer
-    let user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     let customerId = user.stripeCustomerId;
 
     if (!customerId) {
@@ -41,16 +41,23 @@ export class BillingService {
     // Get price ID from env — create a product+price in Stripe Dashboard
     const priceId = this.config.getOrThrow<string>('STRIPE_PRO_PRICE_ID');
 
+    const subscriptionData: Stripe.Checkout.SessionCreateParams['subscription_data'] = {
+      metadata: { userId },
+    };
+
+    // 7-day free trial: card collected now, first charge after trial ends
+    if (trial) {
+      subscriptionData.trial_period_days = 7;
+    }
+
     const session = await this.stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { userId },
-      subscription_data: {
-        metadata: { userId },
-      },
+      metadata: { userId, trial: trial ? 'true' : 'false' },
+      subscription_data: subscriptionData,
     });
 
     return { sessionId: session.id, url: session.url };
@@ -113,20 +120,37 @@ export class BillingService {
       return;
     }
 
-    // Subscription ID comes from the session
     const subscriptionId = session.subscription as string | null;
+    const isTrial = session.metadata?.trial === 'true';
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        planType: 'premium',
-        subscriptionStatus: 'active',
-        stripeSubscriptionId: subscriptionId,
-        stripeCustomerId: session.customer as string,
-      },
-    });
+    if (isTrial) {
+      // Trial checkout: set as trial with 7-day expiry
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
-    this.logger.log(`User ${userId} upgraded to Pro via checkout`);
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          planType: 'trial',
+          subscriptionStatus: 'active',
+          stripeSubscriptionId: subscriptionId,
+          stripeCustomerId: session.customer as string,
+          trialEndsAt,
+        },
+      });
+      this.logger.log(`User ${userId} started Pro trial via Stripe checkout`);
+    } else {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          planType: 'premium',
+          subscriptionStatus: 'active',
+          stripeSubscriptionId: subscriptionId,
+          stripeCustomerId: session.customer as string,
+        },
+      });
+      this.logger.log(`User ${userId} upgraded to Pro via checkout`);
+    }
   }
 
   private async handleSubscriptionUpdate(subscription: Stripe.Subscription) {
@@ -137,7 +161,23 @@ export class BillingService {
     const periodEnd = (subscription as unknown as { current_period_end: number }).current_period_end;
     const currentPeriodEnd = new Date(periodEnd * 1000);
 
-    if (status === 'active' || status === 'trialing') {
+    if (status === 'trialing') {
+      // Stripe confirms trialing state — compute trial end from Stripe data
+      const trialEnd = (subscription as unknown as { trial_end: number | null }).trial_end;
+      const trialEndsAt = trialEnd ? new Date(trialEnd * 1000) : null;
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          planType: 'trial',
+          subscriptionStatus: 'active',
+          stripeSubscriptionId: subscription.id,
+          currentPeriodEnd,
+          ...(trialEndsAt ? { trialEndsAt } : {}),
+        },
+      });
+    } else if (status === 'active') {
+      // Trial ended → now actively paying, upgrade to premium
       await this.prisma.user.update({
         where: { id: userId },
         data: {
@@ -145,6 +185,7 @@ export class BillingService {
           subscriptionStatus: 'active',
           stripeSubscriptionId: subscription.id,
           currentPeriodEnd,
+          trialEndsAt: null,
         },
       });
     } else if (status === 'past_due' || status === 'unpaid') {

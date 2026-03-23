@@ -53,7 +53,12 @@ export default function AboutPage() {
               <FounderImage size="lg" />
               <p className="founder-card-name">{a.ceoName}</p>
               <p className="founder-card-role">{a.ceoRole}</p>
-              <p className="team-member-bio">{a.ceoBio}</p>
+              <div className="founder-card-body">
+                <p className="founder-card-intro">{a.ceoIntro}</p>
+                <ul className="founder-card-bullets">
+                  {a.ceoBullets.map((b) => <li key={b}>{b}</li>)}
+                </ul>
+              </div>
               <div className="founder-card-links">
                 <a
                   href="https://www.linkedin.com/in/petrovkyrylo/"
@@ -79,16 +84,14 @@ export default function AboutPage() {
                 alt={a.ctoName}
                 className="founder-img"
               />
-              <a
-                href="https://www.linkedin.com/in/mykhailo-s-862ba860/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="founder-card-name team-member-link"
-              >
-                {a.ctoName}
-              </a>
+              <p className="founder-card-name">{a.ctoName}</p>
               <p className="founder-card-role">{a.ctoRole}</p>
-              <p className="team-member-bio">{a.ctoBio}</p>
+              <div className="founder-card-body">
+                <p className="founder-card-intro">{a.ctoIntro}</p>
+                <ul className="founder-card-bullets">
+                  {a.ctoBullets.map((b) => <li key={b}>{b}</li>)}
+                </ul>
+              </div>
               <div className="founder-card-links">
                 <a
                   href="https://www.linkedin.com/in/mykhailo-s-862ba860/"
@@ -97,6 +100,12 @@ export default function AboutPage() {
                   className="founder-card-btn founder-card-btn--primary"
                 >
                   {a.linkedinLabel}
+                </a>
+                <a
+                  href="mailto:michael.shanahin@gmail.com"
+                  className="founder-card-btn founder-card-btn--ghost"
+                >
+                  {a.emailLabel}
                 </a>
               </div>
             </div>

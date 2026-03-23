@@ -115,7 +115,7 @@ export class MotixApiClient {
 
   // ── Billing ──────────────────────────────────────────────────────────────
 
-  createCheckoutSession(body?: { successUrl?: string; cancelUrl?: string }) {
+  createCheckoutSession(body?: { successUrl?: string; cancelUrl?: string; trial?: boolean }) {
     return this.request<CheckoutSessionResponse>('/billing/create-checkout-session', {
       method: 'POST',
       body: JSON.stringify(body ?? {}),

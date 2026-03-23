@@ -1468,6 +1468,14 @@ input, textarea, select { font-family: inherit; outline: none; }
   background: var(--p); border-color: var(--p); color: #fff;
 }
 
+.ob-trial-note {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;
+  padding: 10px 14px; background: var(--bg); border-radius: var(--r-md);
+  border: 1px solid var(--border);
+}
+.ob-trial-note svg { color: var(--p); margin-top: 1px; }
+
 .ob-actions {
   display: flex; flex-direction: column; gap: 10px;
 }
@@ -3007,6 +3015,23 @@ input, textarea, select { font-family: inherit; outline: none; }
 .sett-pro-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
 .sett-pro-banner-title { font-size: 0.92rem; font-weight: 700; color: var(--p); }
 .sett-pro-banner-sub { font-size: 0.8rem; color: var(--text-sub); margin-top: 2px; line-height: 1.5; }
+.sett-pro-banner--trial { background: #EFF6FF; border-color: #BFDBFE; }
+.sett-pro-banner--trial .sett-pro-banner-title { color: #1D4ED8; }
+.sett-billing-btn {
+  border: 1.5px solid var(--border); background: transparent; border-radius: var(--r-full);
+  padding: 8px 18px; font-size: 0.84rem; font-weight: 600; color: var(--text-sub);
+  cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast);
+}
+.sett-billing-btn:hover { border-color: var(--p); color: var(--p); }
+.sett-billing-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.sett-upgrade-btn {
+  border: none; background: var(--p); color: #fff; border-radius: var(--r-full);
+  padding: 10px 20px; font-size: 0.86rem; font-weight: 700;
+  cursor: pointer; transition: background var(--t-fast);
+  box-shadow: 0 1px 4px rgba(234,88,12,.3);
+}
+.sett-upgrade-btn:hover { background: var(--p-hover); }
+.sett-upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .sett-promo-section { display: flex; flex-direction: column; gap: 8px; }
 .sett-promo-label { font-size: 0.8rem; font-weight: 600; color: var(--text-sub); }
 .sett-promo-row { display: flex; gap: 8px; }
@@ -3953,14 +3978,30 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .team-member-card {
   display: flex; flex-direction: column; align-items: center;
-  text-align: center; gap: 12px;
+  text-align: center; gap: 6px;
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);
-  padding: 40px 28px 32px; box-shadow: var(--sh-xs);
+  padding: 40px 32px 32px; box-shadow: var(--sh-xs);
   transition: box-shadow var(--t-mid), transform var(--t-mid), border-color var(--t-mid);
 }
 .team-member-card:hover { box-shadow: var(--sh-md); transform: translateY(-2px); border-color: var(--p-border); }
-.team-member-bio {
-  font-size: 0.88rem; color: var(--text-sub); line-height: 1.7; max-width: 340px;
+.founder-card-body {
+  text-align: left; width: 100%; max-width: 360px; margin-top: 12px;
+}
+.founder-card-intro {
+  font-size: 0.9rem; font-weight: 600; color: var(--text); line-height: 1.5;
+  margin-bottom: 12px;
+}
+.founder-card-bullets {
+  list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;
+}
+.founder-card-bullets li {
+  font-size: 0.84rem; color: var(--text-sub); line-height: 1.55;
+  padding-left: 18px; position: relative;
+}
+.founder-card-bullets li::before {
+  content: ''; position: absolute; left: 0; top: 7px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--p); opacity: 0.6;
 }
 .team-member-link {
   text-decoration: none; transition: color var(--t-fast);
@@ -3988,7 +4029,7 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .founder-card-name { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-top: 4px; }
 .founder-card-role { font-size: 0.8rem; color: var(--text-muted); }
-.founder-card-links { display: flex; gap: 8px; margin-top: 8px; }
+.founder-card-links { display: flex; gap: 8px; margin-top: 16px; }
 .founder-card-btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 7px 16px; border-radius: var(--r-full);
