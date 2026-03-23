@@ -3686,7 +3686,7 @@ input, textarea, select { font-family: inherit; outline: none; }
   display: flex; align-items: center; gap: 0; margin-right: 8px;
   font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em;
 }
-.lang-sep { color: var(--text-sub); opacity: 0.35; margin: 0 1px; user-select: none; }
+.lang-sep { color: var(--text-sub); opacity: 0.3; margin: 0 2px; user-select: none; font-size: 0.65rem; }
 .lang-btn {
   border: none; background: none; cursor: pointer;
   color: var(--text-sub); padding: 4px 5px; border-radius: var(--r-sm);

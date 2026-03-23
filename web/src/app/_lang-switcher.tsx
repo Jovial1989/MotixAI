@@ -27,7 +27,7 @@ export default function LangSwitcher() {
     <div className="lang-switcher">
       {LANGS.map((lang, i) => (
         <span key={lang.code}>
-          {i > 0 && <span className="lang-sep">/</span>}
+          {i > 0 && <span className="lang-sep">·</span>}
           <button
             type="button"
             className={`lang-btn${lang.code === currentLocale ? ' lang-btn--active' : ''}`}
