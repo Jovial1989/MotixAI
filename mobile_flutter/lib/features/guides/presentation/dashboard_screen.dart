@@ -6,6 +6,7 @@ import '../../auth/auth_provider.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/mx_widgets.dart';
 import '../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'guide_create_sheet.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -45,6 +46,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showGuestAuthSheet() {
+    final l = S.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -88,7 +90,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Create account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                child: Text(l.createAccount, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               ),
             ),
             const SizedBox(height: 10),
@@ -101,7 +103,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
-                child: const Text('Sign in', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0F172A))),
+                child: Text(l.signIn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0F172A))),
               ),
             ),
           ],
@@ -112,6 +114,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final state = ref.watch(guidesProvider);
     final authState = ref.watch(authProvider);
     final isGuest = authState.tokens?.user.role == 'GUEST';
@@ -126,7 +129,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ? const SizedBox(width: 18, height: 18,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
             : Icon(isGuest ? Icons.lock_outline : Icons.add),
-        label: Text(_creating ? 'Generating…' : (isGuest ? 'Sign up to generate' : 'New guide'),
+        label: Text(_creating ? l.generating : (isGuest ? l.signUpToGenerate : l.newGuide),
           style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: SafeArea(
@@ -152,12 +155,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const Icon(Icons.info_outline, size: 15, color: Color(0xFFD97706)),
                   const SizedBox(width: s8),
                   Expanded(child: Text(
-                    'Browsing as guest — read-only. ',
+                    l.guestBanner,
                     style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
                   )),
                   GestureDetector(
                     onTap: () => context.go('/signup'),
-                    child: const Text('Sign up', style: TextStyle(
+                    child: Text(l.guestBannerSignUp, style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFEA580C),
                       decoration: TextDecoration.underline,
                     )),
@@ -191,10 +194,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     if (state.guides.isEmpty) {
-      return const MxEmptyState(
+      final l = S.of(context)!;
+      return MxEmptyState(
         icon: '🔧',
-        title: 'No guides yet',
-        subtitle: 'Type a repair query above to generate your first AI-powered guide.',
+        title: l.noGuidesYet,
+        subtitle: l.noGuidesDesc,
       );
     }
 
@@ -215,19 +219,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _confirmDelete(RepairGuide guide) {
+    final l = S.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete guide'),
-        content: Text('Delete "${guide.title}"?'),
+        title: Text(l.deleteGuide),
+        content: Text(l.deleteGuideConfirm(guide.title)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               ref.read(guidesProvider.notifier).delete(guide.id);
             },
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFDC2626))),
+            child: Text(l.delete, style: const TextStyle(color: Color(0xFFDC2626))),
           ),
         ],
       ),

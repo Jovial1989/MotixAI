@@ -8,6 +8,7 @@ import '../../../shared/api/providers.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/mx_widgets.dart';
 import '../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class GuideDetailScreen extends ConsumerStatefulWidget {
   final String guideId;
@@ -27,6 +28,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final state = ref.watch(guideDetailProvider(widget.guideId));
 
     if (state.error != null && state.guide == null) {
@@ -84,7 +86,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
                           children: [
                             const Text('⚠️', style: TextStyle(fontSize: 14)),
                             const SizedBox(width: s8),
-                            Text('Safety notes (${guide.safetyNotes.length})',
+                            Text(l.safetyNotes,
                               style: tsSmallBold.copyWith(color: kWarning)),
                           ],
                         ),
@@ -116,7 +118,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
                           children: [
                             const Text('🔧', style: TextStyle(fontSize: 14)),
                             const SizedBox(width: s8),
-                            Text('Tools required (${guide.tools.length})',
+                            Text(l.toolsRequired,
                               style: tsSmallBold),
                           ],
                         ),
@@ -130,7 +132,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
                     ],
 
                     // Step header
-                    Text('PROCEDURE — ${steps.length} STEPS', style: tsLabel),
+                    Text(l.procedureSteps(steps.length), style: tsLabel),
                     const SizedBox(height: s12),
 
                     // Current step card
@@ -183,6 +185,7 @@ class _GuideHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final steps = guide.steps;
     final progress = steps.isNotEmpty ? (stepIndex + 1) / steps.length : 0.0;
 
@@ -240,8 +243,8 @@ class _GuideHeader extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       allReady
-                          ? '${steps.length} steps ready'
-                          : '$readyCount/${steps.length} illustrations',
+                          ? l.procedureSteps(steps.length)
+                          : '$readyCount/${steps.length}',
                       style: tsCaption.copyWith(color: kTextMuted),
                     ),
                   ],
@@ -294,6 +297,7 @@ class _StepCardState extends State<_StepCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final step = widget.step;
     final hasDetails = step.torqueValue != null || step.warningNote != null;
 
@@ -349,7 +353,7 @@ class _StepCardState extends State<_StepCard> {
                     onTap: () => setState(() => _detailsExpanded = !_detailsExpanded),
                     child: Row(
                       children: [
-                        Text('Details', style: tsSmallBold.copyWith(color: kPrimary)),
+                        Text(l.details, style: tsSmallBold.copyWith(color: kPrimary)),
                         const SizedBox(width: s4),
                         Icon(
                           _detailsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
@@ -363,7 +367,7 @@ class _StepCardState extends State<_StepCard> {
                     if (step.torqueValue != null)
                       _SpecChip(
                         icon: '🔩',
-                        label: 'Torque',
+                        label: l.torque,
                         value: step.torqueValue!,
                         bg: kSuccessLight,
                         border: kSuccessBorder,
@@ -473,6 +477,7 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final step = widget.step;
 
     if (step.imageStatus == ImageStatus.ready && step.imageUrl != null) {
@@ -498,8 +503,8 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
                   color: Colors.black.withOpacity(0.55),
                   borderRadius: kRadiusSm,
                 ),
-                child: const Text('⤢ Tap to expand',
-                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
+                child: Text('⤢ ${l.tapToExpand}',
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
               ),
             ),
           ],
@@ -509,10 +514,10 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
 
     if (step.isPending) {
       final statusLabel = switch (step.imageStatus) {
-        ImageStatus.searchingRefs  => 'Searching references…',
-        ImageStatus.analyzingRefs  => 'Analysing diagram layout…',
-        ImageStatus.generating     => 'Generating illustration…',
-        _                          => 'Queued…',
+        ImageStatus.searchingRefs  => l.searchingRefs,
+        ImageStatus.analyzingRefs  => l.analyzingRefs,
+        ImageStatus.generating     => l.generatingIllustration,
+        _                          => l.queued,
       };
       return FadeTransition(
         opacity: _anim,
@@ -568,7 +573,7 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
                 children: [
                   const Text('⟳', style: TextStyle(fontSize: 16, color: Color(0xFFDC2626))),
                   const SizedBox(width: 6),
-                  Text('Tap to regenerate', style: tsCaption.copyWith(color: const Color(0xFFDC2626))),
+                  Text(l.tapToRegenerate, style: tsCaption.copyWith(color: const Color(0xFFDC2626))),
                 ],
               ),
             ),
@@ -593,7 +598,7 @@ class _StepImageState extends State<_StepImage> with SingleTickerProviderStateMi
           children: [
             const CircularProgressIndicator(color: kPrimary, strokeWidth: 2),
             const SizedBox(height: 8),
-            Text('Preparing illustration…',
+            Text(l.preparingIllustration,
                 style: tsCaption.copyWith(fontWeight: FontWeight.w400)),
           ],
         ),
@@ -653,7 +658,9 @@ class _StepNavigator extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    return Container(
     height: 72,
     padding: const EdgeInsets.symmetric(horizontal: s16),
     decoration: BoxDecoration(
@@ -667,7 +674,7 @@ class _StepNavigator extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: stepIndex > 0 ? onPrev : null,
           icon: const Icon(Icons.arrow_back_ios, size: 14),
-          label: const Text('Prev'),
+          label: Text(l.prev),
           style: OutlinedButton.styleFrom(
             foregroundColor: kPrimary,
             side: BorderSide(color: stepIndex > 0 ? kPrimary : kBorder),
@@ -679,7 +686,7 @@ class _StepNavigator extends StatelessWidget {
         // Counter
         Expanded(
           child: Center(
-            child: Text('${stepIndex + 1} / $total',
+            child: Text(l.stepOf(stepIndex + 1, total),
               style: tsSubhead.copyWith(color: kTextSub)),
           ),
         ),
@@ -687,7 +694,7 @@ class _StepNavigator extends StatelessWidget {
         // Next
         FilledButton.icon(
           onPressed: stepIndex < total - 1 ? onNext : null,
-          icon: const Text('Next'),
+          icon: Text(l.next),
           label: const Icon(Icons.arrow_forward_ios, size: 14),
           style: FilledButton.styleFrom(
             backgroundColor: kPrimary,
@@ -698,6 +705,7 @@ class _StepNavigator extends StatelessWidget {
       ],
     ),
   );
+  }
 }
 
 // ── Step instruction renderer ─────────────────────────────────────────────────
@@ -758,6 +766,7 @@ class _SourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final isSourceBacked = guide.source == 'source-backed';
     final isWebFallback  = guide.source == 'web-fallback';
 
@@ -771,10 +780,10 @@ class _SourceBadge extends StatelessWidget {
                        : isWebFallback  ? const Color(0xFFB45309)
                        : kPrimaryDark;
     final String label = isSourceBacked
-        ? '📄 ${guide.sourceProvider ?? "Source"}'
+        ? '📄 ${l.sourceBacked(guide.sourceProvider ?? "Source")}'
         : isWebFallback
-            ? '🌐 Web Synthesis'
-            : '⚡ AI Generated';
+            ? '🌐 ${l.webSynthesis}'
+            : '⚡ ${l.aiGenerated}';
 
     return Row(
       children: [
@@ -836,6 +845,7 @@ class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: kBgSubtle,
@@ -855,7 +865,7 @@ class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
                 children: [
                   const Text('🤖', style: TextStyle(fontSize: 14)),
                   const SizedBox(width: s8),
-                  Text('Ask AI about this step', style: tsSmallBold.copyWith(color: kPrimary)),
+                  Text(l.askAiAboutStep, style: tsSmallBold.copyWith(color: kPrimary)),
                   const Spacer(),
                   Icon(_expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                     size: 18, color: kPrimary),
@@ -883,7 +893,7 @@ class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _submit(),
                           decoration: InputDecoration(
-                            hintText: 'e.g. What torque for this bolt?',
+                            hintText: l.askAiHint,
                             hintStyle: tsCaption.copyWith(color: kTextMuted),
                             contentPadding: const EdgeInsets.symmetric(horizontal: s12, vertical: s10),
                             border: OutlineInputBorder(

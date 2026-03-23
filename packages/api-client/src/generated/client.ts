@@ -5,11 +5,13 @@ import type {
   CreateJobInput,
   CreateRequestInput,
   EnterpriseGuideInput,
+  CheckoutSessionResponse,
   ForgotPasswordResponse,
   GenerateImageResponse,
   GuideRequest,
   ManualDocument,
   PlanType,
+  PortalSessionResponse,
   RedeemPromoResponse,
   RepairGuide,
   RepairJob,
@@ -108,6 +110,22 @@ export class MotixApiClient {
     return this.request<RedeemPromoResponse>('/user/redeem-promo', {
       method: 'POST',
       body: JSON.stringify({ promoCode }),
+    });
+  }
+
+  // ── Billing ──────────────────────────────────────────────────────────────
+
+  createCheckoutSession(body?: { successUrl?: string; cancelUrl?: string }) {
+    return this.request<CheckoutSessionResponse>('/billing/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify(body ?? {}),
+    });
+  }
+
+  createPortalSession(body?: { returnUrl?: string }) {
+    return this.request<PortalSessionResponse>('/billing/portal-session', {
+      method: 'POST',
+      body: JSON.stringify(body ?? {}),
     });
   }
 

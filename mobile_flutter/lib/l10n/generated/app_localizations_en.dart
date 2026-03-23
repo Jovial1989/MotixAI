@@ -1,0 +1,399 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class SEn extends S {
+  SEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appName => 'Motixi';
+
+  @override
+  String get aiPoweredRepairGuides => 'AI-Powered Repair Guides';
+
+  @override
+  String get welcomeBack => 'Welcome back';
+
+  @override
+  String get signInToAccount => 'Sign in to your account';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get emailPlaceholder => 'you@example.com';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get passwordPlaceholder => '••••••••';
+
+  @override
+  String get enterValidEmail => 'Enter a valid email';
+
+  @override
+  String get minSixChars => 'Min 6 characters';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get noAccountSignUp => 'Don\'t have an account? Sign up';
+
+  @override
+  String get continueAsGuest => 'Continue as guest →';
+
+  @override
+  String get createAccount => 'Create account';
+
+  @override
+  String get getStarted => 'Get started with Motixi';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get repeatPassword => 'Repeat password';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? Sign in';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get onboardingWelcome => 'Welcome to Motixi';
+
+  @override
+  String get onboardingWelcomeSub =>
+      'AI-powered repair guides that know your vehicle, your parts, and your job — all in one place.';
+
+  @override
+  String get onboardingFeatures => 'Everything you need to fix it right';
+
+  @override
+  String get onboardingFeaturesSub =>
+      'From oil changes to timing belts — precise, step-by-step guides with AI illustrations.';
+
+  @override
+  String get featStepByStep => 'Step-by-step guides';
+
+  @override
+  String get featStepByStepDesc =>
+      'Auto-generated from OEM data and trusted sources';
+
+  @override
+  String get featAiIllustrations => 'AI illustrations';
+
+  @override
+  String get featAiIllustrationsDesc =>
+      'Visual reference for every repair step';
+
+  @override
+  String get featAskGuide => 'Ask the guide';
+
+  @override
+  String get featAskGuideDesc => 'Get instant answers to repair questions';
+
+  @override
+  String get choosePlan => 'Choose your plan';
+
+  @override
+  String get choosePlanSub => 'You can change this later.';
+
+  @override
+  String get planTrial => '7-day free trial';
+
+  @override
+  String get planTrialDesc => 'Full access for 7 days. No card required.';
+
+  @override
+  String get planTrialBadge => 'Recommended';
+
+  @override
+  String get planFree => 'Free (limited)';
+
+  @override
+  String get planFreeDesc => '5 guides per month. Basic features.';
+
+  @override
+  String get continueBtn => 'Continue';
+
+  @override
+  String get skipToPlan => 'Skip to plan selection';
+
+  @override
+  String get startFreeTrial => 'Start my free trial';
+
+  @override
+  String get continueFree => 'Continue free';
+
+  @override
+  String get settingUp => 'Setting up…';
+
+  @override
+  String get somethingWentWrong => 'Something went wrong';
+
+  @override
+  String get noGuidesYet => 'No guides yet';
+
+  @override
+  String get noGuidesDesc =>
+      'Type a repair query above to generate your first AI-powered guide.';
+
+  @override
+  String get newGuide => 'New guide';
+
+  @override
+  String get signUpToGenerate => 'Sign up to generate';
+
+  @override
+  String get generating => 'Generating…';
+
+  @override
+  String get guestBanner => 'Browsing as guest — read-only.';
+
+  @override
+  String get guestBannerSignUp => 'Sign up';
+
+  @override
+  String get deleteGuide => 'Delete guide';
+
+  @override
+  String deleteGuideConfirm(String title) {
+    return 'Delete \"$title\"?';
+  }
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get search => 'Search…';
+
+  @override
+  String get safetyNotes => 'Safety notes';
+
+  @override
+  String get toolsRequired => 'Tools required';
+
+  @override
+  String procedureSteps(int count) {
+    return 'PROCEDURE — $count STEPS';
+  }
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get searchingRefs => 'Searching references…';
+
+  @override
+  String get analyzingRefs => 'Analysing diagram layout…';
+
+  @override
+  String get generatingIllustration => 'Generating illustration…';
+
+  @override
+  String get queued => 'Queued…';
+
+  @override
+  String get preparingIllustration => 'Preparing illustration…';
+
+  @override
+  String get tapToExpand => '⤢ Tap to expand';
+
+  @override
+  String get tapToRegenerate => 'Tap to regenerate';
+
+  @override
+  String sourceBacked(String provider) {
+    return '📄 $provider';
+  }
+
+  @override
+  String get webSynthesis => '🌐 Web Synthesis';
+
+  @override
+  String get aiGenerated => '⚡ AI Generated';
+
+  @override
+  String get askAiAboutStep => 'Ask AI about this step';
+
+  @override
+  String get askAiHint => 'e.g. What torque for this bolt?';
+
+  @override
+  String get prev => 'Prev';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String stepOf(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String get torque => 'Torque';
+
+  @override
+  String get warning => 'Warning';
+
+  @override
+  String get make => 'Make';
+
+  @override
+  String get model => 'Model';
+
+  @override
+  String get year => 'Year';
+
+  @override
+  String get selectMake => 'Select make…';
+
+  @override
+  String get selectModel => 'Select model…';
+
+  @override
+  String get anyYear => 'Any year (optional)';
+
+  @override
+  String get selectMakeFirst => 'Select make first';
+
+  @override
+  String get partRepairDesc => 'Part / repair description';
+
+  @override
+  String get oemPartNumber => 'OEM / part number';
+
+  @override
+  String get didYouMean => 'Did you mean:';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String get generateGuide => 'Generate Guide';
+
+  @override
+  String get confirmGenDesc =>
+      'AI will generate a step-by-step repair guide with images for each step.';
+
+  @override
+  String get vehicle => 'Vehicle';
+
+  @override
+  String get repair => 'Repair';
+
+  @override
+  String get partNo => 'Part No.';
+
+  @override
+  String get required => 'required';
+
+  @override
+  String get optional => 'optional';
+
+  @override
+  String get history => 'History';
+
+  @override
+  String get noHistoryYet => 'No history yet';
+
+  @override
+  String get noHistoryDesc => 'Guides you generate will appear here.';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get accountSection => 'Account';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get roleLabel => 'Role';
+
+  @override
+  String get tenantLabel => 'Tenant';
+
+  @override
+  String get planSection => 'Plan';
+
+  @override
+  String get proActive => '⚡ Pro plan active';
+
+  @override
+  String get proActiveDesc => 'Unlimited guides · Priority images · API access';
+
+  @override
+  String get trialActive => 'Trial active';
+
+  @override
+  String trialDaysRemaining(int days) {
+    return '$days day(s) remaining';
+  }
+
+  @override
+  String get freePlan => 'Free plan';
+
+  @override
+  String get freePlanDesc => '5 guides/month. Use a promo code to unlock Pro.';
+
+  @override
+  String get guideHistory => 'Guide History';
+
+  @override
+  String get promoCode => 'PROMO CODE';
+
+  @override
+  String get enterPromoCode => 'Enter promo code…';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get promoApplied => 'Promo applied! You now have Pro access.';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get countrySelectTitle => 'Choose your region';
+
+  @override
+  String get countrySelectSub =>
+      'This sets the language for the app. You can change it later in settings.';
+
+  @override
+  String get countryGlobal => '🌐  Global (English)';
+
+  @override
+  String get countryUkraine => '🇺🇦  Ukraine';
+
+  @override
+  String get countryBulgaria => '🇧🇬  Bulgaria';
+
+  @override
+  String get countryConfirm => 'Continue';
+
+  @override
+  String get loading => 'Loading…';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get error => 'Error';
+}

@@ -4,8 +4,10 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { webApi } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 export default function ForgotPasswordPage() {
+  const t = useT();
   const router = useRouter();
   const [error, setError]         = useState<string | null>(null);
   const [loading, setLoading]     = useState(false);
@@ -31,17 +33,17 @@ export default function ForgotPasswordPage() {
       <main className="auth-page">
         <Link href="/" className="auth-logo">Motixi</Link>
         <div className="auth-card">
-          <h1 className="auth-title">Token ready</h1>
+          <h1 className="auth-title">{t.forgotPassword.tokenReady}</h1>
           <p className="auth-sub">
-            In production this would be emailed. Copy and use the token below.
+            {t.forgotPassword.tokenReadySub}
           </p>
           <div className="auth-token-box">{resetToken}</div>
-          <p className="auth-token-note">Tap to select all · valid for 15 minutes</p>
+          <p className="auth-token-note">{t.forgotPassword.tokenNote}</p>
           <button
             className="auth-btn-primary"
             onClick={() => router.push(`/auth/reset-password?token=${encodeURIComponent(resetToken)}`)}
           >
-            Continue to reset password
+            {t.forgotPassword.continueToReset}
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -56,16 +58,16 @@ export default function ForgotPasswordPage() {
       <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="auth-card">
-        <h1 className="auth-title">Forgot password?</h1>
+        <h1 className="auth-title">{t.forgotPassword.title}</h1>
         <p className="auth-sub">
-          Enter your email and we&apos;ll send a reset token.{' '}
-          <Link href="/auth/login">Back to sign in</Link>
+          {t.forgotPassword.sub}{' '}
+          <Link href="/auth/login">{t.forgotPassword.backToSignIn}</Link>
         </p>
 
         <form onSubmit={onSubmit}>
           <div className="auth-fields">
             <div className="auth-field">
-              <label className="auth-label">Email</label>
+              <label className="auth-label">{t.forgotPassword.emailLabel}</label>
               <input name="email" type="email" required placeholder="you@example.com" className="auth-input" />
             </div>
           </div>
@@ -82,8 +84,8 @@ export default function ForgotPasswordPage() {
 
           <button type="submit" disabled={loading} className="auth-btn-primary">
             {loading ? (
-              <><span className="gen-spinner" /> Sending…</>
-            ) : 'Send reset token'}
+              <><span className="gen-spinner" /> {t.forgotPassword.sending}</>
+            ) : t.forgotPassword.sendResetToken}
           </button>
         </form>
       </div>

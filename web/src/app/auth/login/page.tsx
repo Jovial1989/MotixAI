@@ -4,11 +4,13 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { webApi } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 export default function LoginPage() {
   const [error, setError]   = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const t = useT();
 
   const pendingQuery = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('q')
@@ -36,7 +38,7 @@ export default function LoginPage() {
       const base = result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding';
       router.push(pendingQuery ? `${base}?q=${encodeURIComponent(pendingQuery)}` : base);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t.auth.loginFailed);
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ export default function LoginPage() {
       localStorage.setItem('motix_onboarding_done', 'true');
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to continue as guest');
+      setError(err instanceof Error ? err.message : t.auth.guestFailed);
     } finally {
       setLoading(false);
     }
@@ -65,30 +67,30 @@ export default function LoginPage() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Back
+          {t.common.back}
         </Link>
         <Link href="/" className="auth-logo">Motixi</Link>
         <div style={{ width: 60 }} />
       </div>
 
       <div className="auth-card">
-        <h1 className="auth-title">Welcome back</h1>
+        <h1 className="auth-title">{t.auth.welcomeBack}</h1>
         <p className="auth-sub">
-          No account?{' '}
-          <Link href="/auth/signup">Create one free</Link>
+          {t.auth.noAccount}{' '}
+          <Link href="/auth/signup">{t.auth.createOneFree}</Link>
         </p>
 
         <form onSubmit={onSubmit}>
           <div className="auth-fields">
             <div className="auth-field">
-              <label className="auth-label">Email</label>
+              <label className="auth-label">{t.common.email}</label>
               <input name="email" type="email" required placeholder="you@example.com" className="auth-input" />
             </div>
             <div className="auth-field">
-              <label className="auth-label">Password</label>
+              <label className="auth-label">{t.common.password}</label>
               <input name="password" type="password" required placeholder="••••••••" className="auth-input" />
               <div className="auth-field-footer">
-                <Link href="/auth/forgot-password" className="auth-link">Forgot password?</Link>
+                <Link href="/auth/forgot-password" className="auth-link">{t.auth.forgotPassword}</Link>
               </div>
             </div>
           </div>
@@ -105,17 +107,17 @@ export default function LoginPage() {
 
           <button type="submit" disabled={loading} className="auth-btn-primary">
             {loading ? (
-              <><span className="gen-spinner" /> Signing in…</>
-            ) : 'Sign in'}
+              <><span className="gen-spinner" /> {t.auth.signingIn}</>
+            ) : t.common.signIn}
           </button>
         </form>
 
         <div className="auth-divider">
-          <hr /><span>or</span><hr />
+          <hr /><span>{t.common.or}</span><hr />
         </div>
 
         <button type="button" onClick={onGuest} disabled={loading} className="auth-btn-ghost">
-          Continue as guest
+          {t.auth.continueAsGuest}
         </button>
       </div>
     </main>

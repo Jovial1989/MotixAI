@@ -1,5 +1,7 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
+
 export type DashView =
   | 'guides'
   | 'new-guide'
@@ -61,6 +63,7 @@ export default function Sidebar({
   guidesUsed, guidesLimit,
   mobileOpen, onMobileClose, planType = 'free',
 }: Props) {
+  const t = useT();
 
   function nav(v: DashView) {
     onView(v);
@@ -70,12 +73,12 @@ export default function Sidebar({
   const isPremium = planType === 'premium' || isEnterprise;
   const isTrial = planType === 'trial';
   const planLabel = isEnterprise
-    ? 'Enterprise'
+    ? t.sidebar.enterprise
     : isPremium
-    ? 'Pro ✓'
+    ? t.sidebar.pro
     : isTrial
-    ? `Trial · ${guidesUsed}/${guidesLimit}`
-    : (guidesUsed >= guidesLimit ? 'Free · limit reached' : `Free · ${guidesUsed}/${guidesLimit}`);
+    ? `${t.sidebar.trial} · ${guidesUsed}/${guidesLimit}`
+    : (guidesUsed >= guidesLimit ? `${t.sidebar.free} · ${t.sidebar.limitReached}` : `${t.sidebar.free} · ${guidesUsed}/${guidesLimit}`);
   const planPercent = isPremium ? 100 : Math.min(100, Math.round(guidesUsed / guidesLimit * 100));
 
   return (
@@ -95,14 +98,14 @@ export default function Sidebar({
           <nav className="sb-nav">
             <NavItem
               icon={<IconGuides />}
-              label="Sample Guides"
+              label={t.sidebar.sampleGuides}
               active={view === 'guides'}
               count={guideCount}
               onClick={() => nav('guides')}
             />
             <div style={{ flex: 1 }} />
             <a href="/auth/signup" className="sb-new-btn" style={{ textDecoration: 'none', textAlign: 'center' }}>
-              Create free account
+              {t.sidebar.createFreeAccount}
             </a>
           </nav>
         ) : (
@@ -110,14 +113,14 @@ export default function Sidebar({
           <nav className="sb-nav">
             <NavItem
               icon={<IconGuides />}
-              label="Guides"
+              label={t.common.guides}
               active={view === 'guides'}
               count={guideCount}
               onClick={() => nav('guides')}
             />
             <NavItem
               icon={<IconGarage />}
-              label="Vehicles"
+              label={t.common.vehicles}
               active={view === 'garage'}
               onClick={() => nav('garage')}
             />
@@ -125,39 +128,39 @@ export default function Sidebar({
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              New Guide
+              {t.sidebar.newGuide}
             </button>
 
             {isEnterprise && (
               <>
-                <SectionLabel>WORKSHOP</SectionLabel>
+                <SectionLabel>{t.sidebar.workshop}</SectionLabel>
                 <NavItem
                   icon={<IconJobs />}
-                  label="Jobs"
+                  label={t.sidebar.jobs}
                   active={view === 'jobs'}
                   count={jobCount}
                   onClick={() => nav('jobs')}
                 />
                 <NavItem
                   icon={<IconRequests />}
-                  label="Requests"
+                  label={t.sidebar.requests}
                   active={view === 'requests'}
                   count={requestCount}
                   onClick={() => nav('requests')}
                 />
                 <NavItem
                   icon={<IconAnalytics />}
-                  label="Analytics"
+                  label={t.sidebar.analytics}
                   active={view === 'analytics'}
                   onClick={() => nav('analytics')}
                 />
               </>
             )}
 
-            <SectionLabel>ACCOUNT</SectionLabel>
+            <SectionLabel>{t.sidebar.account}</SectionLabel>
             <NavItem
               icon={<IconSettings />}
-              label="Settings"
+              label={t.sidebar.settings}
               active={view === 'settings'}
               onClick={() => nav('settings')}
             />
@@ -186,8 +189,8 @@ export default function Sidebar({
                   </div>
                   {guidesUsed >= guidesLimit && (
                     <p className="sb-upgrade-hint">
-                      Limit reached —{' '}
-                      <button className="sb-upgrade-link" onClick={() => nav('settings')}>upgrade</button>
+                      {t.sidebar.limitReached} —{' '}
+                      <button className="sb-upgrade-link" onClick={() => nav('settings')}>{t.sidebar.upgrade}</button>
                     </p>
                   )}
                 </div>
@@ -206,7 +209,7 @@ export default function Sidebar({
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            {isGuest ? 'Exit demo' : 'Log out'}
+            {isGuest ? t.sidebar.exitDemo : t.sidebar.logOut}
           </button>
         </div>
       </aside>

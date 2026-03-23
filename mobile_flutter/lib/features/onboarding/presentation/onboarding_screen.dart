@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../shared/api/providers.dart';
-import '../../../shared/storage/token_store.dart';
 import '../../auth/auth_provider.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -23,20 +23,20 @@ class _Feature {
   const _Feature(this.icon, this.title, this.desc);
 }
 
-const _infoSteps = [
+List<_InfoStep> _buildInfoSteps(S l) => [
   _InfoStep(
     '🔧',
-    'Welcome to Motixi',
-    'AI-powered repair guides that know your vehicle, your parts, and your job — all in one place.',
+    l.onboardingWelcome,
+    l.onboardingWelcomeSub,
   ),
   _InfoStep(
     '⚡',
-    'Everything you need to fix it right',
-    'From oil changes to timing belts — precise, step-by-step guides with AI illustrations.',
+    l.onboardingFeatures,
+    l.onboardingFeaturesSub,
     [
-      _Feature('📋', 'Step-by-step guides', 'Auto-generated from OEM data and trusted sources'),
-      _Feature('🖼️', 'AI illustrations', 'Visual reference for every repair step'),
-      _Feature('💬', 'Ask the guide', 'Get instant answers to repair questions'),
+      _Feature('📋', l.featStepByStep, l.featStepByStepDesc),
+      _Feature('🖼️', l.featAiIllustrations, l.featAiIllustrationsDesc),
+      _Feature('💬', l.featAskGuide, l.featAskGuideDesc),
     ],
   ),
 ];
@@ -50,14 +50,12 @@ class _Plan {
   const _Plan(this.id, this.emoji, this.name, this.desc, {this.recommended = false});
 }
 
-const _plans = [
-  _Plan('trial', '🚀', '7-day free trial',
-      'Full access — AI illustrations, OEM-backed guides, unlimited repairs. No card required.',
+List<_Plan> _buildPlans(S l) => [
+  _Plan('trial', '🚀', l.planTrial,
+      l.planTrialDesc,
       recommended: true),
-  _Plan('premium', '⭐', 'Premium',
-      'Full access immediately. Best for shops and serious techs.'),
-  _Plan('free', '🔓', 'Free (limited)',
-      'Basic guide generation. No AI illustrations, limited history.'),
+  _Plan('free', '🔓', l.planFree,
+      l.planFreeDesc),
 ];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -101,17 +99,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  String get _ctaLabel {
+  String _ctaLabel(S l) {
     if (_isLastStep) {
-      if (_selectedPlan == 'trial') return 'Start my free trial';
-      if (_selectedPlan == 'premium') return 'Get Premium access';
-      return 'Continue free';
+      if (_selectedPlan == 'trial') return l.startFreeTrial;
+      return l.continueFree;
     }
-    return 'Continue';
+    return l.continueBtn;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    final infoSteps = _buildInfoSteps(l);
+    final plans = _buildPlans(l);
+
     return Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
@@ -153,7 +154,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  child: _step < 2 ? _InfoStepWidget(step: _infoSteps[_step]) : _PlanStepWidget(
+                  child: _step < 2 ? _InfoStepWidget(step: infoSteps[_step]) : _PlanStepWidget(
+                    plans: plans,
                     selectedPlan: _selectedPlan,
                     onSelect: (p) => setState(() => _selectedPlan = p),
                     error: _error,
@@ -175,15 +177,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   child: _loading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text(_ctaLabel),
+                      : Text(_ctaLabel(l)),
                 ),
               ),
               if (!_isLastStep && _step > 0) ...[
                 const SizedBox(height: s8),
                 TextButton(
                   onPressed: () => setState(() => _step = 2),
-                  child: const Text('Skip to plan selection',
-                    style: TextStyle(fontSize: 13, color: kTextMuted)),
+                  child: Text(l.skipToPlan,
+                    style: const TextStyle(fontSize: 13, color: kTextMuted)),
                 ),
               ],
               const SizedBox(height: s24),
@@ -252,23 +254,25 @@ class _FeatureTile extends StatelessWidget {
 // ── Plan selection widget ─────────────────────────────────────────────────────
 
 class _PlanStepWidget extends StatelessWidget {
+  final List<_Plan> plans;
   final String selectedPlan;
   final ValueChanged<String> onSelect;
   final String? error;
-  const _PlanStepWidget({required this.selectedPlan, required this.onSelect, this.error});
+  const _PlanStepWidget({required this.plans, required this.selectedPlan, required this.onSelect, this.error});
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Choose your plan', style: TextStyle(
+        Text(l.choosePlan, style: const TextStyle(
           fontSize: 26, fontWeight: FontWeight.w800, color: kText, letterSpacing: -0.5, height: 1.2)),
         const SizedBox(height: s12),
-        const Text('Start with a free trial — no credit card required. Upgrade any time.',
-          style: TextStyle(fontSize: 15, color: kTextSub, height: 1.6)),
+        Text(l.choosePlanSub,
+          style: const TextStyle(fontSize: 15, color: kTextSub, height: 1.6)),
         const SizedBox(height: s24),
-        ..._plans.map((p) => _PlanCard(
+        ...plans.map((p) => _PlanCard(
           plan: p,
           selected: selectedPlan == p.id,
           onTap: () => onSelect(p.id),
@@ -341,8 +345,8 @@ class _PlanCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(color: kPrimary, borderRadius: kRadiusFull),
-                  child: const Text('Recommended',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.5)),
+                  child: Text(S.of(context)!.planTrialBadge,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.5)),
                 ),
               ),
           ],

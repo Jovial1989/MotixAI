@@ -215,6 +215,15 @@ export interface ForgotPasswordResponse {
   message: string;
 }
 
+export interface CheckoutSessionResponse {
+  sessionId: string;
+  url: string | null;
+}
+
+export interface PortalSessionResponse {
+  url: string;
+}
+
 export interface ResetPasswordInput {
   resetToken: string;
   newPassword: string;

@@ -1,55 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 import MainNav from '../_main-nav';
 import Footer from '../_footer';
-
-const forCards = [
-  {
-    icon: '🔧',
-    label: 'Independent technicians',
-    desc: 'Find the right procedure in seconds — no PDF hunting, no forum guessing, no mis-matched specs.',
-  },
-  {
-    icon: '🏭',
-    label: 'Fleet workshops',
-    desc: 'Standardize repair procedures across your team with consistent, AI-generated step sequences.',
-  },
-  {
-    icon: '🚛',
-    label: 'Heavy equipment operators',
-    desc: 'Guides for excavators, cranes, and specialist machinery — not just passenger cars.',
-  },
-  {
-    icon: '📋',
-    label: 'Service managers',
-    desc: 'Cut diagnostic time and reduce training overhead with on-demand reference guides.',
-  },
-];
-
-const guideOutputs = [
-  'Ordered step sequence', 'Torque specifications', 'Required tools list',
-  'OEM part references', 'Safety warnings', 'Engineering diagrams',
-  'Difficulty rating', 'Time estimate',
-];
-
-const differentiators = [
-  {
-    vs: 'vs PDF manuals',
-    title: 'Searchable. Instant. Structured.',
-    desc: 'No downloading. No scrolling through 400 pages. Natural language in, structured procedure out.',
-  },
-  {
-    vs: 'vs forum threads',
-    title: 'Authoritative, not anecdotal',
-    desc: 'Engineered from AI knowledge — not forum opinions that may not match your exact vehicle trim.',
-  },
-  {
-    vs: 'vs generic AI chat',
-    title: 'Domain-aware output',
-    desc: 'Motixi is built for automotive repair. It understands torque specs, OEM references, and tool requirements.',
-  },
-];
+import { useT } from '@/lib/i18n';
 
 export default function ProductPage() {
+  const t = useT();
+
+  const forCards = t.productPage.forCards;
+  const guideOutputs = t.productPage.guideOutputs;
+  const differentiators = t.productPage.differentiators;
+
   return (
     <div className="page">
       <MainNav />
@@ -57,15 +19,14 @@ export default function ProductPage() {
       {/* ─── HERO ────────────────────────────────────────── */}
       <section className="inner-hero">
         <div className="inner-hero-content">
-          <p className="eyebrow-tag">Product</p>
-          <h1 className="inner-hero-h1">AI repair guides.<br />Instant. Structured. Accurate.</h1>
+          <p className="eyebrow-tag">{t.productPage.eyebrow}</p>
+          <h1 className="inner-hero-h1">{t.productPage.title.split('\n')[0]}<br />{t.productPage.title.split('\n')[1]}</h1>
           <p className="inner-hero-sub">
-            Type a vehicle model and repair description. Get a complete step-by-step procedure
-            — with torque specs, tools, safety warnings, and engineering diagrams — in under 3 seconds.
+            {t.productPage.sub}
           </p>
           <div className="cta-band-actions" style={{ marginTop: '2rem' }}>
-            <Link href="/auth/signup" className="cta-primary">Start trial</Link>
-            <Link href="/contact" className="cta-band-ghost">Talk to founder →</Link>
+            <Link href="/auth/signup" className="cta-primary">{t.productPage.startTrial}</Link>
+            <Link href="/contact" className="cta-band-ghost">{t.productPage.talkToFounder}</Link>
           </div>
         </div>
       </section>
@@ -73,10 +34,10 @@ export default function ProductPage() {
       {/* ─── APP DEMO ─────────────────────────────────────── */}
       <section className="app-demo-section">
         <div className="app-demo-header">
-          <p className="app-demo-eyebrow">Product walkthrough</p>
-          <h2 className="app-demo-h2">Search to guide in three steps</h2>
+          <p className="app-demo-eyebrow">{t.productPage.walkthroughEyebrow}</p>
+          <h2 className="app-demo-h2">{t.productPage.walkthroughTitle}</h2>
           <p className="app-demo-sub">
-            Available on web and mobile — same AI, same accuracy, any device.
+            {t.productPage.walkthroughSub}
           </p>
         </div>
 
@@ -118,9 +79,9 @@ export default function ProductPage() {
               </div>
             </div>
             <div className="app-screen-cap">
-              <p className="app-screen-num">Step 01</p>
-              <p className="app-screen-title">Type your query</p>
-              <p className="app-screen-desc">Natural language or structured — VIN, model name, part number. No special syntax.</p>
+              <p className="app-screen-num">{t.productPage.step01}</p>
+              <p className="app-screen-title">{t.productPage.step01title}</p>
+              <p className="app-screen-desc">{t.productPage.step01desc}</p>
             </div>
           </div>
 
@@ -167,9 +128,9 @@ export default function ProductPage() {
               </div>
             </div>
             <div className="app-screen-cap">
-              <p className="app-screen-num">Step 02</p>
-              <p className="app-screen-title">Instant match or generate</p>
-              <p className="app-screen-desc">Motixi searches the knowledge base first. Matches are instant — new guides in under 3s.</p>
+              <p className="app-screen-num">{t.productPage.step02}</p>
+              <p className="app-screen-title">{t.productPage.step02title}</p>
+              <p className="app-screen-desc">{t.productPage.step02desc}</p>
             </div>
           </div>
 
@@ -221,9 +182,9 @@ export default function ProductPage() {
               </div>
             </div>
             <div className="app-screen-cap">
-              <p className="app-screen-num">Step 03</p>
-              <p className="app-screen-title">Follow step-by-step</p>
-              <p className="app-screen-desc">Ordered steps, torque specs, tools, warnings. Diagrams render inline as you work.</p>
+              <p className="app-screen-num">{t.productPage.step03}</p>
+              <p className="app-screen-title">{t.productPage.step03title}</p>
+              <p className="app-screen-desc">{t.productPage.step03desc}</p>
             </div>
           </div>
 
@@ -234,9 +195,9 @@ export default function ProductPage() {
       <section className="pg-section pg-section--alt">
         <div className="pg-wrap">
           <div className="pg-header">
-            <p className="eyebrow-tag">Who it&apos;s for</p>
-            <h2 className="section-h2">Built for people who fix things</h2>
-            <p className="section-sub">From solo technicians to enterprise fleet workshops.</p>
+            <p className="eyebrow-tag">{t.productPage.whoEyebrow}</p>
+            <h2 className="section-h2">{t.productPage.whoTitle}</h2>
+            <p className="section-sub">{t.productPage.whoSub}</p>
           </div>
           <div className="for-grid-v2">
             {forCards.map((c) => (
@@ -254,9 +215,9 @@ export default function ProductPage() {
       <section className="pg-section">
         <div className="pg-wrap">
           <div className="pg-header">
-            <p className="eyebrow-tag">Guide output</p>
-            <h2 className="section-h2">Everything a technician needs, structured</h2>
-            <p className="section-sub">Every generated guide includes these elements — not stripped-down summaries.</p>
+            <p className="eyebrow-tag">{t.productPage.guideOutputEyebrow}</p>
+            <h2 className="section-h2">{t.productPage.guideOutputTitle}</h2>
+            <p className="section-sub">{t.productPage.guideOutputSub}</p>
           </div>
           <div className="guide-outputs">
             {guideOutputs.map((item) => (
@@ -273,8 +234,8 @@ export default function ProductPage() {
       <section className="pg-section pg-section--alt">
         <div className="pg-wrap">
           <div className="pg-header">
-            <p className="eyebrow-tag">Why Motixi</p>
-            <h2 className="section-h2">Not a chatbot. Not a manual.<br />Something better.</h2>
+            <p className="eyebrow-tag">{t.productPage.whyEyebrow}</p>
+            <h2 className="section-h2">{t.productPage.whyTitle.split('\n')[0]}<br />{t.productPage.whyTitle.split('\n')[1]}</h2>
           </div>
           <div className="diff-grid">
             {differentiators.map((d) => (
@@ -291,12 +252,12 @@ export default function ProductPage() {
       {/* ─── CTA ─────────────────────────────────────────── */}
       <section className="cta-band">
         <div className="cta-band-orb" aria-hidden />
-        <p className="cta-band-eyebrow">Get started today</p>
-        <h2 className="cta-band-h2">Generate your first repair guide free.</h2>
-        <p className="cta-band-sub">No credit card. No setup. Just results.</p>
+        <p className="cta-band-eyebrow">{t.productPage.ctaEyebrow}</p>
+        <h2 className="cta-band-h2">{t.productPage.ctaTitle}</h2>
+        <p className="cta-band-sub">{t.productPage.ctaSub}</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">Start trial</Link>
-          <Link href="/auth/login" className="cta-band-ghost">Already have an account →</Link>
+          <Link href="/auth/signup" className="cta-primary">{t.productPage.startTrial}</Link>
+          <Link href="/auth/login" className="cta-band-ghost">{t.productPage.alreadyHaveAccount}</Link>
         </div>
       </section>
 

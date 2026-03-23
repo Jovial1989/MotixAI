@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
@@ -166,6 +167,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -192,11 +194,11 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.all(20),
                 children: [
-                  if (_step == 0) ..._buildStep0(),
-                  if (_step == 1) ..._buildStep1(),
-                  if (_step == 2) ..._buildStep2(),
+                  if (_step == 0) ..._buildStep0(l),
+                  if (_step == 1) ..._buildStep1(l),
+                  if (_step == 2) ..._buildStep2(l),
                   const SizedBox(height: 24),
-                  _buildNavButtons(),
+                  _buildNavButtons(l),
                 ],
               ),
             ),
@@ -208,16 +210,16 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
 
   // ── Step 0: Vehicle ───────────────────────────────────────────────────────
 
-  List<Widget> _buildStep0() => [
-    _Label('Make', required: true),
+  List<Widget> _buildStep0(S l) => [
+    _Label(l.make, required: true),
     const SizedBox(height: 6),
     _PickerField(
-      hint: 'Select make…',
+      hint: '${l.selectMake}…',
       value: _selMake,
       onTap: () async {
         final picked = await _showMxPicker<String>(
           context: context,
-          title: 'Select Make',
+          title: l.selectMake,
           items: _kPopularMakes,
           label: (m) => m,
           selected: _selMake,
@@ -227,7 +229,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
     ),
     const SizedBox(height: 14),
 
-    _Label('Model', required: true),
+    _Label(l.model, required: true),
     const SizedBox(height: 6),
     if (_loadingModels)
       Container(
@@ -244,12 +246,12 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
       )
     else if (_models.isNotEmpty)
       _PickerField(
-        hint: 'Select model…',
+        hint: '${l.selectModel}…',
         value: _selModel,
         onTap: () async {
           final picked = await _showMxPicker<String>(
             context: context,
-            title: 'Select Model',
+            title: l.selectModel,
             items: _models,
             label: (m) => m,
             selected: _selModel,
@@ -262,26 +264,26 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         controller: _modelCtrl,
         onChanged: (v) => setState(() => _selModel = v.trim().isEmpty ? null : v.trim()),
         enabled: _selMake != null,
-        decoration: _inputDec(_selMake == null ? 'Select make first' : 'e.g. Qashqai, F-150…'),
+        decoration: _inputDec(_selMake == null ? l.selectMakeFirst : 'e.g. Qashqai, F-150…'),
       ),
     const SizedBox(height: 14),
 
-    _Label('Year', required: false),
+    _Label(l.year, required: false),
     const SizedBox(height: 6),
     _PickerField(
-      hint: 'Any year (optional)',
+      hint: '${l.anyYear} (${l.optional})',
       value: _selYear,
       onTap: () async {
-        final years = ['Any year', ..._kYears.map((y) => '$y')];
+        final years = [l.anyYear, ..._kYears.map((y) => '$y')];
         final picked = await _showMxPicker<String>(
           context: context,
-          title: 'Select Year',
+          title: l.year,
           items: years,
           label: (y) => y,
-          selected: _selYear ?? 'Any year',
+          selected: _selYear ?? l.anyYear,
         );
         if (picked != null) {
-          setState(() => _selYear = picked == 'Any year' ? null : picked);
+          setState(() => _selYear = picked == l.anyYear ? null : picked);
         }
       },
     ),
@@ -289,7 +291,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
 
   // ── Step 1: Repair ────────────────────────────────────────────────────────
 
-  List<Widget> _buildStep1() => [
+  List<Widget> _buildStep1(S l) => [
     // vehicle pill
     Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -304,12 +306,12 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         Expanded(child: Text(_vehicleModel, style: const TextStyle(fontSize: 13, color: kTextMuted, fontWeight: FontWeight.w600))),
         GestureDetector(
           onTap: () => setState(() => _step = 0),
-          child: const Text('Edit', style: TextStyle(color: kPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
+          child: Text(l.back, style: const TextStyle(color: kPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
         ),
       ]),
     ),
     const SizedBox(height: 16),
-    _Label('Part / repair description', required: true),
+    _Label(l.partRepairDesc, required: true),
     const SizedBox(height: 6),
     TextField(
       controller: _partCtrl,
@@ -319,7 +321,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
     ),
     if (_disambig != null && _disambig!.isNotEmpty) ...[
       const SizedBox(height: 12),
-      const Text('Did you mean:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextMuted, letterSpacing: 0.5)),
+      Text('${l.didYouMean}:', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextMuted, letterSpacing: 0.5)),
       const SizedBox(height: 8),
       Wrap(
         spacing: 6,
@@ -332,14 +334,14 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
       ),
     ],
     const SizedBox(height: 16),
-    _Label('OEM / part number', required: false),
+    _Label(l.oemPartNumber, required: false),
     const SizedBox(height: 6),
     TextField(controller: _oemCtrl, decoration: _inputDec('e.g. 4633891')),
   ];
 
   // ── Step 2: Confirm ───────────────────────────────────────────────────────
 
-  List<Widget> _buildStep2() => [
+  List<Widget> _buildStep2(S l) => [
     Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -348,12 +350,12 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         border: Border.all(color: kBorder),
       ),
       child: Column(children: [
-        _ConfirmRow(label: 'Vehicle', value: _vehicleModel),
+        _ConfirmRow(label: l.vehicle, value: _vehicleModel),
         const Divider(height: 20),
-        _ConfirmRow(label: 'Repair', value: _partCtrl.text.trim()),
+        _ConfirmRow(label: l.repair, value: _partCtrl.text.trim()),
         if (_oemCtrl.text.isNotEmpty) ...[
           const Divider(height: 20),
-          _ConfirmRow(label: 'Part No.', value: _oemCtrl.text.trim(), mono: true),
+          _ConfirmRow(label: l.partNo, value: _oemCtrl.text.trim(), mono: true),
         ],
       ]),
     ),
@@ -365,12 +367,12 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: kPrimary.withOpacity(0.2)),
       ),
-      child: const Row(children: [
-        Icon(Icons.auto_awesome, size: 16, color: kPrimary),
-        SizedBox(width: 8),
+      child: Row(children: [
+        const Icon(Icons.auto_awesome, size: 16, color: kPrimary),
+        const SizedBox(width: 8),
         Expanded(child: Text(
-          'AI will generate a step-by-step repair guide with images for each step.',
-          style: TextStyle(fontSize: 13, color: kPrimary, fontWeight: FontWeight.w500),
+          l.confirmGenDesc,
+          style: const TextStyle(fontSize: 13, color: kPrimary, fontWeight: FontWeight.w500),
         )),
       ]),
     ),
@@ -378,47 +380,47 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
 
   // ── Nav buttons ───────────────────────────────────────────────────────────
 
-  Widget _buildNavButtons() {
+  Widget _buildNavButtons(S l) {
     if (_step == 0) {
       return SizedBox(
         width: double.infinity,
         child: FilledButton(
           onPressed: _step0Valid ? () => setState(() => _step = 1) : null,
           style: _btnStyle(),
-          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('Continue', style: TextStyle(fontWeight: FontWeight.w700)),
-            SizedBox(width: 6),
-            Icon(Icons.arrow_forward, size: 16),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(l.continueBtn, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward, size: 16),
           ]),
         ),
       );
     }
     if (_step == 1) {
       return Row(children: [
-        _BackBtn(onTap: () => setState(() => _step = 0)),
+        _BackBtn(label: l.back, onTap: () => setState(() => _step = 0)),
         const SizedBox(width: 10),
         Expanded(child: FilledButton(
           onPressed: _step1Valid ? () => setState(() => _step = 2) : null,
           style: _btnStyle(),
-          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('Review', style: TextStyle(fontWeight: FontWeight.w700)),
-            SizedBox(width: 6),
-            Icon(Icons.arrow_forward, size: 16),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(l.review, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward, size: 16),
           ]),
         )),
       ]);
     }
     // step 2
     return Row(children: [
-      _BackBtn(onTap: () => setState(() => _step = 1)),
+      _BackBtn(label: l.back, onTap: () => setState(() => _step = 1)),
       const SizedBox(width: 10),
       Expanded(child: FilledButton(
         onPressed: _submit,
         style: _btnStyle(),
-        child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.auto_awesome, size: 16),
-          SizedBox(width: 6),
-          Text('Generate Guide', style: TextStyle(fontWeight: FontWeight.w700)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.auto_awesome, size: 16),
+          const SizedBox(width: 6),
+          Text(l.generateGuide, style: const TextStyle(fontWeight: FontWeight.w700)),
         ]),
       )),
     ]);
@@ -512,6 +514,7 @@ class _MxPickerSheetState<T> extends State<_MxPickerSheet<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final mq = MediaQuery.of(context);
     return Container(
       height: mq.size.height * 0.72,
@@ -556,7 +559,7 @@ class _MxPickerSheetState<T> extends State<_MxPickerSheet<T>> {
               focusNode: _searchFocus,
               autofocus: false,
               decoration: InputDecoration(
-                hintText: 'Search…',
+                hintText: '${l.search}…',
                 hintStyle: const TextStyle(color: kTextMuted, fontSize: 14),
                 prefixIcon: const Icon(Icons.search, size: 18, color: kTextMuted),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -746,8 +749,9 @@ class _ConfirmRow extends StatelessWidget {
 }
 
 class _BackBtn extends StatelessWidget {
+  final String label;
   final VoidCallback onTap;
-  const _BackBtn({required this.onTap});
+  const _BackBtn({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) => OutlinedButton(
@@ -758,10 +762,10 @@ class _BackBtn extends StatelessWidget {
       foregroundColor: kTextMuted,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
     ),
-    child: const Row(children: [
-      Icon(Icons.arrow_back, size: 16),
-      SizedBox(width: 4),
-      Text('Back', style: TextStyle(fontWeight: FontWeight.w600)),
+    child: Row(children: [
+      const Icon(Icons.arrow_back, size: 16),
+      const SizedBox(width: 4),
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
     ]),
   );
 }

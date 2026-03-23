@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import VehicleSelector from '../_vehicle-selector';
+import { useT } from '@/lib/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ function SourceGuideForm({
   submitting: boolean;
   error: string | null;
 }) {
+  const t = useT();
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
@@ -84,8 +86,14 @@ function SourceGuideForm({
   const [suppressError, setSuppressError] = useState(true);
   const prevErrorRef = useRef(error);
 
+  const localizedTasks: Record<string, string> = {
+    oil_change: t.guideForm.taskOilChange,
+    brake_pad_replacement: t.guideForm.taskBrakePad,
+    brake_fluid_flush: t.guideForm.taskBrakeFluid,
+  };
+
   const catalog = make ? SOURCE_CATALOG[make] : null;
-  const selectedTask = catalog?.tasks.find((t) => t.value === taskType);
+  const selectedTask = catalog?.tasks.find((task) => task.value === taskType);
   const selectedModelEntry = catalog?.models.find((m) => m.name === model) ?? null;
   const supportedYears = selectedModelEntry
     ? Array.from(
@@ -126,19 +134,19 @@ function SourceGuideForm({
           </svg>
         </div>
         <div>
-          <span className="gen-form-title">Source-backed guide</span>
-          <span className="sgf-src-badge">Nissan &amp; Toyota</span>
+          <span className="gen-form-title">{t.guideForm.sourceTitle}</span>
+          <span className="sgf-src-badge">{t.guideForm.sourceBadge}</span>
         </div>
       </div>
 
       <p className="sgf-src-desc">
-        Guides are synthesised from <strong>NICOclub</strong> and <strong>ToyoDIY</strong> verified service manual data.
+        {t.guideForm.sourceDesc}
       </p>
 
       <div className="gen-inputs gen-inputs--col">
         {/* Make */}
         <div className="gen-input-wrap">
-          <label className="gen-label">Make <span className="gen-label-required">*</span></label>
+          <label className="gen-label">{t.guideForm.make} <span className="gen-label-required">*</span></label>
           <div className="sgf-make-row">
             {Object.keys(SOURCE_CATALOG).map((m) => (
               <button
@@ -154,9 +162,9 @@ function SourceGuideForm({
         {/* Model */}
         {catalog && (
           <div className="gen-input-wrap">
-            <label className="gen-label">Model <span className="gen-label-required">*</span></label>
+            <label className="gen-label">{t.guideForm.model} <span className="gen-label-required">*</span></label>
             <select className="gen-input gen-input--select" value={model} onChange={(e) => setModel(e.target.value)}>
-              <option value="">Select model…</option>
+              <option value="">{t.guideForm.selectModel}</option>
               {catalog.models.map((m) => <option key={m.name} value={m.name}>{m.name}</option>)}
             </select>
           </div>
@@ -166,11 +174,11 @@ function SourceGuideForm({
         {model && selectedModelEntry && (
           <div className="gen-input-wrap">
             <label className="gen-label">
-              Year <span className="gen-label-required">*</span>
+              {t.guideForm.year} <span className="gen-label-required">*</span>
               <span className="gen-label-hint">{selectedModelEntry.yearRange[0]}–{selectedModelEntry.yearRange[1]}</span>
             </label>
             <select className="gen-input gen-input--select" value={year} onChange={(e) => setYear(e.target.value)}>
-              <option value="">Select year…</option>
+              <option value="">{t.guideForm.selectYear}</option>
               {supportedYears.map((y) => <option key={y} value={String(y)}>{y}</option>)}
             </select>
           </div>
@@ -179,10 +187,10 @@ function SourceGuideForm({
         {/* Task */}
         {year && catalog && (
           <div className="gen-input-wrap">
-            <label className="gen-label">Task <span className="gen-label-required">*</span></label>
+            <label className="gen-label">{t.guideForm.task} <span className="gen-label-required">*</span></label>
             <select className="gen-input gen-input--select" value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)}>
-              <option value="">Select task…</option>
-              {catalog.tasks.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              <option value="">{t.guideForm.selectTask}</option>
+              {catalog.tasks.map((task) => <option key={task.value} value={task.value}>{task.label}</option>)}
             </select>
           </div>
         )}
@@ -195,7 +203,7 @@ function SourceGuideForm({
             <rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
             <path d="M3 5.5h5M3 3.5h5M3 7.5h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
           </svg>
-          Source: {make === 'Nissan' ? 'NICOclub service manual' : 'ToyoDIY component reference'}
+          {t.guideForm.source} {make === 'Nissan' ? t.guideForm.sourceNissan : t.guideForm.sourceToyota}
         </div>
       )}
 
@@ -211,13 +219,13 @@ function SourceGuideForm({
 
       <button type="button" className="gen-btn" disabled={!isValid || submitting} onClick={handleSubmit}>
         {submitting ? (
-          <><span className="gen-spinner" /> Synthesising from source…</>
+          <><span className="gen-spinner" /> {t.guideForm.synthesisingFromSource}</>
         ) : (
           <>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M13 8H3M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Generate from source
+            {t.guideForm.generateFromSource}
           </>
         )}
       </button>
@@ -249,7 +257,10 @@ const DISAMBIGUATION: Record<string, string[]> = {
 function getDisambiguation(text: string): string[] | null {
   const lower = text.toLowerCase();
   for (const [key, options] of Object.entries(DISAMBIGUATION)) {
-    if (lower.includes(key)) return options;
+    // Use word boundary match to avoid false positives
+    // e.g. "replacing" should NOT match "ac"
+    const re = new RegExp(`\\b${key}\\b`, 'i');
+    if (re.test(lower)) return options;
   }
   return null;
 }
@@ -276,6 +287,7 @@ async function decodeVin(vin: string): Promise<NHTSAVinResult | null> {
 // ── SmartGuideForm ────────────────────────────────────────────────────────────
 
 export default function SmartGuideForm({ onSubmit, submitting, error, initialQuery }: Props) {
+  const t = useT();
   const [formMode, setFormMode] = useState<'standard' | 'source'>('standard');
 
   // ALL hooks must be declared at top level before any conditional return.
@@ -309,10 +321,10 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
       <div>
         <div className="sgf-mode-tabs sgf-mode-tabs--top">
           <button type="button" className="sgf-mode-tab" onClick={() => setFormMode('standard')}>
-            ← AI Generated
+            {`← ${t.guideForm.aiGenerated}`}
           </button>
           <button type="button" className="sgf-mode-tab sgf-mode-tab--active sgf-mode-tab--src">
-            Source-Backed
+            {t.guideForm.sourceBacked}
           </button>
         </div>
         <SourceGuideForm onSubmit={onSubmit} submitting={submitting} error={error} />
@@ -322,13 +334,13 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
 
   async function handleVinDecode() {
     const vin = vinInput.trim().toUpperCase();
-    if (vin.length < 11) { setVinError('Enter at least 11 characters'); return; }
+    if (vin.length < 11) { setVinError(t.guideForm.vinError11); return; }
     setVinError(''); setVinDecoding(true);
     try {
       const result = await decodeVin(vin);
-      if (!result) setVinError('Could not decode VIN — check the number and try again');
+      if (!result) setVinError(t.guideForm.couldNotDecodeVin);
       else setDecodedVin(result);
-    } catch { setVinError('Network error — check your connection'); }
+    } catch { setVinError(t.guideForm.networkError); }
     finally { setVinDecoding(false); }
   }
 
@@ -342,9 +354,9 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
     <div className="gen-form">
       {/* Top-level form mode switcher */}
       <div className="sgf-mode-tabs sgf-mode-tabs--top">
-        <button type="button" className="sgf-mode-tab sgf-mode-tab--active">AI Generated</button>
+        <button type="button" className="sgf-mode-tab sgf-mode-tab--active">{t.guideForm.aiGenerated}</button>
         <button type="button" className="sgf-mode-tab sgf-mode-tab--src" onClick={() => setFormMode('source')}>
-          Source-Backed
+          {t.guideForm.sourceBacked}
         </button>
       </div>
 
@@ -357,15 +369,15 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
             <circle cx="12.5" cy="15" r="1" fill="currentColor"/>
           </svg>
         </div>
-        <span className="gen-form-title">Step 1 of 3 — Choose your vehicle</span>
+        <span className="gen-form-title">{t.guideForm.step1title}</span>
         <span className="sgf-step-badge">1 / 3</span>
       </div>
 
       <div className="sgf-mode-tabs">
         <button type="button" className={`sgf-mode-tab${idMode === 'manual' ? ' sgf-mode-tab--active' : ''}`}
-          onClick={() => { setIdMode('manual'); setDecodedVin(null); setVinError(''); }}>Manual entry</button>
+          onClick={() => { setIdMode('manual'); setDecodedVin(null); setVinError(''); }}>{t.guideForm.manualEntry}</button>
         <button type="button" className={`sgf-mode-tab${idMode === 'vin' ? ' sgf-mode-tab--active' : ''}`}
-          onClick={() => { setIdMode('vin'); setDecodedVin(null); setVinError(''); }}>VIN decode</button>
+          onClick={() => { setIdMode('vin'); setDecodedVin(null); setVinError(''); }}>{t.guideForm.vinDecode}</button>
       </div>
 
       {idMode === 'manual' ? (
@@ -373,7 +385,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
           <VehicleSelector value={{ make: selMake, model: selModel, year: selYear }}
             onChange={(next) => { setSelMake(next.make); setSelModel(next.model); setSelYear(next.year); }} required />
           <div className="gen-input-wrap">
-            <label className="gen-label">VIN <span className="gen-label-or">optional</span></label>
+            <label className="gen-label">{t.guideForm.vinOptional} <span className="gen-label-or">optional</span></label>
             <input className="gen-input" value={vinInput} onChange={(e) => setVinInput(e.target.value.toUpperCase())}
               placeholder="e.g. 1HGBH41JXMN109186" maxLength={17} />
           </div>
@@ -381,14 +393,14 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
       ) : (
         <div className="gen-inputs gen-inputs--col">
           <div className="gen-input-wrap">
-            <label className="gen-label">VIN number <span className="gen-label-required">*</span></label>
+            <label className="gen-label">{t.guideForm.vinNumber} <span className="gen-label-required">*</span></label>
             <div className="sgf-vin-row">
               <input className="gen-input" value={vinInput}
                 onChange={(e) => { setVinInput(e.target.value.toUpperCase()); setDecodedVin(null); setVinError(''); }}
                 placeholder="e.g. 1HGBH41JXMN109186" maxLength={17} />
               <button type="button" className="sgf-decode-btn" onClick={handleVinDecode}
                 disabled={vinDecoding || vinInput.trim().length < 11}>
-                {vinDecoding ? <span className="gen-spinner" /> : 'Decode'}
+                {vinDecoding ? <span className="gen-spinner" /> : t.guideForm.decode}
               </button>
             </div>
             {vinError && <p className="sgf-field-error">{vinError}</p>}
@@ -412,7 +424,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
       )}
 
       <button type="button" className="gen-btn" disabled={!step1Valid} onClick={() => setStep(2)}>
-        Continue
+        {t.guideForm.continue}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
@@ -430,7 +442,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
             <path d="M14 4l-3 3M4 14l3-3M9 9l3-3-1-4-4 1-3 3 4 4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
           </svg>
         </div>
-        <span className="gen-form-title">Step 2 of 3 — What needs repair?</span>
+        <span className="gen-form-title">{t.guideForm.step2title}</span>
         <span className="sgf-step-badge">2 / 3</span>
       </div>
 
@@ -440,17 +452,17 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
           <rect x="1" y="7.5" width="10" height="3" rx="0.8" stroke="currentColor" strokeWidth="1.2"/>
         </svg>
         {vehicleModel}
-        <button type="button" className="sgf-back-inline" onClick={() => setStep(1)}>Edit</button>
+        <button type="button" className="sgf-back-inline" onClick={() => setStep(1)}>{t.guideForm.edit}</button>
       </div>
 
       <div className="gen-inputs gen-inputs--col">
         <div className="gen-input-wrap">
-          <label className="gen-label">Part / repair description <span className="gen-label-required">*</span></label>
+          <label className="gen-label">{t.guideForm.partRepairDesc} <span className="gen-label-required">*</span></label>
           <input className="gen-input" value={partName} onChange={(e) => setPartName(e.target.value)}
-            placeholder="e.g. Hydraulic pump, brakes, oil change…" autoFocus />
+            placeholder={t.guideForm.partPlaceholder} autoFocus />
           {disambigOptions && (
             <div className="sgf-disambig">
-              <p className="sgf-disambig-label">Did you mean:</p>
+              <p className="sgf-disambig-label">{t.guideForm.didYouMean}</p>
               <div className="sgf-chips">
                 {disambigOptions.map((opt) => (
                   <button key={opt} type="button" className={`sgf-chip${partName === opt ? ' sgf-chip--active' : ''}`}
@@ -461,15 +473,15 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
           )}
         </div>
         <div className="gen-input-wrap">
-          <label className="gen-label">OEM / part number <span className="gen-label-or">optional</span></label>
+          <label className="gen-label">{t.guideForm.oemPartNumber} <span className="gen-label-or">optional</span></label>
           <input className="gen-input" value={oemNumber} onChange={(e) => setOemNumber(e.target.value)} placeholder="e.g. 4633891" />
         </div>
       </div>
 
       <div className="sgf-btn-row">
-        <button type="button" className="sgf-back-btn" onClick={() => setStep(1)}>← Back</button>
+        <button type="button" className="sgf-back-btn" onClick={() => setStep(1)}>{`← ${t.guideForm.back}`}</button>
         <button type="button" className="gen-btn sgf-btn-grow" disabled={!step2Valid} onClick={() => setStep(3)}>
-          Review
+          {t.guideForm.review}
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -489,28 +501,28 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
             <rect x="2" y="2" width="14" height="14" rx="3" stroke="currentColor" strokeWidth="1.4"/>
           </svg>
         </div>
-        <span className="gen-form-title">Step 3 of 3 — Confirm &amp; generate</span>
+        <span className="gen-form-title">{t.guideForm.step3title}</span>
         <span className="sgf-step-badge">3 / 3</span>
       </div>
 
       <div className="sgf-confirm-card">
         <div className="sgf-confirm-row">
-          <span className="sgf-confirm-label">Vehicle</span>
+          <span className="sgf-confirm-label">{t.guideForm.vehicleLabel}</span>
           <span className="sgf-confirm-value">{vehicleModel}</span>
         </div>
         {vinForSubmit && (
           <div className="sgf-confirm-row">
-            <span className="sgf-confirm-label">VIN</span>
+            <span className="sgf-confirm-label">{t.guideForm.vinLabel}</span>
             <span className="sgf-confirm-value sgf-confirm-mono">{vinForSubmit}</span>
           </div>
         )}
         <div className="sgf-confirm-row">
-          <span className="sgf-confirm-label">Repair</span>
+          <span className="sgf-confirm-label">{t.guideForm.repairLabel}</span>
           <span className="sgf-confirm-value">{partName}</span>
         </div>
         {oemNumber && (
           <div className="sgf-confirm-row">
-            <span className="sgf-confirm-label">Part No.</span>
+            <span className="sgf-confirm-label">{t.guideForm.partNoLabel}</span>
             <span className="sgf-confirm-value sgf-confirm-mono">{oemNumber}</span>
           </div>
         )}
@@ -527,16 +539,16 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
       )}
 
       <div className="sgf-btn-row">
-        <button type="button" className="sgf-back-btn" onClick={() => setStep(2)}>← Back</button>
+        <button type="button" className="sgf-back-btn" onClick={() => setStep(2)}>{`← ${t.guideForm.back}`}</button>
         <button type="button" className="gen-btn sgf-btn-grow" disabled={submitting} onClick={handleSubmit}>
           {submitting ? (
-            <><span className="gen-spinner" /> Generating…</>
+            <><span className="gen-spinner" /> {t.guideForm.generatingGuide}</>
           ) : (
             <>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M13 8H3M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Generate Guide
+              {t.guideForm.generateGuide}
             </>
           )}
         </button>

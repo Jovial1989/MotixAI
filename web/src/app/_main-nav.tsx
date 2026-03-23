@@ -4,26 +4,24 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import NavAuth from './_nav-auth';
+import { useT } from '@/lib/i18n';
 
-const NAV_ITEMS = [
-  { label: 'How it works', anchor: 'how' },
-  { label: 'Features',     anchor: 'features' },
-  { label: 'Pricing',      anchor: 'pricing' },
-  { label: 'Product',      href: '/product' },
-  { label: 'About',        href: '/about' },
-  { label: 'Contacts',     href: '/contact' },
-] as const;
-
-type NavItem = typeof NAV_ITEMS[number];
-
-function isAnchor(item: NavItem): item is Extract<NavItem, { anchor: string }> {
-  return 'anchor' in item;
-}
+type NavItemDef = { label: string; anchor?: string; href?: string };
 
 export default function MainNav() {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useT();
+
+  const NAV_ITEMS: NavItemDef[] = [
+    { label: t.nav.howItWorks, anchor: 'how' },
+    { label: t.nav.features,  anchor: 'features' },
+    { label: t.nav.pricing,   anchor: 'pricing' },
+    { label: t.common.product, href: '/product' },
+    { label: t.common.about,   href: '/about' },
+    { label: t.common.contacts, href: '/contact' },
+  ];
 
   return (
     <>
@@ -33,7 +31,7 @@ export default function MainNav() {
 
           <div className="nav-center">
             {NAV_ITEMS.map((item) => {
-              if (isAnchor(item)) {
+              if (item.anchor) {
                 const href = isHome ? `#${item.anchor}` : `/#${item.anchor}`;
                 return (
                   <a key={item.label} href={href} className="nav-link">
@@ -45,7 +43,7 @@ export default function MainNav() {
               return (
                 <Link
                   key={item.label}
-                  href={item.href}
+                  href={item.href!}
                   className={`nav-link${active ? ' nav-link--active' : ''}`}
                 >
                   {item.label}
@@ -93,7 +91,7 @@ export default function MainNav() {
 
             <nav className="nav-mobile-links">
               {NAV_ITEMS.map((item) => {
-                if (isAnchor(item)) {
+                if (item.anchor) {
                   const href = isHome ? `#${item.anchor}` : `/#${item.anchor}`;
                   return (
                     <a
@@ -109,7 +107,7 @@ export default function MainNav() {
                 return (
                   <Link
                     key={item.label}
-                    href={item.href}
+                    href={item.href!}
                     className="nav-mobile-link"
                     onClick={() => setMobileOpen(false)}
                   >
@@ -125,14 +123,14 @@ export default function MainNav() {
                 className="nav-mobile-auth-cta"
                 onClick={() => setMobileOpen(false)}
               >
-                Start trial
+                {t.nav.startTrial}
               </Link>
               <Link
                 href="/auth/login"
                 className="nav-mobile-auth-ghost"
                 onClick={() => setMobileOpen(false)}
               >
-                Log in
+                {t.common.logIn}
               </Link>
             </div>
           </div>

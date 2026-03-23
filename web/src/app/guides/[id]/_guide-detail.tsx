@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, createRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 // Guard against AI-generated string "null"/"none" values for optional fields
 function isMeaningfulString(v: string | null | undefined): v is string {
@@ -15,6 +16,7 @@ function isMeaningfulString(v: string | null | undefined): v is string {
 
 /* ── Locked image block (guest) ──────────────────────────────────────── */
 function LockedImageBlock() {
+  const t = useT();
   return (
     <div className="locked-block">
       <div className="locked-block-icon">
@@ -23,15 +25,16 @@ function LockedImageBlock() {
           <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       </div>
-      <p className="locked-block-title">AI illustration</p>
-      <p className="locked-block-desc">Available for registered users</p>
-      <Link href="/auth/signup" className="locked-block-cta">Create free account</Link>
+      <p className="locked-block-title">{t.guideDetail.aiIllustration}</p>
+      <p className="locked-block-desc">{t.guideDetail.availableForRegistered}</p>
+      <Link href="/auth/signup" className="locked-block-cta">{t.guideDetail.createFreeAccount}</Link>
     </div>
   );
 }
 
 /* ── Image viewer (authenticated only) ───────────────────────────────── */
 function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
+  const t = useT();
   const [status, setStatus] = useState(step.imageStatus ?? 'none');
   const [url, setUrl]       = useState(step.imageUrl ?? null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -69,11 +72,11 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
         <img src={url} alt={step.title} className="simg-img" />
         <span className="simg-expand">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 4.5V2h2.5M8.5 2H11v2.5M11 8.5V11H8.5M4.5 11H2V8.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          Expand
+          {t.guideDetail.expand}
         </span>
       </button>
       {!url.startsWith('data:') && (
-        <span className="simg-fallback-badge">Fallback illustration</span>
+        <span className="simg-fallback-badge">{t.guideDetail.fallbackIllustration}</span>
       )}
       <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
         e.stopPropagation();
@@ -81,7 +84,7 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
           setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
         }).catch(() => {});
         setStatus('queued');
-      }}>↺ Regenerate</button>
+      }}>{`↺ ${t.guideDetail.regenerate}`}</button>
       {fullscreen && (
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>
@@ -93,10 +96,10 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
   );
 
   const statusLabel: Record<string, string> = {
-    queued:         'Queued…',
-    searching_refs: 'Searching references…',
-    analyzing_refs: 'Analysing diagram layout…',
-    generating:     'Generating illustration…',
+    queued:         t.guideDetail.queuedStatus,
+    searching_refs: t.guideDetail.searchingRefs,
+    analyzing_refs: t.guideDetail.analyzingRefs,
+    generating:     t.guideDetail.generatingStatus,
   };
   if (status in statusLabel) return (
     <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{statusLabel[status]}</span></div>
@@ -108,8 +111,13 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="Failed illustration" className="simg-img" />
       )}
-      <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>↺ Retry illustration</button>
+      <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>{`↺ ${t.guideDetail.retryIllustration}`}</button>
     </div>
+  );
+
+  // Show loading state while initial generation request is in-flight
+  if (triggered && status === 'none') return (
+    <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{t.guideDetail.preparingIllustration}</span></div>
   );
 
   return null;
@@ -117,6 +125,7 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
 
 /* ── Guest upgrade modal ─────────────────────────────────────────────── */
 function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
     <div className="simg-modal" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="guest-upgrade-modal" onClick={e => e.stopPropagation()}>
@@ -127,11 +136,11 @@ function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
             <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
-        <h3 className="guest-upgrade-title">Create an account to continue</h3>
-        <p className="guest-upgrade-desc">Ask follow-up questions, save guides, and unlock full functionality.</p>
+        <h3 className="guest-upgrade-title">{t.guideDetail.createAccountToContinue}</h3>
+        <p className="guest-upgrade-desc">{t.guideDetail.upgradeDesc}</p>
         <div className="guest-upgrade-actions">
-          <Link href="/auth/signup" className="guest-upgrade-cta">Create free account</Link>
-          <Link href="/auth/login" className="guest-upgrade-ghost">Sign in</Link>
+          <Link href="/auth/signup" className="guest-upgrade-cta">{t.guideDetail.createFreeAccount}</Link>
+          <Link href="/auth/login" className="guest-upgrade-ghost">{t.guideDetail.signIn}</Link>
         </div>
       </div>
     </div>
@@ -142,6 +151,7 @@ function GuestUpgradeModal({ onClose }: { onClose: () => void }) {
 const guestAskUsed = new Set<string>();
 
 function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: string; isGuest?: boolean }) {
+  const t = useT();
   const [open, setOpen]         = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer]     = useState<string | null>(null);
@@ -168,7 +178,7 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
       if (isGuest) {
         setShowUpgrade(true);
       } else {
-        setAnswer('Could not get an AI explanation at this time.');
+        setAnswer(t.guideDetail.aiExplanationError);
       }
     } finally { setLoading(false); }
   }
@@ -181,7 +191,7 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 1l1.12 3.44H11L8.44 6.56 9.56 10 6 7.88 2.44 10l1.12-3.44L1 4.44h3.88L6 1z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/>
           </svg>
-          Ask AI about this step
+          {t.guideDetail.askAiAboutStep}
         </button>
       ) : (
         <div className="ask-ai-panel">
@@ -190,20 +200,20 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
               <path d="M6.5 1.5c2.76 0 5 2.01 5 4.5 0 1.56-.85 2.94-2.14 3.76L9 11.5l-1.5-.75A5.4 5.4 0 016.5 11c-2.76 0-5-2.01-5-4.5s2.24-4.5 5-4.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
               <path d="M6.5 5v1.5M6.5 8.5v.2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
             </svg>
-            Ask AI
+            {t.guideDetail.askAi}
             <button className="ask-ai-close" onClick={() => { setOpen(false); setAnswer(null); setQuestion(''); }}>✕</button>
           </div>
           <div className="ask-ai-input-row">
             <input
               className="ask-ai-input"
-              placeholder="e.g. What torque should I use here?"
+              placeholder={t.guideDetail.askPlaceholder}
               value={question}
               onChange={e => setQuestion(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && ask()}
               autoFocus
             />
             <button className="ask-ai-submit" onClick={ask} disabled={loading}>
-              {loading ? <span className="gen-spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> : 'Ask'}
+              {loading ? <span className="gen-spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> : t.guideDetail.ask}
             </button>
           </div>
           {answer && (
@@ -225,6 +235,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
   step: RepairStep; index: number; active: boolean; onActivate: () => void; guideId: string;
   stepRef: React.RefObject<HTMLDivElement>; isGuest?: boolean;
 }) {
+  const t = useT();
   return (
     <div ref={stepRef} className={`sc${active ? ' sc--open sc--active' : ''}`}>
       <button className="sc-hd" onClick={onActivate}>
@@ -274,7 +285,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
               {isMeaningfulString(step.torqueValue) && (
                 <div className="sc-spec sc-spec--ok">
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                  Torque: {step.torqueValue}
+                  {t.guideDetail.torque}: {step.torqueValue}
                 </div>
               )}
             </div>
@@ -288,6 +299,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
 
 /* ── Guide detail page ────────────────────────────────────────────────── */
 export default function GuideDetailPage() {
+  const t = useT();
   const params = useParams<{ id: string }>();
   const [guide, setGuide]         = useState<RepairGuide | null>(null);
   const [error, setError]         = useState<string | null>(null);
@@ -326,7 +338,7 @@ export default function GuideDetailPage() {
           <div className="dash-nav-right">
             <Link href="/dashboard" className="dash-nav-back">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              All guides
+              {t.guideDetail.backToGuides}
             </Link>
           </div>
         </div>
@@ -337,16 +349,16 @@ export default function GuideDetailPage() {
           <path d="M24 16v10M24 30v2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
         </svg>
         <p className="gd-error-msg" style={{ margin: 0 }}>{error}</p>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>This guide could not be loaded. It may have been deleted or is temporarily unavailable.</p>
-        <Link href="/dashboard" className="auth-btn-primary" style={{ display: 'inline-flex', width: 'auto', padding: '0 24px', marginTop: 8 }}>Back to guides</Link>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>{t.guideDetail.errorLoadMsg}</p>
+        <Link href="/dashboard" className="auth-btn-primary" style={{ display: 'inline-flex', width: 'auto', padding: '0 24px', marginTop: 8 }}>{t.guideDetail.backToGuides}</Link>
       </div>
     </div>
   );
 
   if (!guide) return (
     <div className="dash-root">
-      <header className="dash-nav"><Link href="/dashboard" className="dash-logo">Motixi</Link><Link href="/dashboard" className="dash-nav-back">← All guides</Link></header>
-      <div className="gd-center"><span className="gen-spinner gen-spinner--lg" /><p style={{color:'var(--text-muted)',marginTop:12}}>Loading guide…</p></div>
+      <header className="dash-nav"><Link href="/dashboard" className="dash-logo">Motixi</Link><Link href="/dashboard" className="dash-nav-back">← {t.guideDetail.backToGuides}</Link></header>
+      <div className="gd-center"><span className="gen-spinner gen-spinner--lg" /><p style={{color:'var(--text-muted)',marginTop:12}}>{t.common.loading}</p></div>
     </div>
   );
 
@@ -370,7 +382,7 @@ export default function GuideDetailPage() {
           <div className="dash-nav-right">
             <Link href="/dashboard" className="dash-nav-back">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              All guides
+              {t.guideDetail.backToGuides}
             </Link>
           </div>
         </div>
@@ -393,8 +405,8 @@ export default function GuideDetailPage() {
           </div>
 
           <div className="gd-steps-hd">
-            <span className="gd-steps-label">PROCEDURE</span>
-            <span className="gd-steps-count">{steps.length} steps</span>
+            <span className="gd-steps-label">{t.guideDetail.procedure}</span>
+            <span className="gd-steps-count">{steps.length} {t.common.steps}</span>
           </div>
 
           <div className="gd-steps-list">
@@ -424,39 +436,39 @@ export default function GuideDetailPage() {
               <span className="gd-chip">{guide.vehicle.model}</span>
             </div>
             <h2 className="gd-sb-title">{guide.title}</h2>
-            <p className="gd-sb-sub">{guide.part.name} · {steps.length} steps</p>
+            <p className="gd-sb-sub">{guide.part.name} · {steps.length} {t.common.steps}</p>
             <div className="gd-ai-meta">
               {guide.source === 'source-backed' ? (
                 <span className="ai-source-chip ai-source-chip--sourced">
-                  📄 {guide.sourceProvider ?? 'Source-Backed'}
+                  📄 {guide.sourceProvider ?? t.guideDetail.sourceBackedLabel}
                 </span>
               ) : guide.source === 'web-fallback' ? (
                 <span className="ai-source-chip ai-source-chip--fallback">
-                  🌐 Web Synthesis
+                  🌐 {t.guideDetail.webSynthesisLabel}
                 </span>
               ) : (
-                <span className="ai-source-chip">⚡ AI Generated</span>
+                <span className="ai-source-chip">⚡ {t.guideDetail.aiGeneratedLabel}</span>
               )}
               {guide.confidence != null && guide.source === 'source-backed' && (
-                <span className="ai-confidence">{guide.confidence}% confidence</span>
+                <span className="ai-confidence">{guide.confidence}% {t.guideDetail.confidence}</span>
               )}
             </div>
             <div className="gd-prog-track">
               <div className="gd-prog-fill" style={{ width: `${pct}%` }} />
             </div>
-            <p className="gd-prog-label">Step {activeStep + 1} of {steps.length}</p>
+            <p className="gd-prog-label">{t.guideDetail.step} {activeStep + 1} {t.guideDetail.stepOf} {steps.length}</p>
           </div>
 
           {guide.tools && guide.tools.length > 0 && (
             <div className="gd-sb-card">
-              <p className="gd-sb-section">TOOLS REQUIRED</p>
+              <p className="gd-sb-section">{t.guideDetail.toolsRequired}</p>
               <div className="gd-tools">
-                {toolsVisible?.map((t) => <span key={t} className="gd-tool">{t}</span>)}
+                {toolsVisible?.map((tool) => <span key={tool} className="gd-tool">{tool}</span>)}
                 {!toolsOpen && toolsExtra > 0 && (
-                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(true)}>+{toolsExtra} more</button>
+                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(true)}>+{toolsExtra} {t.guideDetail.moreTools}</button>
                 )}
                 {toolsOpen && (
-                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(false)}>Show less ↑</button>
+                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(false)}>{t.guideDetail.showLess} ↑</button>
                 )}
               </div>
             </div>
@@ -469,7 +481,7 @@ export default function GuideDetailPage() {
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5L11.5 4.5V8c0 2.2-2 4.2-5 5C2 12.2.5 10.2.5 8V4.5L6.5 1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M4.5 7l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </span>
                 <span className="gd-safety-ttl">
-                  {safetyOpen ? 'Safety notes' : `${guide.safetyNotes.length} safety notes`}
+                  {safetyOpen ? t.guideDetail.safetyNotes : `${guide.safetyNotes.length} ${t.guideDetail.nSafetyNotes}`}
                 </span>
                 <svg className="gd-safety-chv" width="14" height="14" viewBox="0 0 14 14" fill="none"
                   style={{ transform: safetyOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
@@ -486,7 +498,7 @@ export default function GuideDetailPage() {
 
           {guide.sourceReferences && guide.sourceReferences.length > 0 && (
             <div className="gd-sb-card">
-              <p className="gd-sb-section">SOURCE REFERENCES</p>
+              <p className="gd-sb-section">{t.guideDetail.sourceReferences}</p>
               <div className="gd-sources">
                 {guide.sourceReferences.map((ref, i) => (
                   <div key={i} className="gd-source-item">
@@ -501,13 +513,20 @@ export default function GuideDetailPage() {
           <div className="gd-sb-card gd-nav">
             <button className="gd-nav-prev" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              Prev
+              {t.guideDetail.prev}
             </button>
             <span className="gd-nav-pos">{activeStep + 1} / {steps.length}</span>
-            <button className="gd-nav-next" disabled={activeStep >= steps.length - 1} onClick={() => setActiveStep(s => s + 1)}>
-              Next
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
+            {activeStep >= steps.length - 1 ? (
+              <Link href="/dashboard" className="gd-nav-next gd-nav-done">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {t.guideDetail.done}
+              </Link>
+            ) : (
+              <button className="gd-nav-next" onClick={() => setActiveStep(s => s + 1)}>
+                {t.guideDetail.next}
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            )}
           </div>
 
         </aside>

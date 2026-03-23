@@ -2549,6 +2549,11 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .gd-nav-prev:disabled, .gd-nav-next:disabled { opacity: 0.38; cursor: not-allowed; }
 .gd-nav-pos { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+.gd-nav-done {
+  background: var(--green) !important; border-color: var(--green) !important;
+  color: #fff !important; text-decoration: none;
+}
+.gd-nav-done:hover { opacity: 0.9; }
 
 /* Error/center helpers */
 .gd-center {
@@ -2582,6 +2587,100 @@ input, textarea, select { font-family: inherit; outline: none; }
   .guide-header { padding: 20px; }
   .guide-title { font-size: 1.4rem; }
   .auth-card { padding: 28px 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LANDING PAGE — MOBILE RESPONSIVE
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet ── */
+@media (max-width: 768px) {
+  /* Hero */
+  .hero { min-height: auto; padding: 56px 16px 48px; }
+  .hero-h1 { font-size: clamp(1.8rem, 5vw, 2.4rem); }
+  .hero-p { font-size: 0.95rem; }
+
+  /* Search input — prevent overflow */
+  .sh-root { padding: 0 16px; gap: 36px; }
+  .sh-input-wrap { padding: 0 4px 0 14px; }
+  .sh-input { font-size: 0.9rem; padding: 12px 8px; }
+  .sh-btn { padding: 9px 14px; font-size: 0.82rem; }
+  .sh-btn svg { display: none; }
+
+  /* Logos bar */
+  .logos-bar { padding: 20px 16px; gap: 16px 20px; justify-content: center; }
+  .logos-label { width: 100%; text-align: center; }
+
+  /* How it works */
+  .how-section { padding: 56px 16px; }
+  .section-header { margin-bottom: 32px; }
+  .how-steps { grid-template-columns: 1fr; gap: 0; }
+  .how-step { padding: 20px 16px; }
+  .how-step-line { display: none; }
+
+  /* Stats bar */
+  .stats-bar { gap: 0; flex-wrap: wrap; }
+  .stat { padding: 20px 24px; flex: 1 1 45%; }
+  .stat-val { font-size: 1.6rem; }
+
+  /* Features */
+  .features-section { padding: 56px 16px; }
+  .features-grid { grid-template-columns: 1fr; }
+
+  /* Mobile app section */
+  .mobile-section { padding: 56px 16px; }
+  .mobile-inner { gap: 36px; }
+  .mobile-phones { height: 420px; max-width: 380px; }
+  .phone { width: 170px; }
+  .phone--back { height: 320px; }
+  .phone--front { height: 400px; }
+
+  /* Pricing */
+  .pricing-section { padding: 56px 16px; }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .plan--pro { transform: none; }
+  .plan--pro:hover { transform: translateY(-3px); }
+
+  /* CTA band */
+  .cta-band { padding: 56px 16px; }
+  .cta-band-h2 { font-size: clamp(1.4rem, 4vw, 1.8rem); }
+
+  /* Footer */
+  .footer-inner { flex-direction: column; text-align: center; gap: 16px; }
+}
+
+/* ── Small mobile ── */
+@media (max-width: 480px) {
+  .hero { padding: 40px 12px 36px; }
+  .sh-root { padding: 0 12px; gap: 28px; }
+  .sh-h1 { font-size: clamp(1.6rem, 7vw, 2rem); }
+  .sh-sub { font-size: 0.9rem; }
+  .sh-input-wrap { padding: 0 3px 0 12px; }
+  .sh-input { font-size: 0.85rem; padding: 11px 6px; }
+  .sh-btn { padding: 8px 12px; font-size: 0.78rem; }
+  .sh-chips { gap: 6px; }
+  .sh-chip { padding: 4px 10px; font-size: 0.72rem; }
+  .sh-popular-grid { grid-template-columns: 1fr; }
+
+  /* Stats */
+  .stat { flex: 1 1 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .stat:last-child { border-bottom: none; }
+
+  /* Phone mockups — scale down further */
+  .mobile-phones { height: 340px; max-width: 300px; }
+  .phone { width: 140px; border-radius: 28px; }
+  .phone::after { border-radius: 25px; }
+  .phone-screen { border-radius: 25px; }
+  .phone--back { height: 260px; bottom: 30px; }
+  .phone--front { height: 320px; }
+
+  /* Sections padding */
+  .how-section,
+  .features-section,
+  .mobile-section,
+  .pricing-section { padding: 40px 12px; }
+
+  .section-h2 { font-size: clamp(1.3rem, 4vw, 1.6rem); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4167,4 +4266,82 @@ input, textarea, select { font-family: inherit; outline: none; }
 .about-exp-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--p); flex-shrink: 0; margin-top: 7px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COUNTRY SELECTOR MODAL
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cs-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.cs-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 36px 32px;
+  max-width: 420px; width: 92%;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+}
+.cs-icon {
+  color: var(--p);
+  margin-bottom: 16px;
+}
+.cs-title {
+  font-size: 1.35rem; font-weight: 700;
+  color: var(--text); margin: 0 0 6px;
+}
+.cs-sub {
+  font-size: 0.88rem; color: var(--text-sub);
+  line-height: 1.5; margin: 0 0 24px;
+}
+.cs-options {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; margin-bottom: 20px;
+}
+.cs-option {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 0.95rem; color: var(--text);
+  text-align: left;
+}
+.cs-option:hover {
+  border-color: var(--p);
+  background: rgba(234, 88, 12, 0.04);
+}
+.cs-option--active {
+  border-color: var(--p);
+  background: rgba(234, 88, 12, 0.08);
+}
+.cs-option-flag {
+  font-size: 1.6rem; flex-shrink: 0;
+}
+.cs-option-label {
+  flex: 1; font-weight: 500;
+}
+.cs-option-check {
+  color: var(--p); flex-shrink: 0;
+}
+.cs-confirm {
+  width: 100%; padding: 12px 0;
+  border-radius: 10px; border: none;
+  background: var(--p); color: white;
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.cs-confirm:hover { opacity: 0.9; }
+.cs-confirm:disabled {
+  opacity: 0.4; cursor: not-allowed;
 }

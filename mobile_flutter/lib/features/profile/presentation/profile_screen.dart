@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../auth/auth_provider.dart';
 import '../../../shared/api/providers.dart';
 import '../../../shared/widgets/mx_widgets.dart';
 import '../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -45,6 +47,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final auth = ref.watch(authProvider);
     final user = auth.tokens?.user;
     final planType = user?.planType ?? 'free';
@@ -79,7 +82,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Icon(Icons.arrow_back_ios, size: 20, color: kPrimary),
                   ),
                   const SizedBox(width: s12),
-                  Text('Profile', style: tsSubhead),
+                  Text(l.profile, style: tsSubhead),
                 ],
               ),
             ),
@@ -127,20 +130,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: s16),
 
                     // Account section
-                    MxSectionHeader('Account'),
+                    MxSectionHeader(l.accountSection),
                     _TileCard(children: [
-                      _InfoRow(label: 'Email', value: user?.email ?? '—'),
+                      _InfoRow(label: l.emailLabel, value: user?.email ?? '—'),
                       _Divider(),
-                      _InfoRow(label: 'Role', value: user?.role ?? '—'),
+                      _InfoRow(label: l.roleLabel, value: user?.role ?? '—'),
                       if (user?.tenantId != null) ...[
                         _Divider(),
-                        _InfoRow(label: 'Tenant', value: user!.tenantId!),
+                        _InfoRow(label: l.tenantLabel, value: user!.tenantId!),
                       ],
                     ]),
                     const SizedBox(height: s16),
 
                     // Plan section
-                    MxSectionHeader('Plan & Billing'),
+                    MxSectionHeader(l.planSection),
                     if (isPremium) ...[
                       _ProBanner(),
                     ] else if (isTrial) ...[
@@ -156,6 +159,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ] else ...[
                       _FreeBanner(),
                       const SizedBox(height: s12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () async {
+                            try {
+                              final api = ref.read(apiClientProvider);
+                              final res = await api.createCheckoutSession({});
+                              final url = res['url'] as String?;
+                              if (url != null) {
+                                await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                              }
+                            } catch (_) {}
+                          },
+                          icon: const Icon(Icons.bolt, size: 18),
+                          label: const Text('Upgrade to Pro'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: kPrimary,
+                            shape: RoundedRectangleBorder(borderRadius: kRadiusMd),
+                            minimumSize: const Size.fromHeight(48),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: s12),
                       _PromoSection(
                         ctrl: _promoCtrl,
                         loading: _promoLoading,
@@ -167,11 +193,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: s16),
 
                     // Navigation
-                    MxSectionHeader('Navigation'),
                     _TileCard(children: [
                       _NavRow(
                         icon: Icons.history,
-                        label: 'Guide History',
+                        label: l.guideHistory,
                         onTap: () => context.push('/history'),
                       ),
                     ]),
@@ -191,7 +216,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           minimumSize: const Size.fromHeight(52),
                           shape: RoundedRectangleBorder(borderRadius: kRadiusMd),
                         ),
-                        child: const Text('Sign out', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: Text(l.signOut, style: const TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ],
@@ -226,24 +251,27 @@ class _PlanChip extends StatelessWidget {
 
 class _ProBanner extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(s16),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFFF7ED),
-      borderRadius: kRadiusLg,
-      border: Border.all(color: const Color(0xFFFDBA74)),
-    ),
-    child: Row(children: [
-      const Text('⚡', style: TextStyle(fontSize: 22)),
-      const SizedBox(width: s12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Pro plan active', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kPrimary)),
-        const SizedBox(height: 2),
-        Text('Unlimited guides · Priority images · API access',
-          style: TextStyle(fontSize: 12, color: kTextMuted)),
-      ])),
-    ]),
-  );
+  Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(s16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        borderRadius: kRadiusLg,
+        border: Border.all(color: const Color(0xFFFDBA74)),
+      ),
+      child: Row(children: [
+        const Text('⚡', style: TextStyle(fontSize: 22)),
+        const SizedBox(width: s12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.proActive, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kPrimary)),
+          const SizedBox(height: 2),
+          Text(l.proActiveDesc,
+            style: TextStyle(fontSize: 12, color: kTextMuted)),
+        ])),
+      ]),
+    );
+  }
 }
 
 class _TrialBanner extends StatelessWidget {
@@ -251,46 +279,52 @@ class _TrialBanner extends StatelessWidget {
   const _TrialBanner({required this.daysLeft});
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(s16),
-    decoration: BoxDecoration(
-      color: const Color(0xFFE0F2FE),
-      borderRadius: kRadiusLg,
-      border: Border.all(color: const Color(0xFFBAE6FD)),
-    ),
-    child: Row(children: [
-      const Icon(Icons.access_time, size: 20, color: Color(0xFF0369A1)),
-      const SizedBox(width: s12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Trial active', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0369A1))),
-        const SizedBox(height: 2),
-        Text('$daysLeft day${daysLeft != 1 ? 's' : ''} remaining',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF0369A1))),
-      ])),
-    ]),
-  );
+  Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(s16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0F2FE),
+        borderRadius: kRadiusLg,
+        border: Border.all(color: const Color(0xFFBAE6FD)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.access_time, size: 20, color: Color(0xFF0369A1)),
+        const SizedBox(width: s12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.trialActive, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0369A1))),
+          const SizedBox(height: 2),
+          Text(l.trialDaysRemaining(daysLeft),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF0369A1))),
+        ])),
+      ]),
+    );
+  }
 }
 
 class _FreeBanner extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(s16),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF8FAFC),
-      borderRadius: kRadiusLg,
-      border: Border.all(color: kBorder),
-    ),
-    child: Row(children: [
-      const Icon(Icons.star_outline, size: 20, color: kTextMuted),
-      const SizedBox(width: s12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Free plan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kText)),
-        const SizedBox(height: 2),
-        Text('5 guides/month. Use a promo code to unlock Pro.',
-          style: TextStyle(fontSize: 12, color: kTextMuted)),
-      ])),
-    ]),
-  );
+  Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(s16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: kRadiusLg,
+        border: Border.all(color: kBorder),
+      ),
+      child: Row(children: [
+        const Icon(Icons.star_outline, size: 20, color: kTextMuted),
+        const SizedBox(width: s12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.freePlan, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kText)),
+          const SizedBox(height: 2),
+          Text(l.freePlanDesc,
+            style: TextStyle(fontSize: 12, color: kTextMuted)),
+        ])),
+      ]),
+    );
+  }
 }
 
 // ── Promo section ─────────────────────────────────────────────────────────────
@@ -307,74 +341,77 @@ class _PromoSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(s16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: kRadiusLg,
-      border: Border.all(color: kBorder),
-    ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('PROMO CODE', style: TextStyle(
-        fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: kTextMuted,
-      )),
-      const SizedBox(height: s8),
-      if (success) ...[
-        Container(
-          padding: const EdgeInsets.all(s12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF0FDF4),
-            borderRadius: kRadiusMd,
-            border: Border.all(color: const Color(0xFFBBF7D0)),
-          ),
-          child: const Row(children: [
-            Icon(Icons.check_circle, size: 16, color: Color(0xFF16A34A)),
-            SizedBox(width: s8),
-            Text('Promo applied! You now have Pro access.', style: TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF16A34A),
-            )),
-          ]),
-        ),
-      ] else ...[
-        Row(children: [
-          Expanded(child: TextField(
-            controller: ctrl,
-            textCapitalization: TextCapitalization.none,
-            decoration: InputDecoration(
-              hintText: 'Enter promo code…',
-              hintStyle: const TextStyle(color: kTextMuted, fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: kPrimary, width: 1.5)),
+  Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(s16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: kRadiusLg,
+        border: Border.all(color: kBorder),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(l.promoCode, style: const TextStyle(
+          fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: kTextMuted,
+        )),
+        const SizedBox(height: s8),
+        if (success) ...[
+          Container(
+            padding: const EdgeInsets.all(s12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: kRadiusMd,
+              border: Border.all(color: const Color(0xFFBBF7D0)),
             ),
-            onSubmitted: (_) => onRedeem(),
-          )),
-          const SizedBox(width: s8),
-          SizedBox(
-            height: 44,
-            child: FilledButton(
-              onPressed: loading ? null : onRedeem,
-              style: FilledButton.styleFrom(
-                backgroundColor: kPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(children: [
+              const Icon(Icons.check_circle, size: 16, color: Color(0xFF16A34A)),
+              const SizedBox(width: s8),
+              Text(l.promoApplied, style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF16A34A),
+              )),
+            ]),
+          ),
+        ] else ...[
+          Row(children: [
+            Expanded(child: TextField(
+              controller: ctrl,
+              textCapitalization: TextCapitalization.none,
+              decoration: InputDecoration(
+                hintText: l.enterPromoCode,
+                hintStyle: const TextStyle(color: kTextMuted, fontSize: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: kBorder)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: kPrimary, width: 1.5)),
               ),
-              child: loading
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Apply', style: TextStyle(fontWeight: FontWeight.w700)),
+              onSubmitted: (_) => onRedeem(),
+            )),
+            const SizedBox(width: s8),
+            SizedBox(
+              height: 44,
+              child: FilledButton(
+                onPressed: loading ? null : onRedeem,
+                style: FilledButton.styleFrom(
+                  backgroundColor: kPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: loading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(l.apply, style: const TextStyle(fontWeight: FontWeight.w700)),
+              ),
             ),
-          ),
-        ]),
-        if (error != null) ...[
-          const SizedBox(height: s8),
-          Text(error!, style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626), fontWeight: FontWeight.w500)),
+          ]),
+          if (error != null) ...[
+            const SizedBox(height: s8),
+            Text(error!, style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626), fontWeight: FontWeight.w500)),
+          ],
         ],
-      ],
-    ]),
-  );
+      ]),
+    );
+  }
 }
 
 // ── Small helper widgets ──────────────────────────────────────────────────────

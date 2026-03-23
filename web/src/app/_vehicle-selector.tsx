@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n';
 
 export interface VehicleSelection {
   make: string;
@@ -36,6 +37,7 @@ async function fetchModels(make: string): Promise<string[]> {
 }
 
 export default function VehicleSelector({ value, onChange, required = false }: VehicleSelectorProps) {
+  const t = useT();
   const [models, setModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
 
@@ -69,20 +71,20 @@ export default function VehicleSelector({ value, onChange, required = false }: V
   return (
     <>
       <div className="gen-input-wrap">
-        <label className="gen-label">Brand {required && <span className="gen-label-required">*</span>}</label>
+        <label className="gen-label">{t.vehicleSelector.brand} {required && <span className="gen-label-required">*</span>}</label>
         <select
           className="gen-input gen-input--select"
           value={value.make}
           required={required}
           onChange={(e) => onChange({ make: e.target.value, model: '', year: value.year })}
         >
-          <option value="">Select brand…</option>
+          <option value="">{t.vehicleSelector.selectBrand}</option>
           {POPULAR_MAKES.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
 
       <div className="gen-input-wrap">
-        <label className="gen-label">Model {required && <span className="gen-label-required">*</span>}</label>
+        <label className="gen-label">{t.vehicleSelector.model} {required && <span className="gen-label-required">*</span>}</label>
         <select
           className="gen-input gen-input--select"
           value={value.model}
@@ -90,20 +92,20 @@ export default function VehicleSelector({ value, onChange, required = false }: V
           disabled={!value.make || loadingModels}
           onChange={(e) => onChange({ ...value, model: e.target.value })}
         >
-          <option value="">{loadingModels ? 'Loading…' : 'Select model…'}</option>
+          <option value="">{loadingModels ? t.vehicleSelector.loading : t.vehicleSelector.selectModel}</option>
           {models.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
 
       <div className="gen-input-wrap">
-        <label className="gen-label">Year {required && <span className="gen-label-required">*</span>}</label>
+        <label className="gen-label">{t.vehicleSelector.year} {required && <span className="gen-label-required">*</span>}</label>
         <select
           className="gen-input gen-input--select"
           value={value.year}
           required={required}
           onChange={(e) => onChange({ ...value, year: e.target.value })}
         >
-          <option value="">Select year…</option>
+          <option value="">{t.vehicleSelector.selectYear}</option>
           {YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
         </select>
       </div>

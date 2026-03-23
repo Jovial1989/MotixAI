@@ -4,8 +4,10 @@ import { FormEvent, Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { webApi } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 function ResetPasswordForm() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError]     = useState<string | null>(null);
@@ -21,15 +23,15 @@ function ResetPasswordForm() {
     const newPassword     = String(data.get('newPassword'));
     const confirmPassword = String(data.get('confirmPassword'));
 
-    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
-    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (newPassword.length < 8) { setError(t.resetPassword.passwordMinLength); return; }
+    if (newPassword !== confirmPassword) { setError(t.resetPassword.passwordsMismatch); return; }
 
     setLoading(true);
     try {
       await webApi.resetPassword(resetToken, newPassword);
       router.push('/auth/login?reset=1');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired token');
+      setError(err instanceof Error ? err.message : t.resetPassword.invalidToken);
     } finally {
       setLoading(false);
     }
@@ -40,30 +42,30 @@ function ResetPasswordForm() {
       <Link href="/" className="auth-logo">Motixi</Link>
 
       <div className="auth-card">
-        <h1 className="auth-title">Reset password</h1>
+        <h1 className="auth-title">{t.resetPassword.title}</h1>
         <p className="auth-sub">
-          <Link href="/auth/login">Back to sign in</Link>
+          <Link href="/auth/login">{t.resetPassword.backToSignIn}</Link>
         </p>
 
         <form onSubmit={onSubmit}>
           <div className="auth-fields">
             <div className="auth-field">
-              <label className="auth-label">Reset token</label>
+              <label className="auth-label">{t.resetPassword.resetTokenLabel}</label>
               <textarea
                 name="resetToken"
                 required
                 defaultValue={prefillToken}
-                placeholder="Paste your reset token here"
+                placeholder={t.resetPassword.pasteToken}
                 rows={3}
                 className="auth-input auth-input--mono"
               />
             </div>
             <div className="auth-field">
-              <label className="auth-label">New password</label>
+              <label className="auth-label">{t.resetPassword.newPassword}</label>
               <input name="newPassword" type="password" required placeholder="••••••••" className="auth-input" />
             </div>
             <div className="auth-field">
-              <label className="auth-label">Confirm new password</label>
+              <label className="auth-label">{t.resetPassword.confirmNewPassword}</label>
               <input name="confirmPassword" type="password" required placeholder="••••••••" className="auth-input" />
             </div>
           </div>
@@ -80,8 +82,8 @@ function ResetPasswordForm() {
 
           <button type="submit" disabled={loading} className="auth-btn-primary">
             {loading ? (
-              <><span className="gen-spinner" /> Updating…</>
-            ) : 'Update password'}
+              <><span className="gen-spinner" /> {t.resetPassword.updating}</>
+            ) : t.resetPassword.updatePassword}
           </button>
         </form>
       </div>

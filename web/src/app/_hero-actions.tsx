@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/lib/i18n';
 
 function hasValidToken(): boolean {
   try {
@@ -18,6 +19,7 @@ function hasValidToken(): boolean {
 }
 
 export default function HeroActions() {
+  const t = useT();
   const router = useRouter();
 
   function handleDashboard() {
@@ -27,13 +29,13 @@ export default function HeroActions() {
   return (
     <div className="hero-actions">
       <Link href="/auth/signup" className="cta-primary">
-        Start for free
+        {t.heroActions.startForFree}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
           <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </Link>
       <button onClick={handleDashboard} className="cta-secondary">
-        View dashboard
+        {t.heroActions.viewDashboard}
       </button>
     </div>
   );

@@ -1,117 +1,122 @@
+'use client';
+
 import Link from 'next/link';
 import MainNav from './_main-nav';
 import Footer from './_footer';
 import SearchHero from './_search-hero';
-
-const features = [
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 2L3 7v11h5v-5h4v5h5V7L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      </svg>
-    ),
-    title: 'Instant guide generation',
-    desc: 'VIN or model + part number → full structured repair guide in under 3 seconds.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Step-by-step precision',
-    desc: '8–15 ordered steps with torque specs, required tools, and safety warnings built in.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="2" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M6 17h8M10 15v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M5 8h10M5 11h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Engineering diagrams',
-    desc: 'AI-generated technical diagrams rendered per step via background image jobs.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Web & mobile',
-    desc: 'One unified backend powers both the Next.js dashboard and Flutter mobile app.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Background job queue',
-    desc: 'Image generation runs asynchronously with real-time status polling on the client.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM14 13.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      </svg>
-    ),
-    title: 'Enterprise-ready',
-    desc: 'Tenant isolation, custom manual ingestion, role-based access, and admin controls.',
-  },
-];
-
-const steps = [
-  { n: '01', title: 'Search or ask a question', text: 'Type a vehicle model and repair description — or ask naturally like "bmw e90 oil change".' },
-  { n: '02', title: 'AI searches knowledge base', text: 'Motixi checks thousands of stored guides before generating anything new.' },
-  { n: '03', title: 'Instant result or new guide', text: 'Get an existing guide in under a second, or AI generates a new one in under 3 seconds.' },
-  { n: '04', title: 'Follow step-by-step', text: 'Open the guide on web or mobile and follow inline with engineering diagrams.' },
-];
-
-const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: '',
-    desc: 'Get started at no cost.',
-    items: ['5 guides / month', 'Standard step output', 'Web access', 'Community support'],
-    cta: 'Get started',
-    href: '/auth/signup',
-    highlight: false,
-  },
-  {
-    name: 'Pro',
-    price: '$39',
-    period: '/mo',
-    desc: 'For working technicians.',
-    items: ['Unlimited guides', 'Priority image jobs', 'Web + mobile', 'API access', 'Email support'],
-    cta: 'Start trial',
-    href: '/auth/signup',
-    highlight: true,
-  },
-  {
-    name: 'Enterprise',
-    price: 'Custom',
-    period: '',
-    desc: 'For fleets and workshops.',
-    items: ['Tenant isolation', 'Custom manual ingestion', 'Admin dashboard', 'SLA guarantee', 'Dedicated support'],
-    cta: 'Contact us',
-    href: '/contact',
-    highlight: false,
-  },
-];
-
-const stats = [
-  { val: '<3s', label: 'Guide generation' },
-  { val: '8–15', label: 'Steps per guide' },
-  { val: '100%', label: 'AI-generated' },
-  { val: '∞', label: 'Vehicle models' },
-];
+import { useT } from '@/lib/i18n';
 
 export default function LandingPage() {
+  const t = useT();
+
+  const features = [
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2L3 7v11h5v-5h4v5h5V7L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        </svg>
+      ),
+      title: t.landing.feat1title,
+      desc: t.landing.feat1desc,
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: t.landing.feat2title,
+      desc: t.landing.feat2desc,
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M6 17h8M10 15v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M5 8h10M5 11h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: t.landing.feat3title,
+      desc: t.landing.feat3desc,
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: t.landing.feat4title,
+      desc: t.landing.feat4desc,
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: t.landing.feat5title,
+      desc: t.landing.feat5desc,
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM14 13.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        </svg>
+      ),
+      title: t.landing.feat6title,
+      desc: t.landing.feat6desc,
+    },
+  ];
+
+  const steps = [
+    { n: '01', title: t.landing.step01title, text: t.landing.step01text },
+    { n: '02', title: t.landing.step02title, text: t.landing.step02text },
+    { n: '03', title: t.landing.step03title, text: t.landing.step03text },
+    { n: '04', title: t.landing.step04title, text: t.landing.step04text },
+  ];
+
+  const plans = [
+    {
+      name: t.landing.planFreeName,
+      price: '$0',
+      period: '',
+      desc: t.landing.planFreeDesc,
+      items: [t.landing.planFreeItem1, t.landing.planFreeItem2, t.landing.planFreeItem3, t.landing.planFreeItem4],
+      cta: t.landing.planFreeGetStarted,
+      href: '/auth/signup',
+      highlight: false,
+    },
+    {
+      name: t.landing.planProName,
+      price: '$39',
+      period: t.landing.planPerMonth,
+      desc: t.landing.planProDesc,
+      items: [t.landing.planProItem1, t.landing.planProItem2, t.landing.planProItem3, t.landing.planProItem4, t.landing.planProItem5],
+      cta: t.landing.planProStartTrial,
+      href: '/auth/signup',
+      highlight: true,
+    },
+    {
+      name: t.landing.planEntName,
+      price: t.landing.planCustom,
+      period: '',
+      desc: t.landing.planEntDesc,
+      items: [t.landing.planEntItem1, t.landing.planEntItem2, t.landing.planEntItem3, t.landing.planEntItem4, t.landing.planEntItem5],
+      cta: t.landing.planEntContactUs,
+      href: '/contact',
+      highlight: false,
+    },
+  ];
+
+  const stats = [
+    { val: '<3s', label: t.landing.statGeneration },
+    { val: '8–15', label: t.landing.statSteps },
+    { val: '100%', label: t.landing.statAiGenerated },
+    { val: '∞', label: t.landing.statVehicleModels },
+  ];
+
   return (
     <div className="page">
 
@@ -131,7 +136,7 @@ export default function LandingPage() {
 
       {/* ─── LOGOS ───────────────────────────────────────── */}
       <div className="logos-bar">
-        <p className="logos-label">Trusted by teams at</p>
+        <p className="logos-label">{t.landing.trustedBy}</p>
         {['AutoShop Pro', 'FleetWorks', 'HeavyMech', 'TechGarage', 'MotoServ'].map((name) => (
           <span key={name} className="logos-name">{name}</span>
         ))}
@@ -140,8 +145,8 @@ export default function LandingPage() {
       {/* ─── HOW IT WORKS ────────────────────────────────── */}
       <section id="how" className="how-section">
         <div className="section-header">
-          <p className="eyebrow-tag">How it works</p>
-          <h2 className="section-h2">From query to guide in four steps</h2>
+          <p className="eyebrow-tag">{t.landing.howEyebrow}</p>
+          <h2 className="section-h2">{t.landing.howTitle}</h2>
         </div>
         <div className="how-steps">
           {steps.map((s, i) => (
@@ -168,9 +173,9 @@ export default function LandingPage() {
       {/* ─── FEATURES ────────────────────────────────────── */}
       <section id="features" className="features-section">
         <div className="section-header">
-          <p className="eyebrow-tag">Features</p>
-          <h2 className="section-h2">Everything a technician needs</h2>
-          <p className="section-sub">Built for speed, accuracy, and real-world workshop conditions.</p>
+          <p className="eyebrow-tag">{t.landing.featuresEyebrow}</p>
+          <h2 className="section-h2">{t.landing.featuresTitle}</h2>
+          <p className="section-sub">{t.landing.featuresSub}</p>
         </div>
         <div className="features-grid">
           {features.map((f) => (
@@ -189,19 +194,17 @@ export default function LandingPage() {
 
           {/* Left: text + CTA */}
           <div className="mobile-text">
-            <p className="eyebrow-tag">Mobile App</p>
-            <h2 className="section-h2">Workshop guides<br />in your pocket</h2>
+            <p className="eyebrow-tag">{t.landing.mobileEyebrow}</p>
+            <h2 className="section-h2">{t.landing.mobileTitle}</h2>
             <p className="mobile-sub">
-              The same AI-generated repair guides, optimized for mobile.
-              Step through procedures at the bench, pinch-to-zoom diagrams,
-              and track progress — all offline-capable.
+              {t.landing.mobileSub}
             </p>
 
             <ul className="mobile-bullets">
               {[
-                'Swipe through steps one-handed',
-                'Pinch-to-zoom on engineering diagrams',
-                'Offline mode for workshop use',
+                t.landing.mobileBullet1,
+                t.landing.mobileBullet2,
+                t.landing.mobileBullet3,
               ].map((b) => (
                 <li key={b} className="mobile-bullet">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
@@ -216,12 +219,12 @@ export default function LandingPage() {
               href="mailto:hello@motixai.com?subject=Mobile%20App%20Early%20Access"
               className="mobile-cta"
             >
-              Request early access
+              {t.landing.mobileEarlyAccess}
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
                 <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </a>
-            <p className="mobile-coming">Coming soon to iOS and Android</p>
+            <p className="mobile-coming">{t.landing.mobileComingSoon}</p>
           </div>
 
           {/* Right: premium dark phone mockups */}
@@ -245,9 +248,9 @@ export default function LandingPage() {
                 {/* Header */}
                 <div className="mp-list-header">
                   <div>
-                    <p className="mp-list-eyebrow">My Workspace</p>
-                    <p className="mp-list-title">Guides</p>
-                    <p className="mp-list-count">3 guides · this week</p>
+                    <p className="mp-list-eyebrow">{t.landing.phoneMyWorkspace}</p>
+                    <p className="mp-list-title">{t.landing.phoneGuides}</p>
+                    <p className="mp-list-count">{t.landing.phoneGuidesCount}</p>
                   </div>
                   <div className="mp-avatar">K</div>
                 </div>
@@ -255,11 +258,11 @@ export default function LandingPage() {
                 {/* Search bar */}
                 <div className="mp-search">
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.2"/><path d="M7.5 7.5L9.5 9.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                  <span>Search guides…</span>
+                  <span>{t.landing.phoneSearchGuides}</span>
                 </div>
 
                 {/* Section label */}
-                <p className="mp-list-section">Recent</p>
+                <p className="mp-list-section">{t.landing.phoneRecent}</p>
 
                 {/* Guide cards */}
                 {[
@@ -286,7 +289,7 @@ export default function LandingPage() {
                     <div className="mp-card-right">
                       <div className="mp-card-steps-badge" style={{ background: g.diffColor + '18', borderColor: g.diffColor + '35', color: g.diffColor }}>
                         <span className="mp-card-steps-num">{g.steps}</span>
-                        <span className="mp-card-steps-lbl">steps</span>
+                        <span className="mp-card-steps-lbl">{t.common.steps}</span>
                       </div>
                       <svg width="7" height="7" viewBox="0 0 7 7" fill="none" style={{ marginTop: 5, color: '#404050' }}><path d="M1.5 1.5l4 2-4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
@@ -297,16 +300,16 @@ export default function LandingPage() {
                 <div className="mp-tabbar">
                   <button className="mp-tab-item mp-tab-item--active">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L2 5.5V12.5H5.5V9H8.5V12.5H12V5.5L7 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
-                    <span>Guides</span>
+                    <span>{t.landing.phoneGuides}</span>
                     <div className="mp-tab-dot" />
                   </button>
                   <button className="mp-tab-item">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 8l1.5-4h5L11 8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="2" y="8" width="10" height="3.5" rx="1" stroke="currentColor" strokeWidth="1.3"/><circle cx="5" cy="12.5" r="1" fill="currentColor"/><circle cx="9" cy="12.5" r="1" fill="currentColor"/></svg>
-                    <span>Garage</span>
+                    <span>{t.landing.phoneGarage}</span>
                   </button>
                   <button className="mp-tab-item">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M2.5 12.5c0-2.49 2.01-4.5 4.5-4.5s4.5 2.01 4.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                    <span>Profile</span>
+                    <span>{t.landing.phoneProfile}</span>
                   </button>
                 </div>
               </div>
@@ -331,7 +334,7 @@ export default function LandingPage() {
                 <div className="mp-detail-nav">
                   <button className="mp-back">
                     <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M6.5 1L1.5 6l5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    Back
+                    {t.landing.phoneBack}
                   </button>
                   <div className="mp-motix-logo">
                     <div className="mp-motix-mark">M</div>
@@ -353,7 +356,7 @@ export default function LandingPage() {
                       <svg width="7" height="7" viewBox="0 0 7 7" fill="none"><path d="M3.5 1L1 3v2.5L3.5 7 6 5.5V3L3.5 1Z" stroke="currentColor" strokeWidth="0.8" strokeLinejoin="round"/></svg>
                       Intermediate
                     </span>
-                    <span className="mp-dc mp-dc--steps">10 steps</span>
+                    <span className="mp-dc mp-dc--steps">10 {t.common.steps}</span>
                   </div>
                 </div>
 
@@ -362,11 +365,11 @@ export default function LandingPage() {
                   <div className="mp-section">
                     <p className="mp-section-hd">
                       <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 8L3.5 5.5M5.5 1l2.5 2.5-2 2-2.5-2.5L5.5 1ZM3.5 5.5L2.5 6.5" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      Tools required
+                      {t.landing.phoneToolsRequired}
                     </p>
                     <div className="mp-tools">
-                      {['Socket set', 'Torque wrench', 'Trim tools', 'Thread locker'].map((t) => (
-                        <span key={t} className="mp-tool">{t}</span>
+                      {['Socket set', 'Torque wrench', 'Trim tools', 'Thread locker'].map((tool) => (
+                        <span key={tool} className="mp-tool">{tool}</span>
                       ))}
                     </div>
                   </div>
@@ -375,10 +378,10 @@ export default function LandingPage() {
                   <div className="mp-safety">
                     <div className="mp-safety-hd">
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 3.5V6C1 7.93 2.79 9.62 5 10C7.21 9.62 9 7.93 9 6V3.5L5 1Z" stroke="#F59E0B" strokeWidth="1" strokeLinejoin="round" fill="rgba(245,158,11,0.12)"/><path d="M5 3.8V5.8M5 6.8v.4" stroke="#F59E0B" strokeWidth="0.9" strokeLinecap="round"/></svg>
-                      <span>Safety notes</span>
+                      <span>{t.landing.phoneSafetyNotes}</span>
                     </div>
-                    <p className="mp-safety-line">• Isolate battery and hydraulic pressure before disassembly.</p>
-                    <p className="mp-safety-line">• Use jack stands and wheel chocks on level ground.</p>
+                    <p className="mp-safety-line">{t.landing.phoneSafetyLine1}</p>
+                    <p className="mp-safety-line">{t.landing.phoneSafetyLine2}</p>
                   </div>
 
                   {/* Step card */}
@@ -386,7 +389,7 @@ export default function LandingPage() {
                     <div className="mp-step-hd">
                       <div className="mp-step-num">1</div>
                       <div style={{ flex: 1 }}>
-                        <p className="mp-step-eyebrow">STEP 1 OF 10</p>
+                        <p className="mp-step-eyebrow">{t.landing.phoneStepOf}</p>
                         <p className="mp-step-name">Preparation &amp; Access</p>
                       </div>
                       <div className="mp-step-status">Ready</div>
@@ -457,7 +460,7 @@ export default function LandingPage() {
 
                     {/* Progress */}
                     <div className="mp-progress">
-                      <span className="mp-progress-label">1 of 10 steps</span>
+                      <span className="mp-progress-label">{t.landing.phoneOfSteps}</span>
                       <div className="mp-progress-track">
                         <div className="mp-progress-fill" style={{ width: '10%' }} />
                       </div>
@@ -476,14 +479,14 @@ export default function LandingPage() {
       {/* ─── PRICING ─────────────────────────────────────── */}
       <section id="pricing" className="pricing-section">
         <div className="section-header">
-          <p className="eyebrow-tag">Pricing</p>
-          <h2 className="section-h2">Simple, transparent pricing</h2>
-          <p className="section-sub">Start free. Upgrade when you need more.</p>
+          <p className="eyebrow-tag">{t.landing.pricingEyebrow}</p>
+          <h2 className="section-h2">{t.landing.pricingTitle}</h2>
+          <p className="section-sub">{t.landing.pricingSub}</p>
         </div>
         <div className="pricing-grid">
           {plans.map((plan) => (
             <article key={plan.name} className={`plan${plan.highlight ? ' plan--pro' : ''}`}>
-              {plan.highlight && <div className="plan-popular">Most popular</div>}
+              {plan.highlight && <div className="plan-popular">{t.landing.planProMostPopular}</div>}
               <p className="plan-name">{plan.name}</p>
               <div className="plan-price-row">
                 <span className="plan-price">{plan.price}</span>
@@ -512,12 +515,12 @@ export default function LandingPage() {
       {/* ─── CTA BAND ────────────────────────────────────── */}
       <section className="cta-band">
         <div className="cta-band-orb" aria-hidden />
-        <p className="cta-band-eyebrow">Get started today</p>
-        <h2 className="cta-band-h2">Generate your first repair guide free.</h2>
-        <p className="cta-band-sub">No credit card. No setup. Just results.</p>
+        <p className="cta-band-eyebrow">{t.landing.ctaEyebrow}</p>
+        <h2 className="cta-band-h2">{t.landing.ctaTitle}</h2>
+        <p className="cta-band-sub">{t.landing.ctaSub}</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">Start trial</Link>
-          <Link href="/auth/login" className="cta-band-ghost">Already have an account →</Link>
+          <Link href="/auth/signup" className="cta-primary">{t.landing.ctaStartTrial}</Link>
+          <Link href="/auth/login" className="cta-band-ghost">{t.landing.ctaAlreadyHaveAccount}</Link>
         </div>
       </section>
 

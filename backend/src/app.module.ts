@@ -11,6 +11,7 @@ import { AnalyticsModule } from './api/analytics/analytics.module';
 import { VehiclesModule } from './api/vehicles/vehicles.module';
 import { AdminModule } from './api/admin/admin.module';
 import { UserModule } from './api/user/user.module';
+import { BillingModule } from './api/billing/billing.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { AiModule } from './ai/ai.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -32,6 +33,7 @@ import { JobsModule } from './jobs/jobs.module';
     VehiclesModule,
     AdminModule,
     UserModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

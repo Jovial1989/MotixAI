@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth_provider.dart';
 import '../../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
+import '../../../shared/providers/locale_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -19,20 +21,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
+    // Check country selection first — gate everything behind it.
+    final hasCountry = await LocaleNotifier.hasChosenCountry();
+    if (!mounted) return;
+
     final result = await ref.read(authProvider.notifier).bootstrap();
     if (!mounted) return;
+
+    final String destination;
     switch (result) {
       case AuthBootResult.hasSession:
-        context.go('/dashboard');
+        destination = '/dashboard';
       case AuthBootResult.needsOnboarding:
-        context.go('/onboarding');
+        destination = '/onboarding';
       case AuthBootResult.noSession:
-        context.go('/login');
+        destination = '/login';
+    }
+
+    if (!hasCountry) {
+      ref.read(hasChosenCountryProvider.notifier).state = false;
+      context.go('/country-select?next=$destination');
+    } else {
+      ref.read(hasChosenCountryProvider.notifier).state = true;
+      context.go(destination);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context);
     return Scaffold(
       backgroundColor: kPrimary,
       body: Center(
@@ -53,12 +70,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
             ),
             const SizedBox(height: s24),
-            const Text('Motixi', style: TextStyle(
+            Text(l?.appName ?? 'Motixi', style: const TextStyle(
               fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white,
               letterSpacing: -0.5,
             )),
             const SizedBox(height: s8),
-            Text('AI-Powered Repair Guides', style: TextStyle(
+            Text(l?.aiPoweredRepairGuides ?? 'AI-Powered Repair Guides', style: TextStyle(
               fontSize: 14, fontWeight: FontWeight.w500,
               color: Colors.white.withOpacity(0.7),
             )),

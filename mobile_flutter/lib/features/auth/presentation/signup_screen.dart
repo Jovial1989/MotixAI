@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth_provider.dart';
 import '../../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'auth_widgets.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -37,6 +38,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final state = ref.watch(authProvider);
 
     return Scaffold(
@@ -58,16 +60,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.arrow_back_ios, size: 16, color: kPrimary),
-                        Text('Back', style: tsSmallBold.copyWith(color: kPrimary)),
+                        Text(l.back, style: tsSmallBold.copyWith(color: kPrimary)),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: s24),
 
-                Text('Create account', style: tsTitle.copyWith(textBaseline: null)),
+                Text(l.createAccount, style: tsTitle.copyWith(textBaseline: null)),
                 const SizedBox(height: s8),
-                Text('Get started with Motixi', style: tsBody.copyWith(color: kTextMuted)),
+                Text(l.getStarted, style: tsBody.copyWith(color: kTextMuted)),
                 const SizedBox(height: s32),
 
                 if (state.error != null) ...[
@@ -75,44 +77,44 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(height: s16),
                 ],
 
-                _label('Email'),
+                _label(l.email),
                 const SizedBox(height: s4 + 2),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
-                  decoration: authInputDecoration('you@example.com'),
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  decoration: authInputDecoration(l.emailPlaceholder),
+                  validator: (v) => (v == null || !v.contains('@')) ? l.enterValidEmail : null,
                 ),
                 const SizedBox(height: s16),
 
-                _label('Password'),
+                _label(l.password),
                 const SizedBox(height: s4 + 2),
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscure,
                   textInputAction: TextInputAction.next,
-                  decoration: authInputDecoration('Min 6 characters').copyWith(
+                  decoration: authInputDecoration(l.minSixChars).copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
                           size: 20, color: kTextMuted),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                  validator: (v) => (v == null || v.length < 6) ? l.minSixChars : null,
                 ),
                 const SizedBox(height: s16),
 
-                _label('Confirm password'),
+                _label(l.confirmPassword),
                 const SizedBox(height: s4 + 2),
                 TextFormField(
                   controller: _confCtrl,
                   obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  decoration: authInputDecoration('Repeat password'),
-                  validator: (v) => v != _passCtrl.text ? 'Passwords do not match' : null,
+                  decoration: authInputDecoration(l.repeatPassword),
+                  validator: (v) => v != _passCtrl.text ? l.passwordsDoNotMatch : null,
                 ),
                 const SizedBox(height: s24),
 
@@ -126,21 +128,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   child: state.isLoading
                       ? const SizedBox(height: 20, width: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Create account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      : Text(l.createAccount, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: s16),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Already have an account? ', style: tsBody.copyWith(color: kTextMuted)),
-                    GestureDetector(
-                      onTap: () => context.go('/login'),
-                      child: Text('Sign in', style: tsBody.copyWith(
-                        color: kPrimary, fontWeight: FontWeight.w600,
-                      )),
-                    ),
-                  ],
+                GestureDetector(
+                  onTap: () => context.go('/login'),
+                  child: Text(
+                    l.alreadyHaveAccount,
+                    textAlign: TextAlign.center,
+                    style: tsBody.copyWith(color: kTextMuted),
+                  ),
                 ),
               ],
             ),

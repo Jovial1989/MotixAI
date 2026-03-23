@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { env } from '@/lib/env';
+import { useT } from '@/lib/i18n';
 
 const EXAMPLE_QUERIES = [
   'bmw e90 oil filter',
@@ -44,6 +45,7 @@ function isAuthenticated(): boolean {
 
 export default function SearchHero() {
   const router = useRouter();
+  const t = useT();
   const [query, setQuery]   = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const [authModal, setAuthModal] = useState<string | null>(null); // pending query
@@ -97,32 +99,32 @@ export default function SearchHero() {
                 <path d="M5 24c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
               </svg>
             </div>
-            <h2 className="auth-modal-title">Sign in to search</h2>
-            <p className="auth-modal-sub">Create a free account to generate guides, or try 3 real sample guides as a guest.</p>
+            <h2 className="auth-modal-title">{t.authModal.title}</h2>
+            <p className="auth-modal-sub">{t.authModal.sub}</p>
             <div className="auth-modal-actions">
               <Link
                 href={`/auth/signup?q=${encodeURIComponent(authModal)}`}
                 className="auth-modal-btn auth-modal-btn--primary"
                 onClick={() => setAuthModal(null)}
               >
-                Create account
+                {t.authModal.createAccount}
               </Link>
               <Link
                 href={`/auth/login?q=${encodeURIComponent(authModal)}`}
                 className="auth-modal-btn auth-modal-btn--ghost"
                 onClick={() => setAuthModal(null)}
               >
-                Sign in
+                {t.authModal.signIn}
               </Link>
               <button
                 className="auth-modal-btn auth-modal-btn--guest"
                 onClick={continueAsGuest}
                 disabled={guestLoading}
               >
-                {guestLoading ? 'Loading…' : 'Continue as guest'}
+                {guestLoading ? t.authModal.guestLoadingText : t.authModal.continueAsGuest}
               </button>
             </div>
-            <p className="auth-modal-note">Guests see 3 real sample guides in read-only demo mode.</p>
+            <p className="auth-modal-note">{t.authModal.guestNote}</p>
           </div>
         </div>
       )}
@@ -136,17 +138,16 @@ export default function SearchHero() {
           <div className="sh-left">
             <div className="hero-eyebrow">
               <span className="eyebrow-dot" />
-              AI Repair Intelligence
+              {t.landing.heroEyebrow}
             </div>
 
             <h1 className="sh-h1">
-              The repair knowledge base<br />
-              <span className="sh-h1-grad">for every vehicle.</span>
+              {t.landing.heroTitle}<br />
+              <span className="sh-h1-grad">{t.landing.heroTitleGrad}</span>
             </h1>
 
             <p className="sh-sub">
-              Ask any repair question. Motixi searches its knowledge base — if the guide
-              exists, you get it instantly. If not, AI generates it and stores it for everyone.
+              {t.landing.heroSub}
             </p>
 
             <div className="sh-input-wrap">
@@ -156,14 +157,14 @@ export default function SearchHero() {
               </svg>
               <input
                 className="sh-input"
-                placeholder="Search by vehicle, issue, or component…"
+                placeholder={t.landing.searchPlaceholder}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch(query)}
                 autoComplete="off"
               />
               <button className="sh-btn" onClick={() => handleSearch(query)}>
-                Search
+                {t.common.search}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -171,7 +172,7 @@ export default function SearchHero() {
             </div>
 
             <div className="sh-chips">
-              <span className="sh-chips-label">Try:</span>
+              <span className="sh-chips-label">{t.landing.tryLabel}</span>
               {EXAMPLE_QUERIES.map(q => (
                 <button key={q} className="sh-chip" onClick={() => handleSearch(q)}>{q}</button>
               ))}
@@ -179,7 +180,7 @@ export default function SearchHero() {
 
             {recent.length > 0 && (
               <div className="sh-recent">
-                <span className="sh-recent-label">Recent:</span>
+                <span className="sh-recent-label">{t.landing.recentLabel}</span>
                 {recent.map(q => (
                   <button key={q} className="sh-recent-item" onClick={() => handleSearch(q)}>
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -203,12 +204,12 @@ export default function SearchHero() {
                   <rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
                   <path d="M3 3.5h5M3 5.5h5M3 7.5h3" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round"/>
                 </svg>
-                Haynes Workshop Manual
+                {t.landing.demoSourceLabel}
                 <span className="sh-man-verified">
                   <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
                     <path d="M1.5 3.5l1.5 1.5 2.5-2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  OEM Verified
+                  {t.landing.demoOemVerified}
                 </span>
               </div>
 
@@ -222,10 +223,10 @@ export default function SearchHero() {
                     </svg>
                   </div>
                   <div className="sh-man-card-hd-text">
-                    <p className="sh-man-vehicle">BMW E90 330d</p>
-                    <p className="sh-man-title">Brake Caliper — Cross Section</p>
+                    <p className="sh-man-vehicle">{t.landing.demoVehicle1}</p>
+                    <p className="sh-man-title">{t.landing.demoTitle1}</p>
                   </div>
-                  <span className="sh-man-view-badge">Engineering View</span>
+                  <span className="sh-man-view-badge">{t.landing.demoViewBadge}</span>
                 </div>
 
                 {/* Technical schematic diagram */}
@@ -281,60 +282,60 @@ export default function SearchHero() {
                 <div className="sh-man-chips">
                   <span className="sh-man-chip">
                     <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="0.9"/><path d="M4.5 2.5v2l1.2 1" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round"/></svg>
-                    45 min
+                    {t.landing.demoTime1}
                   </span>
                   <span className="sh-man-chip">
                     <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 7.5L3.5 6M5 1.5l2.5 2.5-2 2L3 3.5 5 1.5ZM3.5 6L2.5 7" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    8 tools
+                    {t.landing.demoTools1}
                   </span>
-                  <span className="sh-man-chip sh-man-chip--steps">10 steps</span>
-                  <span className="sh-man-chip sh-man-chip--safety">3 safety notes</span>
+                  <span className="sh-man-chip sh-man-chip--steps">{t.landing.demoSteps1}</span>
+                  <span className="sh-man-chip sh-man-chip--safety">{t.landing.demoSafety1}</span>
                 </div>
               </div>
 
               {/* ── Procedure card ── */}
               <div className="sh-man-card sh-man-card--proc">
                 <div className="sh-man-proc-hd">
-                  <span className="sh-man-proc-title">Brake Pad Replacement</span>
-                  <span className="sh-man-proc-step">3 / 10</span>
+                  <span className="sh-man-proc-title">{t.landing.demoProcTitle}</span>
+                  <span className="sh-man-proc-step">{t.landing.demoProcStep}</span>
                 </div>
-                <div className="sh-man-proc-vehicle">Nissan Qashqai J10 · 2019</div>
+                <div className="sh-man-proc-vehicle">{t.landing.demoProcVehicle}</div>
                 <div className="sh-man-steps">
                   <div className="sh-man-step sh-man-step--done">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" fill="#22c55e"/><path d="M3 5l1.5 1.5 2.5-2.5" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    Remove wheel &amp; dust cap
+                    {t.landing.demoStep1}
                   </div>
                   <div className="sh-man-step sh-man-step--done">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" fill="#22c55e"/><path d="M3 5l1.5 1.5 2.5-2.5" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    Loosen caliper guide bolts
+                    {t.landing.demoStep2}
                   </div>
                   <div className="sh-man-step sh-man-step--active">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" fill="#EA580C"/><circle cx="5" cy="5" r="2" fill="white"/></svg>
-                    Compress caliper piston
+                    {t.landing.demoStep3}
                   </div>
                   <div className="sh-man-step sh-man-step--pending">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d1d5db" strokeWidth="1"/></svg>
-                    Fit new brake pads
+                    {t.landing.demoStep4}
                   </div>
                   <div className="sh-man-step sh-man-step--pending">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d1d5db" strokeWidth="1"/></svg>
-                    Torque bolts · 35 Nm
+                    {t.landing.demoStep5}
                   </div>
                 </div>
                 <div className="sh-man-proc-footer">
-                  <span className="sh-man-proc-badge sh-man-proc-badge--ai">✦ AI organized</span>
-                  <span className="sh-man-proc-badge">90–120 min</span>
+                  <span className="sh-man-proc-badge sh-man-proc-badge--ai">{t.landing.demoAiOrganized}</span>
+                  <span className="sh-man-proc-badge">{t.landing.demoTime2}</span>
                 </div>
               </div>
 
               {/* ── Floating detail tags ── */}
               <div className="sh-man-tag sh-man-tag--torque">
                 <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 7.5L3.5 6M5 1.5l2.5 2.5-2 2L3 3.5 5 1.5ZM3.5 6L2.5 7" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                Torque: 35 Nm
+                {t.landing.demoTorqueTag}
               </div>
               <div className="sh-man-tag sh-man-tag--verified">
                 <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 4.5l2 2 3-3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                Manual verified
+                {t.landing.demoVerifiedTag}
               </div>
 
               {/* Soft ambient glow */}
@@ -346,13 +347,13 @@ export default function SearchHero() {
 
         {/* ── Popular repairs (full width below) ── */}
         <div className="sh-popular">
-          <p className="sh-popular-hd">Popular Repairs</p>
+          <p className="sh-popular-hd">{t.landing.popularRepairs}</p>
           <div className="sh-popular-grid">
             {POPULAR_REPAIRS.map(r => (
               <button key={r.query} className="sh-popular-item" onClick={() => handleSearch(r.query)}>
                 <span className="sh-popular-icon">{r.icon}</span>
                 <span className="sh-popular-name">{r.query}</span>
-                <span className="sh-popular-count">{r.count.toLocaleString()} guides</span>
+                <span className="sh-popular-count">{r.count.toLocaleString()} {t.landing.guidesCount}</span>
               </button>
             ))}
           </div>

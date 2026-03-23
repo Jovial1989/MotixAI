@@ -4,11 +4,13 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { webApi } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 export default function SignupPage() {
   const [error, setError]     = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const t = useT();
 
   const pendingQuery = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('q')
@@ -37,7 +39,7 @@ export default function SignupPage() {
       const base = result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding';
       router.push(pendingQuery ? `${base}?q=${encodeURIComponent(pendingQuery)}` : base);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(err instanceof Error ? err.message : t.auth.signupFailed);
     } finally {
       setLoading(false);
     }
@@ -53,7 +55,7 @@ export default function SignupPage() {
       localStorage.setItem('motix_onboarding_done', 'true');
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to continue as guest');
+      setError(err instanceof Error ? err.message : t.auth.guestFailed);
     } finally {
       setLoading(false);
     }
@@ -66,27 +68,27 @@ export default function SignupPage() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Back
+          {t.common.back}
         </Link>
         <Link href="/" className="auth-logo">Motixi</Link>
         <div style={{ width: 60 }} />
       </div>
 
       <div className="auth-card">
-        <h1 className="auth-title">Create account</h1>
+        <h1 className="auth-title">{t.auth.createAccount}</h1>
         <p className="auth-sub">
-          Already have an account?{' '}
-          <Link href="/auth/login">Sign in</Link>
+          {t.auth.alreadyHaveAccount}{' '}
+          <Link href="/auth/login">{t.common.signIn}</Link>
         </p>
 
         <form onSubmit={onSubmit}>
           <div className="auth-fields">
             <div className="auth-field">
-              <label className="auth-label">Email</label>
+              <label className="auth-label">{t.common.email}</label>
               <input name="email" type="email" required placeholder="you@example.com" className="auth-input" />
             </div>
             <div className="auth-field">
-              <label className="auth-label">Password <span style={{ fontWeight: 400, color: 'var(--ink-40)' }}>min 8 characters</span></label>
+              <label className="auth-label">{t.common.password} <span style={{ fontWeight: 400, color: 'var(--ink-40)' }}>{t.auth.passwordMinLength}</span></label>
               <input name="password" type="password" required minLength={8} placeholder="••••••••" className="auth-input" />
             </div>
           </div>
@@ -103,17 +105,17 @@ export default function SignupPage() {
 
           <button type="submit" disabled={loading} className="auth-btn-primary">
             {loading ? (
-              <><span className="gen-spinner" /> Creating account…</>
-            ) : 'Create account'}
+              <><span className="gen-spinner" /> {t.auth.creatingAccount}</>
+            ) : t.auth.createAccount}
           </button>
         </form>
 
         <div className="auth-divider">
-          <hr /><span>or</span><hr />
+          <hr /><span>{t.common.or}</span><hr />
         </div>
 
         <button type="button" onClick={onGuest} disabled={loading} className="auth-btn-ghost">
-          Continue as guest
+          {t.auth.continueAsGuest}
         </button>
       </div>
     </main>

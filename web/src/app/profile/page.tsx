@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { webApi } from '@/lib/api';
+import AuthGuard from '@/app/_auth-guard';
 import VehicleSelector, { type VehicleSelection } from '../_vehicle-selector';
+import { useT } from '@/lib/i18n';
 
 type PlanTier = 'FREE' | 'PRO' | 'ENTERPRISE';
 
@@ -83,6 +85,11 @@ function formatDate(iso: string): string {
 }
 
 export default function ProfilePage() {
+  return <AuthGuard><ProfileInner /></AuthGuard>;
+}
+
+function ProfileInner() {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('USER');
   const [profile, setProfile] = useState<ProfileData>(emptyProfile());
@@ -154,7 +161,7 @@ export default function ProfilePage() {
       <header className="dash-nav">
         <Link href="/dashboard" className="dash-logo">Motixi</Link>
         <div className="dash-nav-right">
-          <Link href="/dashboard" className="dash-nav-link">← Dashboard</Link>
+          <Link href="/dashboard" className="dash-nav-link">← {t.common.dashboard}</Link>
           <button
             className="dash-nav-link dash-nav-link--logout"
             onClick={() => {
@@ -163,7 +170,7 @@ export default function ProfilePage() {
               location.href = '/auth/login';
             }}
           >
-            Log out
+            {t.common.logOut}
           </button>
         </div>
       </header>
@@ -171,17 +178,17 @@ export default function ProfilePage() {
       <div className="dash-body" style={{ maxWidth: 680 }}>
         <div className="dash-page-header">
           <div>
-            <h1 className="dash-page-title">Your Profile</h1>
-            <p className="dash-page-sub">Manage your account information and preferences.</p>
+            <h1 className="dash-page-title">{t.profilePage.title}</h1>
+            <p className="dash-page-sub">{t.profilePage.sub}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="gen-form">
-            <p className="profile-section-title">Account</p>
+            <p className="profile-section-title">{t.profilePage.accountSection}</p>
             <div className="gen-inputs">
               <div className="gen-input-wrap">
-                <label className="gen-label">First name <span className="gen-label-required">*</span></label>
+                <label className="gen-label">{t.profilePage.firstName} <span className="gen-label-required">*</span></label>
                 <input
                   value={profile.firstName}
                   onChange={(e) => handleChange('firstName', e.target.value)}
@@ -191,7 +198,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="gen-input-wrap">
-                <label className="gen-label">Last name <span className="gen-label-required">*</span></label>
+                <label className="gen-label">{t.profilePage.lastName} <span className="gen-label-required">*</span></label>
                 <input
                   value={profile.lastName}
                   onChange={(e) => handleChange('lastName', e.target.value)}
@@ -201,11 +208,11 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="gen-input-wrap" style={{ gridColumn: '1 / -1' }}>
-                <label className="gen-label">Email</label>
+                <label className="gen-label">{t.profilePage.emailLabel}</label>
                 <div className="profile-email-val">{email || '—'}</div>
               </div>
               <div className="gen-input-wrap" style={{ gridColumn: '1 / -1' }}>
-                <label className="gen-label">Primary vehicle <span className="gen-label-required">*</span></label>
+                <label className="gen-label">{t.profilePage.primaryVehicle} <span className="gen-label-required">*</span></label>
               </div>
               <VehicleSelector
                 value={{ make: profile.vehicleMake, model: profile.vehicleModelName, year: profile.vehicleYear }}
@@ -216,18 +223,18 @@ export default function ProfilePage() {
           </div>
 
           <div className="gen-form">
-            <p className="profile-section-title">Your plan</p>
+            <p className="profile-section-title">{t.profilePage.yourPlan}</p>
             <div className="profile-plan-card" style={{ marginTop: 12 }}>
               {activePlan === 'FREE' && (
                 <>
                   <div className="profile-plan-title-row">
-                    <p className="profile-plan-title">⚡ Free Plan</p>
-                    <span className="profile-plan-badge">$0 / mo</span>
+                    <p className="profile-plan-title">{t.profilePage.freePlan}</p>
+                    <span className="profile-plan-badge">$0 {t.profilePage.perMonth}</span>
                   </div>
 
                   <div className="profile-usage-row">
                     <div className="profile-usage-head">
-                      <span>Guides this month</span>
+                      <span>{t.profilePage.guidesThisMonth}</span>
                       <span>{guidesUsed} / {guideLimit}</span>
                     </div>
                     <div className="profile-usage-track">
@@ -237,7 +244,7 @@ export default function ProfilePage() {
 
                   <div className="profile-usage-row">
                     <div className="profile-usage-head">
-                      <span>Image generation</span>
+                      <span>{t.profilePage.imageGeneration}</span>
                       <span>{imageUsed} / {imageLimit}</span>
                     </div>
                     <div className="profile-usage-track">
@@ -245,31 +252,56 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <Link href="/auth/signup" className="gen-btn" style={{ width: 'fit-content', textDecoration: 'none' }}>
-                    Upgrade to Pro — $39/mo →
-                  </Link>
+                  <button
+                    type="button"
+                    className="gen-btn"
+                    style={{ width: 'fit-content' }}
+                    onClick={async () => {
+                      try {
+                        const { url } = await webApi.createCheckoutSession({
+                          successUrl: `${window.location.origin}/profile?billing=success`,
+                          cancelUrl: `${window.location.origin}/profile?billing=cancelled`,
+                        });
+                        if (url) window.location.href = url;
+                      } catch { /* ignore */ }
+                    }}
+                  >
+                    {t.profilePage.upgradeToProPrice}
+                  </button>
                 </>
               )}
 
               {activePlan === 'PRO' && (
                 <>
                   <div className="profile-plan-title-row">
-                    <p className="profile-plan-title">⚡ Pro Plan — $39/mo</p>
-                    <span className="profile-plan-badge">Active</span>
+                    <p className="profile-plan-title">{t.profilePage.proPlan}</p>
+                    <span className="profile-plan-badge">{t.profilePage.active}</span>
                   </div>
                   <ul className="profile-plan-list">
-                    <li>Guides: Unlimited</li>
-                    <li>Image generation: Priority</li>
-                    <li>Mobile app: Enabled</li>
-                    <li>API access: Enabled</li>
+                    <li>{t.common.guides}: {t.profilePage.unlimited}</li>
+                    <li>{t.profilePage.imageGeneration}: {t.profilePage.priorityImage}</li>
+                    <li>{t.profilePage.mobileEnabled}</li>
+                    <li>{t.profilePage.apiEnabled}</li>
                   </ul>
                   <p className="profile-usage-head">
-                    <span>Next billing</span>
+                    <span>{t.profilePage.nextBilling}</span>
                     <span>{formatDate(profile.nextBillingDate)}</span>
                   </p>
                   <div className="profile-inline-actions">
-                    <button type="button" className="gen-btn">Manage subscription</button>
-                    <button type="button" className="gen-btn" style={{ background: 'var(--bg-subtle)', color: 'var(--text-sub)', border: '1px solid var(--border)' }}>Cancel</button>
+                    <button
+                      type="button"
+                      className="gen-btn"
+                      onClick={async () => {
+                        try {
+                          const { url } = await webApi.createPortalSession({
+                            returnUrl: `${window.location.origin}/profile`,
+                          });
+                          if (url) window.location.href = url;
+                        } catch { /* ignore */ }
+                      }}
+                    >
+                      {t.profilePage.manageSubscription}
+                    </button>
                   </div>
                 </>
               )}
@@ -277,21 +309,21 @@ export default function ProfilePage() {
               {activePlan === 'ENTERPRISE' && (
                 <>
                   <div className="profile-plan-title-row">
-                    <p className="profile-plan-title">🏢 Enterprise Plan</p>
-                    <span className="profile-plan-badge">Organization</span>
+                    <p className="profile-plan-title">{t.profilePage.enterprisePlan}</p>
+                    <span className="profile-plan-badge">{t.profilePage.organization}</span>
                   </div>
                   <ul className="profile-plan-list">
-                    <li>Guides: Unlimited</li>
-                    <li>Team members: 4 / 10</li>
-                    <li>Manuals uploaded: 2</li>
-                    <li>Custom SLA: Enabled</li>
+                    <li>{t.common.guides}: {t.profilePage.unlimited}</li>
+                    <li>{t.profilePage.teamMembers}</li>
+                    <li>{t.profilePage.manualsUploaded}</li>
+                    <li>{t.profilePage.customSla}</li>
                   </ul>
                   <p className="profile-usage-head">
-                    <span>Account manager</span>
+                    <span>{t.profilePage.accountManager}</span>
                     <span>hello@motixai.com</span>
                   </p>
                   <a href="mailto:hello@motixai.com" className="gen-btn" style={{ width: 'fit-content', textDecoration: 'none' }}>
-                    Contact support
+                    {t.profilePage.contactSupport}
                   </a>
                 </>
               )}
@@ -299,10 +331,10 @@ export default function ProfilePage() {
           </div>
 
           <div className="gen-form">
-            <p className="profile-section-title">Preferences <span className="gen-label-or">optional</span></p>
+            <p className="profile-section-title">{t.profilePage.preferences} <span className="gen-label-or">optional</span></p>
             <div className="gen-inputs">
               <div className="gen-input-wrap">
-                <label className="gen-label">Country</label>
+                <label className="gen-label">{t.profilePage.country}</label>
                 <input
                   value={profile.country}
                   onChange={(e) => handleChange('country', e.target.value)}
@@ -311,7 +343,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="gen-input-wrap">
-                <label className="gen-label">Preferred brands</label>
+                <label className="gen-label">{t.profilePage.preferredBrands}</label>
                 <input
                   value={profile.preferredBrands}
                   onChange={(e) => handleChange('preferredBrands', e.target.value)}
@@ -323,54 +355,83 @@ export default function ProfilePage() {
           </div>
 
           <div className="gen-form">
-            <p className="profile-section-title">Billing details</p>
+            <p className="profile-section-title">{t.profilePage.billingDetails}</p>
             <div className="gen-inputs" style={{ marginTop: 12 }}>
               <div className="gen-input-wrap">
-                <label className="gen-label">Current plan</label>
+                <label className="gen-label">{t.profilePage.currentPlan}</label>
                 <input value={activePlan === 'FREE' ? 'Free — $0/mo' : activePlan === 'PRO' ? 'Pro — $39/mo' : 'Enterprise — Custom'} readOnly className="gen-input" />
               </div>
               <div className="gen-input-wrap">
-                <label className="gen-label">Next billing date</label>
+                <label className="gen-label">{t.profilePage.nextBillingDate}</label>
                 <input value={activePlan === 'FREE' ? '—' : formatDate(profile.nextBillingDate)} readOnly className="gen-input" />
               </div>
               <div className="gen-input-wrap" style={{ gridColumn: '1 / -1' }}>
-                <label className="gen-label">Payment method on file</label>
+                <label className="gen-label">{t.profilePage.paymentMethod}</label>
                 <div className="profile-email-val">
-                  {profile.paymentMethodLast4 ? `Card ending in ${profile.paymentMethodLast4}` : 'No payment method added'}
+                  {profile.paymentMethodLast4 ? `${t.profilePage.cardEndingIn} ${profile.paymentMethodLast4}` : t.profilePage.noPaymentMethod}
                 </div>
               </div>
               {!profile.paymentMethodLast4 && (
-                <button type="button" className="gen-btn" style={{ width: 'fit-content', background: 'var(--bg-subtle)', color: 'var(--text-sub)', border: '1px solid var(--border)' }}>Add payment method</button>
+                <button type="button" className="gen-btn" style={{ width: 'fit-content', background: 'var(--bg-subtle)', color: 'var(--text-sub)', border: '1px solid var(--border)' }}>{t.profilePage.addPaymentMethod}</button>
               )}
               <div className="gen-input-wrap">
-                <label className="gen-label">Company name</label>
+                <label className="gen-label">{t.profilePage.companyName}</label>
                 <input value={profile.companyName} onChange={(e) => handleChange('companyName', e.target.value)} placeholder="e.g. AutoShop Ltd" className="gen-input" />
               </div>
               <div className="gen-input-wrap">
-                <label className="gen-label">Billing email</label>
+                <label className="gen-label">{t.profilePage.billingEmail}</label>
                 <input type="email" value={profile.billingEmail} onChange={(e) => handleChange('billingEmail', e.target.value)} placeholder="billing@company.com" className="gen-input" />
               </div>
               <div className="gen-input-wrap">
-                <label className="gen-label">VAT / Tax ID</label>
+                <label className="gen-label">{t.profilePage.vatTaxId}</label>
                 <input value={profile.vatId} onChange={(e) => handleChange('vatId', e.target.value)} placeholder="e.g. EU123456789" className="gen-input" />
               </div>
               <div className="gen-input-wrap" style={{ gridColumn: '1 / -1' }}>
-                <label className="gen-label">Billing address</label>
+                <label className="gen-label">{t.profilePage.billingAddress}</label>
                 <input value={profile.billingAddress} onChange={(e) => handleChange('billingAddress', e.target.value)} placeholder="Street, City, Country" className="gen-input" />
               </div>
               <div className="profile-inline-actions" style={{ gridColumn: '1 / -1' }}>
-                <a href="#" className="profile-inline-link">Billing history</a>
+                <a href="#" className="profile-inline-link">{t.profilePage.billingHistory}</a>
                 {activePlan === 'FREE' ? (
-                  <Link href="/auth/signup" className="profile-inline-link">Upgrade to Pro</Link>
+                  <button
+                    type="button"
+                    className="profile-inline-link"
+                    style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer' }}
+                    onClick={async () => {
+                      try {
+                        const { url } = await webApi.createCheckoutSession({
+                          successUrl: `${window.location.origin}/profile?billing=success`,
+                          cancelUrl: `${window.location.origin}/profile?billing=cancelled`,
+                        });
+                        if (url) window.location.href = url;
+                      } catch { /* ignore */ }
+                    }}
+                  >
+                    {t.profilePage.upgradeToPro}
+                  </button>
                 ) : (
-                  <button type="button" className="profile-inline-link" style={{ border: 0, background: 'transparent', padding: 0 }}>Manage subscription</button>
+                  <button
+                    type="button"
+                    className="profile-inline-link"
+                    style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer' }}
+                    onClick={async () => {
+                      try {
+                        const { url } = await webApi.createPortalSession({
+                          returnUrl: `${window.location.origin}/profile`,
+                        });
+                        if (url) window.location.href = url;
+                      } catch { /* ignore */ }
+                    }}
+                  >
+                    {t.profilePage.manageSubscription}
+                  </button>
                 )}
               </div>
             </div>
           </div>
 
           <button type="submit" className="gen-btn">
-            {saved ? '✓ Saved' : 'Save profile'}
+            {saved ? t.profilePage.saved : t.profilePage.saveProfile}
           </button>
         </form>
       </div>

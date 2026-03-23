@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useT } from '@/lib/i18n';
 
 function readAuth(): { valid: boolean; initials: string } {
   try {
@@ -24,6 +25,7 @@ function readAuth(): { valid: boolean; initials: string } {
 }
 
 export default function NavAuth() {
+  const t = useT();
   const [auth, setAuth] = useState<{ valid: boolean; initials: string }>({ valid: false, initials: '' });
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -50,9 +52,9 @@ export default function NavAuth() {
         </button>
         {menuOpen && (
           <div className="nav-dropdown">
-            <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-            <Link href="/profile" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>Profile</Link>
-            <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>Settings</Link>
+            <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.dashboard}</Link>
+            <Link href="/profile" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.profile}</Link>
+            <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.settings}</Link>
             <button
               type="button"
               className="nav-dropdown-item nav-dropdown-item--danger"
@@ -62,7 +64,7 @@ export default function NavAuth() {
                 window.location.href = '/auth/login';
               }}
             >
-              Log out
+              {t.navAuth.logOut}
             </button>
           </div>
         )}
@@ -72,8 +74,8 @@ export default function NavAuth() {
 
   return (
     <div className="nav-right">
-      <Link href="/auth/login" className="nav-btn-ghost">Log in</Link>
-      <Link href="/auth/signup" className="nav-btn-cta">Start trial</Link>
+      <Link href="/auth/login" className="nav-btn-ghost">{t.navAuth.logIn}</Link>
+      <Link href="/auth/signup" className="nav-btn-cta">{t.navAuth.startTrial}</Link>
     </div>
   );
 }

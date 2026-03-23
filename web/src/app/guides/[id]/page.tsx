@@ -1,6 +1,7 @@
 // Server component wrapper — required for `output: 'export'` with dynamic routes.
 // The actual UI is in _guide-detail.tsx (client component).
 import GuideDetailPage from './_guide-detail';
+import AuthGuardWrapper from './_auth-wrapper';
 
 // Return empty array: no pages are pre-rendered at build time.
 // The web Edge Function serves index.html for all unknown paths so
@@ -10,5 +11,9 @@ export function generateStaticParams() {
 }
 
 export default function Page() {
-  return <GuideDetailPage />;
+  return (
+    <AuthGuardWrapper>
+      <GuideDetailPage />
+    </AuthGuardWrapper>
+  );
 }

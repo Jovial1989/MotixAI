@@ -174,6 +174,28 @@ class ApiClient {
     } on DioException catch (e) { return _handleError(e); }
   }
 
+  // ── Billing ────────────────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> createCheckoutSession(Map<String, dynamic> body) async {
+    try {
+      final resp = await _dio.post<Map<String, dynamic>>(
+        '/billing/create-checkout-session',
+        data: body,
+      );
+      return resp.data!;
+    } on DioException catch (e) { return _handleError(e); }
+  }
+
+  Future<Map<String, dynamic>> createPortalSession(Map<String, dynamic> body) async {
+    try {
+      final resp = await _dio.post<Map<String, dynamic>>(
+        '/billing/portal-session',
+        data: body,
+      );
+      return resp.data!;
+    } on DioException catch (e) { return _handleError(e); }
+  }
+
   // ── Steps ─────────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> generateStepImage(String stepId, {bool force = false}) async {

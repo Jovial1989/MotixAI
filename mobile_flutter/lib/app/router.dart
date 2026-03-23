@@ -10,6 +10,7 @@ import '../features/guides/presentation/guide_detail_screen.dart';
 import '../features/guides/presentation/history_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/country/presentation/country_select_screen.dart';
 
 /// Bridges Riverpod's [authProvider] to go_router's ChangeNotifier-based
 /// [refreshListenable]. The GoRouter is created once; this notifier tells
@@ -31,8 +32,8 @@ class _RouterNotifier extends ChangeNotifier {
     final authRoutes = ['/login', '/signup'];
     final isOnAuth = authRoutes.contains(location);
 
-    // Splash handles its own redirect via bootstrap()
-    if (location == '/') return null;
+    // Splash and country-select handle their own routing
+    if (location == '/' || location.startsWith('/country-select')) return null;
 
     // Not authenticated → go to login (unless already on auth screen)
     if (!isAuthenticated && !isOnAuth && location != '/onboarding') {
@@ -64,6 +65,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (_, __) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/country-select',
+        builder: (_, state) {
+          final next = state.uri.queryParameters['next'] ?? '/login';
+          return CountrySelectScreen(nextRoute: next);
+        },
       ),
       GoRoute(
         path: '/login',

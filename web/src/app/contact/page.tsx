@@ -1,8 +1,13 @@
+'use client';
+
 import MainNav from '../_main-nav';
 import Footer from '../_footer';
 import FounderImage from '../_founder-image';
+import { useT } from '@/lib/i18n';
 
 export default function ContactPage() {
+  const t = useT();
+
   return (
     <div className="page">
       <MainNav />
@@ -10,11 +15,10 @@ export default function ContactPage() {
       {/* ─── INNER HERO ──────────────────────────────────── */}
       <section className="inner-hero">
         <div className="inner-hero-content">
-          <p className="eyebrow-tag">Contact</p>
-          <h1 className="inner-hero-h1">Let&apos;s talk</h1>
+          <p className="eyebrow-tag">{t.contactPage.eyebrow}</p>
+          <h1 className="inner-hero-h1">{t.contactPage.title}</h1>
           <p className="inner-hero-sub">
-            For partnerships, enterprise deployments, consulting, product strategy,
-            or any questions about Motixi — I respond personally.
+            {t.contactPage.sub}
           </p>
         </div>
       </section>
@@ -28,14 +32,14 @@ export default function ContactPage() {
             <div className="contact-v2-img-wrap">
               <FounderImage size="sm" />
             </div>
-            <p className="contact-v2-name">Kyrylo Petrov</p>
-            <p className="contact-v2-role">Founder &amp; CEO, Motixi</p>
+            <p className="contact-v2-name">{t.contactPage.founderName}</p>
+            <p className="contact-v2-role">{t.contactPage.founderRole}</p>
             <div className="contact-v2-links">
               <a
                 href="mailto:petrov.cpay@gmail.com"
                 className="founder-card-btn founder-card-btn--primary"
               >
-                Email
+                {t.contactPage.email}
               </a>
               <a
                 href="https://www.linkedin.com/in/petrovkyrylo/"
@@ -43,21 +47,19 @@ export default function ContactPage() {
                 rel="noopener noreferrer"
                 className="founder-card-btn founder-card-btn--ghost"
               >
-                LinkedIn
+                {t.contactPage.linkedin}
               </a>
             </div>
           </div>
 
           {/* Body */}
           <div className="contact-v2-body">
-            <h2 className="contact-v2-h2">Get in touch directly</h2>
+            <h2 className="contact-v2-h2">{t.contactPage.getInTouchTitle}</h2>
             <p className="contact-v2-p">
-              I respond personally to every message. Whether you&apos;re evaluating Motixi
-              for your workshop, exploring an enterprise deployment, looking for a consulting
-              conversation, or just want to discuss the problem space — I&apos;m reachable.
+              {t.contactPage.getInTouchP1}
             </p>
             <p className="contact-v2-p">
-              The fastest path is email. LinkedIn works too for a more formal introduction.
+              {t.contactPage.getInTouchP2}
             </p>
             <div className="contact-v2-divider" />
             <div className="contact-v2-actions">
@@ -82,7 +84,7 @@ export default function ContactPage() {
                 linkedin.com/in/petrovkyrylo
               </a>
             </div>
-            <p className="contact-v2-note">Usually responds within 24 hours.</p>
+            <p className="contact-v2-note">{t.contactPage.responseNote}</p>
           </div>
 
         </div>

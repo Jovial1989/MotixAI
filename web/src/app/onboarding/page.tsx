@@ -4,66 +4,62 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { webApi } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import type { PlanType } from '@motixai/api-client';
-
-// ── Step content ──────────────────────────────────────────────────────────────
-
-const STEPS = [
-  {
-    icon: '🔧',
-    heading: 'Welcome to Motixi',
-    sub: 'AI-powered repair guides that know your vehicle, your parts, and your job — all in one place.',
-    content: null,
-  },
-  {
-    icon: '⚡',
-    heading: 'Everything you need to fix it right',
-    sub: 'From oil changes to timing belts — Motixi generates precise, step-by-step guides with AI illustrations.',
-    content: (
-      <div className="ob-features">
-        {[
-          { icon: '📋', title: 'Step-by-step guides', desc: 'Auto-generated from OEM data and trusted sources' },
-          { icon: '🖼️', title: 'AI illustrations', desc: 'Visual reference for every repair step' },
-          { icon: '💬', title: 'Ask the guide', desc: 'Get instant answers to repair questions' },
-        ].map((f) => (
-          <div className="ob-feature" key={f.title}>
-            <span className="ob-feature-icon">{f.icon}</span>
-            <div className="ob-feature-text">
-              <strong>{f.title}</strong>
-              <span>{f.desc}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-] as const;
-
-const PLANS: Array<{ id: PlanType; icon: string; name: string; desc: string; badge?: string }> = [
-  {
-    id: 'trial',
-    icon: '🚀',
-    name: '7-day free trial',
-    desc: 'Full access — AI illustrations, OEM-backed guides, unlimited repairs. No card required.',
-    badge: 'Recommended',
-  },
-  {
-    id: 'premium',
-    icon: '⭐',
-    name: 'Premium',
-    desc: 'Full access immediately. Best for shops and serious techs.',
-  },
-  {
-    id: 'free',
-    icon: '🔓',
-    name: 'Free (limited)',
-    desc: 'Basic guide generation. No AI illustrations, limited history.',
-  },
-];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  const t = useT();
+
+  // ── Step content ──────────────────────────────────────────────────────────
+  const STEPS = [
+    {
+      icon: '🔧',
+      heading: t.onboarding.welcomeHeading,
+      sub: t.onboarding.welcomeSub,
+      content: null,
+    },
+    {
+      icon: '⚡',
+      heading: t.onboarding.featuresHeading,
+      sub: t.onboarding.featuresSub,
+      content: (
+        <div className="ob-features">
+          {[
+            { icon: '📋', title: t.onboarding.feat1title, desc: t.onboarding.feat1desc },
+            { icon: '🖼️', title: t.onboarding.feat2title, desc: t.onboarding.feat2desc },
+            { icon: '💬', title: t.onboarding.feat3title, desc: t.onboarding.feat3desc },
+          ].map((f) => (
+            <div className="ob-feature" key={f.title}>
+              <span className="ob-feature-icon">{f.icon}</span>
+              <div className="ob-feature-text">
+                <strong>{f.title}</strong>
+                <span>{f.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+  ];
+
+  const PLANS: Array<{ id: PlanType; icon: string; name: string; desc: string; badge?: string }> = [
+    {
+      id: 'trial',
+      icon: '🚀',
+      name: t.onboarding.planTrialName,
+      desc: t.onboarding.planTrialDesc,
+      badge: t.onboarding.planTrialBadge,
+    },
+    {
+      id: 'free',
+      icon: '🔓',
+      name: t.onboarding.planFreeName,
+      desc: t.onboarding.planFreeDesc,
+    },
+  ];
+
   const [step, setStep] = useState(0); // 0 and 1 are info screens, 2 is plan selection
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('trial');
   const [loading, setLoading] = useState(false);
@@ -81,7 +77,7 @@ export default function OnboardingPage() {
       localStorage.setItem('motix_onboarding_done', 'true');
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : t.onboarding.somethingWentWrong);
       setLoading(false);
     }
   }
@@ -124,8 +120,8 @@ export default function OnboardingPage() {
         {step === 2 && (
           <>
             <div>
-              <h1 className="ob-heading">Choose your plan</h1>
-              <p className="ob-sub">Start with a free trial — no credit card required. Upgrade any time.</p>
+              <h1 className="ob-heading">{t.onboarding.choosePlanHeading}</h1>
+              <p className="ob-sub">{t.onboarding.choosePlanSub}</p>
             </div>
 
             <div className="ob-plans">
@@ -174,19 +170,18 @@ export default function OnboardingPage() {
             disabled={loading}
           >
             {loading ? (
-              <><span className="gen-spinner" /> Setting up…</>
+              <><span className="gen-spinner" /> {t.onboarding.settingUp}</>
             ) : isLastStep ? (
-              selectedPlan === 'trial' ? 'Start my free trial' :
-              selectedPlan === 'premium' ? 'Get Premium access' :
-              'Continue free'
+              selectedPlan === 'trial' ? t.onboarding.startMyFreeTrial :
+              t.onboarding.continueFree
             ) : (
-              'Continue'
+              t.common.continue_
             )}
           </button>
 
           {!isLastStep && step > 0 && (
             <button type="button" className="ob-btn-skip" onClick={() => setStep(2)}>
-              Skip to plan selection
+              {t.onboarding.skipToPlanSelection}
             </button>
           )}
         </div>

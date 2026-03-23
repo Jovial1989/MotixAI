@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../guides_provider.dart';
 import '../../../shared/widgets/mx_widgets.dart';
 import '../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// History screen — same guide list as dashboard but read-only, no create bar.
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -50,10 +51,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
 
     if (state.guides.isEmpty) {
-      return const MxEmptyState(
+      final l = S.of(context)!;
+      return MxEmptyState(
         icon: '📋',
-        title: 'No history yet',
-        subtitle: 'Guides you generate will appear here.',
+        title: l.noHistoryYet,
+        subtitle: l.noHistoryDesc,
       );
     }
 
@@ -113,21 +115,24 @@ class _Header extends StatelessWidget {
   const _Header({required this.onBack});
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: s16, vertical: s12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border(bottom: BorderSide(color: kBorder)),
-    ),
-    child: Row(
-      children: [
-        GestureDetector(
-          onTap: onBack,
-          child: Icon(Icons.arrow_back_ios, size: 20, color: kPrimary),
-        ),
-        const SizedBox(width: s12),
-        Text('History', style: tsSubhead),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final l = S.of(context)!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: s16, vertical: s12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: kBorder)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: onBack,
+            child: Icon(Icons.arrow_back_ios, size: 20, color: kPrimary),
+          ),
+          const SizedBox(width: s12),
+          Text(l.history, style: tsSubhead),
+        ],
+      ),
+    );
+  }
 }

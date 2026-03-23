@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth_provider.dart';
 import '../../../../app/theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'auth_widgets.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -42,6 +43,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     final state = ref.watch(authProvider);
 
     // Clear error on first rebuild after a new error appears
@@ -80,10 +82,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: s24),
-                Text('Welcome back', style: tsTitle.copyWith(textBaseline: null),
+                Text(l.welcomeBack, style: tsTitle.copyWith(textBaseline: null),
                   textAlign: TextAlign.center),
                 const SizedBox(height: s8),
-                Text('Sign in to your account', style: tsBody.copyWith(color: kTextMuted),
+                Text(l.signInToAccount, style: tsBody.copyWith(color: kTextMuted),
                   textAlign: TextAlign.center),
                 const SizedBox(height: s48),
 
@@ -94,34 +96,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
 
                 // Email
-                _Label('Email'),
+                _Label(l.email),
                 const SizedBox(height: s4 + 2),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
-                  decoration: authInputDecoration('you@example.com'),
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  decoration: authInputDecoration(l.emailPlaceholder),
+                  validator: (v) => (v == null || !v.contains('@')) ? l.enterValidEmail : null,
                 ),
                 const SizedBox(height: s16),
 
                 // Password
-                _Label('Password'),
+                _Label(l.password),
                 const SizedBox(height: s4 + 2),
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  decoration: authInputDecoration('••••••••').copyWith(
+                  decoration: authInputDecoration(l.passwordPlaceholder).copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
                           size: 20, color: kTextMuted),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                  validator: (v) => (v == null || v.length < 6) ? l.minSixChars : null,
                 ),
                 const SizedBox(height: s24),
 
@@ -136,22 +138,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: state.isLoading
                       ? const SizedBox(height: 20, width: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Sign in', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      : Text(l.signIn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: s16),
 
                 // Sign up link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Don't have an account? ", style: tsBody.copyWith(color: kTextMuted)),
-                    GestureDetector(
-                      onTap: () => context.go('/signup'),
-                      child: Text('Sign up', style: tsBody.copyWith(
-                        color: kPrimary, fontWeight: FontWeight.w600,
-                      )),
-                    ),
-                  ],
+                GestureDetector(
+                  onTap: () => context.go('/signup'),
+                  child: Text(
+                    l.noAccountSignUp,
+                    textAlign: TextAlign.center,
+                    style: tsBody.copyWith(color: kTextMuted),
+                  ),
                 ),
                 const SizedBox(height: s16),
 
@@ -159,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 GestureDetector(
                   onTap: state.isLoading ? null : _continueAsGuest,
                   child: Text(
-                    'Continue as guest →',
+                    l.continueAsGuest,
                     textAlign: TextAlign.center,
                     style: tsBody.copyWith(color: kTextMuted, decoration: TextDecoration.underline),
                   ),
