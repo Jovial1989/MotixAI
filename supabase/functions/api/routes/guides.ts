@@ -40,6 +40,28 @@ function requestLanguage(req: Request): string {
   return normalizeLanguage(url.searchParams.get("language"));
 }
 
+function hasExpectedScript(text: string, language: string): boolean {
+  if (language === "en") return /[A-Za-z]/.test(text);
+  if (language === "uk") return /[А-Яа-яІіЇїЄєҐґ]/.test(text);
+  if (language === "bg") return /[А-Яа-я]/.test(text);
+  return true;
+}
+
+function guideLooksLocalized(
+  guide: Record<string, unknown>,
+  steps: Array<Record<string, unknown>>,
+  language: string,
+): boolean {
+  if (language === "en") return true;
+  const sample = [
+    typeof guide.title === "string" ? guide.title : "",
+    typeof guide.part_name === "string" ? guide.part_name : "",
+    typeof steps[0]?.title === "string" ? String(steps[0].title) : "",
+    typeof steps[0]?.instruction === "string" ? String(steps[0].instruction) : "",
+  ].join(" ");
+  return hasExpectedScript(sample, language);
+}
+
 function guideCanonicalId(guide: Record<string, unknown>): string {
   return typeof guide.canonicalGuideId === "string" && guide.canonicalGuideId
     ? guide.canonicalGuideId
@@ -131,7 +153,11 @@ async function resolveLocalizedGuide(
     LIMIT 1
   `;
   if (sibling.length > 0) {
-    return await fetchGuideRows(sql, sibling[0].id);
+    const siblingGuide = await fetchGuideRows(sql, sibling[0].id);
+    if (siblingGuide && guideLooksLocalized(siblingGuide.guide, siblingGuide.steps, requestedLanguage)) {
+      return siblingGuide;
+    }
+    await sql`DELETE FROM "RepairGuide" WHERE id = ${sibling[0].id}`;
   }
 
   const localized = await localizeGuide({
@@ -151,6 +177,13 @@ async function resolveLocalizedGuide(
   }, requestedLanguage);
 
   if (!localized.steps || localized.steps.length !== current.steps.length) {
+    return current;
+  }
+  if (!guideLooksLocalized(
+    { title: localized.title, part_name: localized.partName },
+    localized.steps.map((step) => ({ title: step.title, instruction: step.instruction })),
+    requestedLanguage,
+  )) {
     return current;
   }
 

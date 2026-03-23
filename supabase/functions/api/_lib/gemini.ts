@@ -511,6 +511,7 @@ Rules:
 - Preserve torque values, warnings, safety notes, and workshop meaning exactly.
 - Translate difficulty, time estimate, part name, tools, safety notes, step titles, and instructions.
 - Do NOT leave English text unless it is a vehicle model, OEM code, or product code.
+- For Ukrainian and Bulgarian, use Cyrillic script for every translated field. If a translated field is still English, the response is invalid.
 - Keep the tone concise and professional.
 
 Respond ONLY with valid JSON:
