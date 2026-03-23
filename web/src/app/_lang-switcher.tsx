@@ -24,19 +24,18 @@ export default function LangSwitcher() {
   }, [currentLocale]);
 
   return (
-    <div className="lang-switcher">
-      {LANGS.map((lang, i) => (
-        <span key={lang.code}>
-          {i > 0 && <span className="lang-sep" aria-hidden="true" />}
-          <button
-            type="button"
-            className={`lang-btn${lang.code === currentLocale ? ' lang-btn--active' : ''}`}
-            onClick={() => switchTo(lang)}
-            aria-label={`Switch to ${lang.label}`}
-          >
-            {lang.label}
-          </button>
-        </span>
+    <div className="lang-seg" role="radiogroup" aria-label="Language">
+      {LANGS.map((lang) => (
+        <button
+          key={lang.code}
+          type="button"
+          role="radio"
+          aria-checked={lang.code === currentLocale}
+          className={`lang-seg-btn${lang.code === currentLocale ? ' lang-seg-btn--on' : ''}`}
+          onClick={() => switchTo(lang)}
+        >
+          {lang.label}
+        </button>
       ))}
     </div>
   );
