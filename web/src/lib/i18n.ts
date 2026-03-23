@@ -631,27 +631,39 @@ export interface Translations {
 
   // About page
   aboutPage: {
-    eyebrow: string;
-    title: string;
-    sub: string;
-    founderName: string;
-    founderRole: string;
-    bioHeadline: string;
-    bioP1: string;
-    bioP2: string;
-    experienceLabel: string;
-    experienceBullets: string[];
+    // Hero
+    heroEyebrow: string;
+    heroTitle: string;
+    heroSub: string;
+    // Our Story
+    storyEyebrow: string;
+    storyTitle: string;
+    storyP1: string;
+    storyP2: string;
+    // Leadership
+    leadershipEyebrow: string;
+    leadershipTitle: string;
+    ceoName: string;
+    ceoRole: string;
+    ceoBio: string;
     ctoName: string;
     ctoRole: string;
-    ctoTitle: string;
     ctoBio: string;
-    backgroundEyebrow: string;
-    backgroundTitle: string;
-    credCards: { icon: string; label: string; desc: string }[];
-    quote: string;
-    quoteAttr: string;
-    getInTouch: string;
-    seeProduct: string;
+    linkedinLabel: string;
+    emailLabel: string;
+    // Why We Build
+    whyEyebrow: string;
+    whyTitle: string;
+    whyCards: { icon: string; title: string; desc: string }[];
+    // Experience
+    expEyebrow: string;
+    expTitle: string;
+    expBullets: { label: string; desc: string }[];
+    // CTA
+    ctaQuote: string;
+    ctaQuoteAttr: string;
+    ctaTrial: string;
+    ctaContact: string;
   };
 
   // Product page
@@ -1301,40 +1313,49 @@ const en: Translations = {
   },
 
   aboutPage: {
-    eyebrow: 'About',
-    title: 'Founder-led software\nfor real-world operations',
-    sub: 'Built by someone with enterprise consulting experience, a product background, and enough time inside technical industries to know exactly where the software gap is.',
-    founderName: 'Kyrylo Petrov',
-    founderRole: 'Founder & CEO',
-    bioHeadline: 'Serial entrepreneur with an enterprise and product background',
-    bioP1: 'I\'ve spent my career at the intersection of enterprise technology, product strategy, and digital transformation — consulting for large organizations on IT modernization, leading product teams through complex builds, and working with clients where bad tooling has real operational consequences.',
-    bioP2: 'The automotive and heavy equipment space has the same profile: technically demanding, consequence-rich, and criminally underserved by software. I built Motixi to close that gap — starting with the most fundamental thing: getting the right repair guide, instantly, every time.',
-    experienceLabel: 'Experience',
-    experienceBullets: [
-      'Led enterprise consulting engagements across financial services, retail, and technology sectors — from discovery to delivery',
-      'Specialized in presales, solution architecture, and bridging business requirements with engineering execution',
-      'Delivered digital transformation and IT modernization programs for large-scale organizations',
-      'Built AI-driven product concepts and data platform initiatives, from early prototype to production',
-      'Experienced across the full product lifecycle: strategy, roadmap, team structure, and go-to-market',
-      'Founded and built multiple technology ventures — hands-on from infrastructure to customer conversations',
-    ],
+    heroEyebrow: 'About Motixi',
+    heroTitle: 'Built for people who\nactually fix things.',
+    heroSub: 'Motixi is an AI-powered platform that generates structured repair guides instantly — built by engineers who understand how workshops really operate.',
+
+    storyEyebrow: 'Our Story',
+    storyTitle: 'Why we built Motixi',
+    storyP1: 'We came from enterprise consulting and software engineering — building platforms for banks, retailers, and tech companies. But when we looked at automotive and heavy equipment, we saw an industry drowning in scattered PDFs, tribal knowledge, and outdated manuals. Technicians deserved better tools.',
+    storyP2: 'So we built Motixi: an AI engine that turns a vehicle model and repair description into a complete, step-by-step guide — with torque specs, safety notes, and diagrams — in under 3 seconds. No manual lookup. No guesswork. Just the right procedure, right now.',
+
+    leadershipEyebrow: 'Leadership',
+    leadershipTitle: 'The team behind Motixi',
+    ceoName: 'Kyrylo Petrov',
+    ceoRole: 'Founder & CEO',
+    ceoBio: 'Serial entrepreneur with a background in enterprise consulting, product strategy, and digital transformation. Spent years building platforms for large organizations before founding Motixi to close the tooling gap in automotive repair.',
     ctoName: 'Mykhailo',
-    ctoRole: 'CTO',
-    ctoTitle: 'Full-Stack Architect · Engineering Leader',
-    ctoBio: 'Mykhailo leads Motixi\'s engineering and architecture, bringing over 20 years of experience in building scalable full-stack systems and managing high-performing engineering teams.',
-    backgroundEyebrow: 'Background',
-    backgroundTitle: 'What I bring to the table',
-    credCards: [
-      { icon: '🏗️', label: 'Enterprise delivery', desc: 'Platforms built for large organizations — multi-tenant, high-availability, compliance-aware.' },
-      { icon: '🤖', label: 'AI & transformation', desc: 'AI-first product initiatives and digital transformation for enterprise clients across industries.' },
-      { icon: '🔧', label: 'Automotive & fleet', desc: 'Direct exposure to fleet operations, repair workflows, and the documentation gap Motixi addresses.' },
-      { icon: '📐', label: 'Product & strategy', desc: 'Takes products from concept to contract — strategy, roadmap, execution, enterprise sales cycle.' },
-      { icon: '⚙️', label: 'Full-stack execution', desc: 'Writes production code, designs APIs, ships mobile. No gap between vision and execution.' },
+    ctoRole: 'CTO & Co-Founder',
+    ctoBio: '20+ years building scalable full-stack systems and leading engineering teams. Architects Motixi\'s AI pipeline, infrastructure, and mobile platforms from the ground up.',
+    linkedinLabel: 'LinkedIn',
+    emailLabel: 'Email',
+
+    whyEyebrow: 'Why We Build',
+    whyTitle: 'What drives us every day',
+    whyCards: [
+      { icon: '⚡', title: 'Speed', desc: 'Guides generated in under 3 seconds. No waiting, no searching, no digging through PDFs.' },
+      { icon: '🎯', title: 'Accuracy', desc: 'AI-verified procedures with torque specs, safety warnings, and part numbers — not generic advice.' },
+      { icon: '🛠️', title: 'Usability', desc: 'Designed for real workshops — mobile-first, step-by-step, works with grease on your hands.' },
+      { icon: '🚫', title: 'No BS', desc: 'No subscriptions to 10 databases. No outdated manuals. One tool that actually works.' },
     ],
-    quote: 'The best repair guide is the one that exists at the moment you need it — accurate, structured, and faster than any manual lookup.',
-    quoteAttr: '— Kyrylo Petrov, Founder & CEO',
-    getInTouch: 'Get in touch',
-    seeProduct: 'See the product →',
+
+    expEyebrow: 'Experience',
+    expTitle: 'What we bring to the table',
+    expBullets: [
+      { label: 'Enterprise delivery', desc: 'Multi-tenant platforms for financial services, retail, and technology — from discovery to production.' },
+      { label: 'AI & data platforms', desc: 'AI-driven products from early prototype to scaled production systems serving real users.' },
+      { label: 'Automotive & fleet', desc: 'Direct exposure to fleet operations, repair workflows, and the documentation gap Motixi addresses.' },
+      { label: 'Full product lifecycle', desc: 'Strategy, roadmap, team structure, go-to-market — from concept to paying customers.' },
+      { label: 'Full-stack engineering', desc: 'Production code, API design, mobile apps, infrastructure — no gap between vision and execution.' },
+    ],
+
+    ctaQuote: 'The best repair guide is the one that exists at the moment you need it — accurate, structured, and faster than any manual lookup.',
+    ctaQuoteAttr: '— Kyrylo Petrov, Founder & CEO',
+    ctaTrial: 'Start free trial',
+    ctaContact: 'Get in touch →',
   },
 
   productPage: {
@@ -1991,40 +2012,49 @@ const uk: Translations = {
   },
 
   aboutPage: {
-    eyebrow: 'Про нас',
-    title: 'Програмне забезпечення від засновника\nдля реальних операцій',
-    sub: 'Створено людиною з досвідом корпоративного консалтингу, продуктовим бекграундом та достатнім часом в технічних індустріях, щоб точно знати, де є прогалина в програмному забезпеченні.',
-    founderName: 'Кирило Петров',
-    founderRole: 'Засновник та CEO',
-    bioHeadline: 'Серійний підприємець з корпоративним та продуктовим досвідом',
-    bioP1: 'Я провів свою кар\'єру на перетині корпоративних технологій, продуктової стратегії та цифрової трансформації — консультуючи великі організації з модернізації ІТ, керуючи продуктовими командами через складні розробки та працюючи з клієнтами, де погані інструменти мають реальні операційні наслідки.',
-    bioP2: 'Автомобільна та важка техніка має той самий профіль: технічно вимогливий, з серйозними наслідками та кримінально недообслуговуваний програмним забезпеченням. Я створив Motixi, щоб закрити цю прогалину — починаючи з найфундаментальнішого: отримати правильну інструкцію з ремонту, миттєво, кожного разу.',
-    experienceLabel: 'Досвід',
-    experienceBullets: [
-      'Керував корпоративними консалтинговими проектами у фінансових послугах, роздрібній торгівлі та технологічних секторах — від дослідження до впровадження',
-      'Спеціалізація в предпродажах, архітектурі рішень та поєднанні бізнес-вимог з інженерним виконанням',
-      'Реалізовував програми цифрової трансформації та модернізації ІТ для великих організацій',
-      'Створював концепції продуктів на базі ШІ та ініціативи платформ даних, від раннього прототипу до виробництва',
-      'Досвід по всьому життєвому циклу продукту: стратегія, дорожня карта, структура команди та вихід на ринок',
-      'Заснував та побудував кілька технологічних підприємств — практично від інфраструктури до розмов з клієнтами',
-    ],
+    heroEyebrow: 'Про Motixi',
+    heroTitle: 'Створено для тих,\nхто справді ремонтує.',
+    heroSub: 'Motixi — це ШІ-платформа, яка миттєво генерує структуровані інструкції з ремонту. Створена інженерами, які розуміють, як насправді працюють майстерні.',
+
+    storyEyebrow: 'Наша історія',
+    storyTitle: 'Чому ми створили Motixi',
+    storyP1: 'Ми прийшли з корпоративного консалтингу та розробки програмного забезпечення — будували платформи для банків, рітейлу та технологічних компаній. Але коли ми подивились на автомобільну галузь і важку техніку, побачили індустрію, яка тоне в розрізнених PDF-ках, усних знаннях і застарілих мануалах. Техніки заслуговують на кращі інструменти.',
+    storyP2: 'Тому ми створили Motixi: ШІ-двигун, який перетворює модель автомобіля та опис ремонту на повну покрокову інструкцію — з моментами затяжки, примітками безпеки та діаграмами — менш ніж за 3 секунди. Без пошуку в мануалах. Без здогадок. Просто правильна процедура, просто зараз.',
+
+    leadershipEyebrow: 'Команда',
+    leadershipTitle: 'Люди за Motixi',
+    ceoName: 'Кирило Петров',
+    ceoRole: 'Засновник та CEO',
+    ceoBio: 'Серійний підприємець з досвідом у корпоративному консалтингу, продуктовій стратегії та цифровій трансформації. Роками будував платформи для великих організацій, перш ніж заснувати Motixi, щоб закрити прогалину в інструментах для автомобільного ремонту.',
     ctoName: 'Михайло',
-    ctoRole: 'CTO',
-    ctoTitle: 'Full-Stack архітектор · Лідер інженерії',
-    ctoBio: 'Михайло керує інженерією та архітектурою Motixi, маючи понад 20 років досвіду у створенні масштабованих full-stack систем та управлінні високоефективними інженерними командами.',
-    backgroundEyebrow: 'Бекграунд',
-    backgroundTitle: 'Що я привношу',
-    credCards: [
-      { icon: '🏗️', label: 'Корпоративні рішення', desc: 'Платформи для великих організацій — мультитенантні, високодоступні, з урахуванням комплаєнсу.' },
-      { icon: '🤖', label: 'ШІ та трансформація', desc: 'Продуктові ініціативи на базі ШІ та цифрова трансформація для корпоративних клієнтів.' },
-      { icon: '🔧', label: 'Автомобілі та автопарки', desc: 'Прямий досвід з операціями автопарків, робочими процесами ремонту та прогалиною в документації, яку вирішує Motixi.' },
-      { icon: '📐', label: 'Продукт та стратегія', desc: 'Веде продукти від концепції до контракту — стратегія, дорожня карта, виконання, цикл корпоративних продажів.' },
-      { icon: '⚙️', label: 'Full-stack виконання', desc: 'Пише продакшн-код, проектує API, випускає мобільні додатки. Без розриву між баченням та виконанням.' },
+    ctoRole: 'CTO та співзасновник',
+    ctoBio: '20+ років створення масштабованих full-stack систем та керування інженерними командами. Будує ШІ-пайплайн, інфраструктуру та мобільні платформи Motixi з нуля.',
+    linkedinLabel: 'LinkedIn',
+    emailLabel: 'Email',
+
+    whyEyebrow: 'Навіщо ми це робимо',
+    whyTitle: 'Що нас рухає щодня',
+    whyCards: [
+      { icon: '⚡', title: 'Швидкість', desc: 'Інструкції за 3 секунди. Без очікування, без пошуку, без копання в PDF-ках.' },
+      { icon: '🎯', title: 'Точність', desc: 'Перевірені ШІ процедури з моментами затяжки, попередженнями безпеки та номерами деталей — не загальні поради.' },
+      { icon: '🛠️', title: 'Зручність', desc: 'Створено для реальних майстерень — мобільний формат, покроково, працює навіть з мастилом на руках.' },
+      { icon: '🚫', title: 'Без зайвого', desc: 'Без підписок на 10 баз даних. Без застарілих мануалів. Один інструмент, який працює.' },
     ],
-    quote: 'Найкраща інструкція з ремонту — та, що існує в момент, коли вона вам потрібна — точна, структурована та швидша за будь-який пошук у мануалі.',
-    quoteAttr: '— Кирило Петров, Засновник та CEO',
-    getInTouch: 'Зв\'язатися',
-    seeProduct: 'Переглянути продукт →',
+
+    expEyebrow: 'Досвід',
+    expTitle: 'Що стоїть за нашою експертизою',
+    expBullets: [
+      { label: 'Корпоративні рішення', desc: 'Мультитенантні платформи для фінансів, рітейлу та технологій — від дослідження до продакшну.' },
+      { label: 'ШІ та дані', desc: 'ШІ-продукти від раннього прототипу до масштабованих систем, які обслуговують реальних користувачів.' },
+      { label: 'Автомобілі та автопарки', desc: 'Прямий досвід з операціями автопарків, робочими процесами ремонту та документаційною прогалиною.' },
+      { label: 'Повний цикл продукту', desc: 'Стратегія, дорожня карта, структура команди, вихід на ринок — від ідеї до клієнтів, що платять.' },
+      { label: 'Full-stack інженерія', desc: 'Продакшн-код, API, мобільні додатки, інфраструктура — без розриву між баченням та виконанням.' },
+    ],
+
+    ctaQuote: 'Найкраща інструкція з ремонту — та, що існує саме тоді, коли вона потрібна — точна, структурована і швидша за будь-який пошук у мануалі.',
+    ctaQuoteAttr: '— Кирило Петров, Засновник та CEO',
+    ctaTrial: 'Спробувати безкоштовно',
+    ctaContact: 'Зв\'язатися з нами →',
   },
 
   productPage: {
@@ -2681,40 +2711,49 @@ const bg: Translations = {
   },
 
   aboutPage: {
-    eyebrow: 'За нас',
-    title: 'Софтуер от основателя\nза реални операции',
-    sub: 'Създаден от човек с опит в корпоративния консултинг, продуктов бекграунд и достатъчно време в технически индустрии, за да знае точно къде е пропускът в софтуера.',
-    founderName: 'Кирило Петров',
-    founderRole: 'Основател и CEO',
-    bioHeadline: 'Сериен предприемач с корпоративен и продуктов опит',
-    bioP1: 'Прекарах кариерата си на кръстопътя на корпоративните технологии, продуктовата стратегия и дигиталната трансформация — консултирайки големи организации по модернизация на ИТ, ръководейки продуктови екипи през сложни проекти и работейки с клиенти, където лошите инструменти имат реални оперативни последствия.',
-    bioP2: 'Автомобилният и тежкотехническият сектор има същия профил: технически взискателен, с високи последствия и престъпно недообслужван от софтуер. Създадох Motixi, за да запълня тази празнина — започвайки с най-фундаменталното: получаване на правилното ръководство за ремонт, мигновено, всеки път.',
-    experienceLabel: 'Опит',
-    experienceBullets: [
-      'Ръководил корпоративни консултантски ангажименти във финансови услуги, търговия и технологични сектори — от проучване до изпълнение',
-      'Специализация в предпродажби, архитектура на решения и свързване на бизнес изисквания с инженерно изпълнение',
-      'Реализирал програми за дигитална трансформация и модернизация на ИТ за големи организации',
-      'Изграждал продуктови концепции, базирани на ИИ, и инициативи за платформи за данни, от ранен прототип до продукция',
-      'Опит в пълния жизнен цикъл на продукта: стратегия, пътна карта, структура на екипа и излизане на пазара',
-      'Основал и изградил множество технологични предприятия — практически от инфраструктура до разговори с клиенти',
-    ],
+    heroEyebrow: 'За Motixi',
+    heroTitle: 'Създадено за хората,\nкоито наистина ремонтират.',
+    heroSub: 'Motixi е платформа с изкуствен интелект, която мигновено генерира структурирани ръководства за ремонт — създадена от инженери, които разбират как реално работят сервизите.',
+
+    storyEyebrow: 'Нашата история',
+    storyTitle: 'Защо създадохме Motixi',
+    storyP1: 'Идваме от корпоративен консултинг и софтуерно инженерство — изграждахме платформи за банки, ритейл и технологични компании. Но когато погледнахме към автомобилната индустрия и тежката техника, видяхме сектор, затрупан с разпръснати PDF файлове, устни знания и остарели наръчници. Техниците заслужават по-добри инструменти.',
+    storyP2: 'Затова създадохме Motixi: ИИ двигател, който превръща модел на автомобил и описание на ремонта в пълно ръководство стъпка по стъпка — с моменти на затягане, бележки за безопасност и диаграми — за по-малко от 3 секунди. Без ръчно търсене. Без догадки. Просто правилната процедура, точно сега.',
+
+    leadershipEyebrow: 'Екип',
+    leadershipTitle: 'Хората зад Motixi',
+    ceoName: 'Кирило Петров',
+    ceoRole: 'Основател и CEO',
+    ceoBio: 'Сериен предприемач с опит в корпоративен консултинг, продуктова стратегия и дигитална трансформация. Години наред изграждал платформи за големи организации, преди да основе Motixi, за да запълни празнината в инструментите за автомобилен ремонт.',
     ctoName: 'Михайло',
-    ctoRole: 'CTO',
-    ctoTitle: 'Full-Stack архитект · Лидер на инженерията',
-    ctoBio: 'Михайло ръководи инженерията и архитектурата на Motixi, с над 20 години опит в изграждането на мащабируеми full-stack системи и управление на високоефективни инженерни екипи.',
-    backgroundEyebrow: 'Бекграунд',
-    backgroundTitle: 'Какво донасям',
-    credCards: [
-      { icon: '🏗️', label: 'Корпоративни решения', desc: 'Платформи за големи организации — мултитенант, висока достъпност, съобразени с комплайънс.' },
-      { icon: '🤖', label: 'ИИ и трансформация', desc: 'Продуктови инициативи, базирани на ИИ, и дигитална трансформация за корпоративни клиенти.' },
-      { icon: '🔧', label: 'Автомобили и автопаркове', desc: 'Пряк опит с операции на автопаркове, работни процеси по ремонт и пропуска в документацията, който Motixi адресира.' },
-      { icon: '📐', label: 'Продукт и стратегия', desc: 'Води продукти от концепция до договор — стратегия, пътна карта, изпълнение, цикъл на корпоративни продажби.' },
-      { icon: '⚙️', label: 'Full-stack изпълнение', desc: 'Пише продукционен код, проектира API, пуска мобилни приложения. Без пропуск между визия и изпълнение.' },
+    ctoRole: 'CTO и съосновател',
+    ctoBio: '20+ години опит в изграждането на мащабируеми full-stack системи и ръководене на инженерни екипи. Проектира ИИ пайплайна, инфраструктурата и мобилните платформи на Motixi от нулата.',
+    linkedinLabel: 'LinkedIn',
+    emailLabel: 'Email',
+
+    whyEyebrow: 'Защо го правим',
+    whyTitle: 'Какво ни движи всеки ден',
+    whyCards: [
+      { icon: '⚡', title: 'Скорост', desc: 'Ръководства за 3 секунди. Без чакане, без търсене, без ровене в PDF файлове.' },
+      { icon: '🎯', title: 'Точност', desc: 'Верифицирани от ИИ процедури с моменти на затягане, предупреждения за безопасност и номера на части — не общи съвети.' },
+      { icon: '🛠️', title: 'Удобство', desc: 'Проектирано за реални сервизи — мобилен формат, стъпка по стъпка, работи дори с грес по ръцете.' },
+      { icon: '🚫', title: 'Без излишно', desc: 'Без абонаменти за 10 бази данни. Без остарели наръчници. Един инструмент, който работи.' },
     ],
-    quote: 'Най-доброто ръководство за ремонт е това, което съществува в момента, в който ви е нужно — точно, структурирано и по-бързо от всяко търсене в ръководство.',
-    quoteAttr: '— Кирило Петров, Основател и CEO',
-    getInTouch: 'Свържете се',
-    seeProduct: 'Вижте продукта →',
+
+    expEyebrow: 'Опит',
+    expTitle: 'Какво стои зад нашата експертиза',
+    expBullets: [
+      { label: 'Корпоративни решения', desc: 'Мултитенант платформи за финанси, ритейл и технологии — от проучване до продукция.' },
+      { label: 'ИИ и данни', desc: 'ИИ продукти от ранен прототип до мащабирани системи, обслужващи реални потребители.' },
+      { label: 'Автомобили и автопаркове', desc: 'Пряк опит с операции на автопаркове, ремонтни процеси и документационната празнина.' },
+      { label: 'Пълен продуктов цикъл', desc: 'Стратегия, пътна карта, структура на екипа, излизане на пазара — от идея до плащащи клиенти.' },
+      { label: 'Full-stack инженерство', desc: 'Продукционен код, API дизайн, мобилни приложения, инфраструктура — без пропуск между визия и изпълнение.' },
+    ],
+
+    ctaQuote: 'Най-доброто ръководство за ремонт е това, което съществува точно когато ви е нужно — точно, структурирано и по-бързо от всяко ръчно търсене.',
+    ctaQuoteAttr: '— Кирило Петров, Основател и CEO',
+    ctaTrial: 'Безплатен пробен период',
+    ctaContact: 'Свържете се с нас →',
   },
 
   productPage: {
