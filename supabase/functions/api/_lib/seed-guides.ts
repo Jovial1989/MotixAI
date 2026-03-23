@@ -148,12 +148,12 @@ export async function seedExampleGuides(userId: string, tenantId?: string | null
       INSERT INTO "RepairGuide" (
         id, "tenantId", "userId", "vehicleId", "partId",
         title, difficulty, "timeEstimate", "safetyNotes", tools,
-        "inputModel", "inputPart", "sourceType", "createdAt", "updatedAt"
+        "inputModel", "inputPart", "sourceType", "language", "canonicalGuideId", "createdAt", "updatedAt"
       ) VALUES (
         ${guideId}, ${tid}, ${userId}, ${vehicleId}, ${partId},
         ${g.title}, ${g.difficulty}, ${g.timeEstimate},
         ${g.safetyNotes}, ${g.tools},
-        ${g.vehicleModel}, ${g.partName}, ${"B2C"}, ${now}, ${now}
+        ${g.vehicleModel}, ${g.partName}, ${"B2C"}, ${"en"}, ${guideId}, ${now}, ${now}
       )
     `;
 

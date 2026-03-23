@@ -48,6 +48,15 @@ function guideStatusDot(guide: RepairGuide): 'green' | 'yellow' | 'red' | null {
   return null;
 }
 
+function difficultyBadgeClass(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (['beginner', 'початковий', 'начинаещ'].includes(normalized)) return 'badge--green';
+  if (['intermediate', 'середній', 'средно ниво'].includes(normalized)) return 'badge--yellow';
+  if (['advanced', 'просунутий', 'напреднал'].includes(normalized)) return 'badge--orange';
+  if (['expert', 'експертний', 'експертно'].includes(normalized)) return 'badge--red';
+  return 'badge--yellow';
+}
+
 // ── Guide list with search + filter ──────────────────────────────────────────
 
 function GuidesView({
@@ -92,12 +101,6 @@ function GuidesView({
     if (!isGuest && sort === 'alpha') list.sort((a, b) => a.title.localeCompare(b.title));
     return list;
   }, [guides, search, filterDiff, isGuest, sort]);
-
-  const difficultyColor: Record<string, string> = {
-    Beginner: 'badge--green', Intermediate: 'badge--yellow',
-    Advanced: 'badge--orange', Expert: 'badge--red',
-    easy: 'badge--green', medium: 'badge--yellow', hard: 'badge--red',
-  };
 
   function clearFilters() { setSearch(''); setFilterDiff(''); }
 
@@ -263,7 +266,7 @@ function GuidesView({
                 )}
                 <Link href={`/guides/${guide.id}`} className="guide-card-main">
                   <div className="guide-card-meta">
-                    <span className={`badge ${difficultyColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
+                    <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
                     <span className="guide-card-time">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2"/>
@@ -281,6 +284,12 @@ function GuidesView({
                   </p>
                 </Link>
                 <div className="guide-card-actions">
+                  {isGuest && guide.steps?.[0]?.imageUrl && (
+                    <Link href={`/guides/${guide.id}`} className="guide-card-thumb" aria-label={guide.title}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={guide.steps[0].imageUrl ?? ''} alt={guide.title} className="guide-card-thumb-img" />
+                    </Link>
+                  )}
                   {!isGuest && (
                     <button
                       className="guide-card-delete"
@@ -1049,6 +1058,7 @@ export default function DashboardPage() {
 
 function DashboardInner() {
   const t = useT();
+  const locale = getLocale();
   const [view, setView] = useState<DashView>('guides');
   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
   const [guides, setGuides] = useState<RepairGuide[]>([]);
@@ -1132,7 +1142,7 @@ function DashboardInner() {
     setLoading(true);
     const guestMode = readJwt().role === 'GUEST';
     Promise.all([
-      guestMode ? webApi.getDemoGuides() : webApi.listGuides(),
+      guestMode ? webApi.getDemoGuides(locale) : webApi.listGuides(locale),
       guestMode ? Promise.resolve([] as VehicleWithHistory[]) : webApi.listVehicles().catch(() => [] as VehicleWithHistory[]),
       guestMode ? Promise.resolve(null) : webApi.getAnalytics().catch(() => null),
     ]).then(([g, v, a]) => {
@@ -1140,7 +1150,7 @@ function DashboardInner() {
     }).catch((err: unknown) => {
       setError(err instanceof Error ? err.message : 'Failed to load');
     }).finally(() => setLoading(false));
-  }, []);
+  }, [locale]);
 
   async function createGuide(data: {
     vehicleModel: string;

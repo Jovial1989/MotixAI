@@ -144,26 +144,35 @@ export class MotixApiClient {
     return this.request<RepairGuide>('/guides', { method: 'POST', body: JSON.stringify(body) });
   }
 
-  listGuides() {
-    return this.request<RepairGuide[]>('/guides');
+  listGuides(language?: string) {
+    const qs = new URLSearchParams();
+    if (language) qs.set('language', language);
+    const query = qs.toString();
+    return this.request<RepairGuide[]>(`/guides${query ? `?${query}` : ''}`);
   }
 
-  getDemoGuides() {
-    return this.request<RepairGuide[]>('/guides/demo');
+  getDemoGuides(language?: string) {
+    const qs = new URLSearchParams();
+    if (language) qs.set('language', language);
+    const query = qs.toString();
+    return this.request<RepairGuide[]>(`/guides/demo${query ? `?${query}` : ''}`);
   }
 
-  getGuide(id: string) {
-    return this.request<RepairGuide>(`/guides/${id}`);
+  getGuide(id: string, language?: string) {
+    const qs = new URLSearchParams();
+    if (language) qs.set('language', language);
+    const query = qs.toString();
+    return this.request<RepairGuide>(`/guides/${id}${query ? `?${query}` : ''}`);
   }
 
   deleteGuide(id: string) {
     return this.request<void>(`/guides/${id}`, { method: 'DELETE' });
   }
 
-  askGuideStep(guideId: string, stepId: string, question: string) {
+  askGuideStep(guideId: string, stepId: string, question: string, language?: string) {
     return this.request<{ answer: string }>(`/guides/${guideId}/ask`, {
       method: 'POST',
-      body: JSON.stringify({ stepId, question }),
+      body: JSON.stringify({ stepId, question, language }),
     });
   }
 

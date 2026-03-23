@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, createRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
-import { useT } from '@/lib/i18n';
+import { getLocale, useT } from '@/lib/i18n';
 
 // Guard against AI-generated string "null"/"none" values for optional fields
 function isMeaningfulString(v: string | null | undefined): v is string {
@@ -32,23 +32,38 @@ function LockedImageBlock() {
   );
 }
 
-/* ── Image viewer (authenticated only) ───────────────────────────────── */
-function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
+function difficultyBadgeClass(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (['beginner', 'початковий', 'начинаещ'].includes(normalized)) return 'badge--green';
+  if (['intermediate', 'середній', 'средно ниво'].includes(normalized)) return 'badge--yellow';
+  if (['advanced', 'просунутий', 'напреднал'].includes(normalized)) return 'badge--orange';
+  if (['expert', 'експертний', 'експертно'].includes(normalized)) return 'badge--red';
+  return 'badge--yellow';
+}
+
+/* ── Image viewer ────────────────────────────────────────────────────── */
+function StepImage({ step, readOnly = false }: { step: RepairStep; readOnly?: boolean }) {
   const t = useT();
-  const [status, setStatus] = useState(step.imageStatus ?? 'none');
+  const [status, setStatus] = useState(step.imageStatus ?? (step.imageUrl ? 'ready' : 'none'));
   const [url, setUrl]       = useState(step.imageUrl ?? null);
   const [fullscreen, setFullscreen] = useState(false);
-  const [triggered, setTriggered]   = useState(false);
+  const [triggered, setTriggered]   = useState(Boolean(step.imageUrl));
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (triggered) return;
+    setStatus(step.imageStatus ?? (step.imageUrl ? 'ready' : 'none'));
+    setUrl(step.imageUrl ?? null);
+    setTriggered(Boolean(step.imageUrl));
+  }, [step.id, step.imageStatus, step.imageUrl]);
+
+  useEffect(() => {
+    if (readOnly || triggered || (status === 'ready' && url)) return;
     setTriggered(true);
     webApi.generateStepImage(step.id, false).then((r) => {
       setStatus(r.imageStatus as typeof status);
       if (r.imageUrl) setUrl(r.imageUrl);
     }).catch(() => {});
-  }, [step.id, triggered]);
+  }, [readOnly, status, step.id, triggered, url]);
 
   useEffect(() => {
     const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
@@ -63,13 +78,15 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
       } catch { /* ignore */ }
     }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, step.id]);
+  }, [readOnly, status, step.id]);
+
+  const showLoader = !url && (readOnly ? false : ['none', 'queued', 'searching_refs', 'analyzing_refs', 'generating'].includes(status));
 
   if (status === 'ready' && url) return (
     <>
       <button className="simg-preview" onClick={() => setFullscreen(true)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt={step.title} className="simg-img" />
+        <img src={url} alt={step.title} className="simg-img simg-img--ready" />
         <span className="simg-expand">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 4.5V2h2.5M8.5 2H11v2.5M11 8.5V11H8.5M4.5 11H2V8.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           {t.guideDetail.expand}
@@ -78,13 +95,15 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
       {!url.startsWith('data:') && (
         <span className="simg-fallback-badge">{t.guideDetail.fallbackIllustration}</span>
       )}
-      <button className="simg-regen" title="Regenerate illustration" onClick={(e) => {
-        e.stopPropagation();
-        webApi.generateStepImage(step.id, true).then((r) => {
-          setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
-        }).catch(() => {});
-        setStatus('queued');
-      }}>{`↺ ${t.guideDetail.regenerate}`}</button>
+      {!readOnly && (
+        <button className="simg-regen" title={t.guideDetail.regenerate} onClick={(e) => {
+          e.stopPropagation();
+          webApi.generateStepImage(step.id, true).then((r) => {
+            setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+          }).catch(() => {});
+          setStatus('queued');
+        }}>{`↺ ${t.guideDetail.regenerate}`}</button>
+      )}
       {fullscreen && (
         <div className="simg-modal" onClick={() => setFullscreen(false)}>
           <button className="simg-modal-x">✕</button>
@@ -101,23 +120,24 @@ function StepImage({ step, guideId }: { step: RepairStep; guideId: string }) {
     analyzing_refs: t.guideDetail.analyzingRefs,
     generating:     t.guideDetail.generatingStatus,
   };
-  if (status in statusLabel) return (
-    <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{statusLabel[status]}</span></div>
+  if (showLoader || status in statusLabel) return (
+    <div className="simg-skeleton">
+      <div className="simg-skeleton-shimmer" />
+      <div className="simg-skeleton-body">
+        <span className="gen-spinner gen-spinner--md" />
+        <span>{statusLabel[status] ?? t.guideDetail.generatingStatus}</span>
+      </div>
+    </div>
   );
 
   if (status === 'failed') return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="simg-failed-wrap">
       {url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="Failed illustration" className="simg-img" />
       )}
       <button className="simg-failed" onClick={() => { setTriggered(false); setStatus('none'); }}>{`↺ ${t.guideDetail.retryIllustration}`}</button>
     </div>
-  );
-
-  // Show loading state while initial generation request is in-flight
-  if (triggered && status === 'none') return (
-    <div className="simg-skeleton"><span className="gen-spinner gen-spinner--md" /><span>{t.guideDetail.preparingIllustration}</span></div>
   );
 
   return null;
@@ -171,7 +191,7 @@ function AskAiPanel({ step, guideId, isGuest }: { step: RepairStep; guideId: str
 
     setLoading(true); setAnswer(null);
     try {
-      const res = await webApi.askGuideStep(guideId, step.id, q);
+      const res = await webApi.askGuideStep(guideId, step.id, q, getLocale());
       setAnswer(res.answer);
       if (isGuest) guestAskUsed.add(step.id);
     } catch {
@@ -236,6 +256,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
   stepRef: React.RefObject<HTMLDivElement>; isGuest?: boolean;
 }) {
   const t = useT();
+  const showLockedIllustration = Boolean(isGuest && !step.imageUrl && step.imageStatus !== 'ready');
   return (
     <div ref={stepRef} className={`sc${active ? ' sc--open sc--active' : ''}`}>
       <button className="sc-hd" onClick={onActivate}>
@@ -249,7 +270,7 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
 
       {active && (
         <div className="sc-bd">
-          {isGuest ? <LockedImageBlock /> : <StepImage step={step} guideId={guideId} />}
+          {showLockedIllustration ? <LockedImageBlock /> : <StepImage step={step} readOnly={Boolean(isGuest)} />}
           <div className="sc-inst">
             {(() => {
               const lines = step.instruction.split('\n').filter(Boolean);
@@ -301,6 +322,8 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
 export default function GuideDetailPage() {
   const t = useT();
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const locale = getLocale();
   const [guide, setGuide]         = useState<RepairGuide | null>(null);
   const [error, setError]         = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -312,10 +335,15 @@ export default function GuideDetailPage() {
     if (!params.id) return;
     setGuide(null);
     setError(null);
-    webApi.getGuide(params.id)
-      .then(setGuide)
+    webApi.getGuide(params.id, locale)
+      .then((nextGuide) => {
+        setGuide(nextGuide);
+        if (nextGuide.id && nextGuide.id !== params.id) {
+          router.replace(`/guides/${nextGuide.id}`);
+        }
+      })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load'));
-  }, [params.id]);
+  }, [locale, params.id, router]);
 
   useEffect(() => {
     const ref = stepRefs.current[activeStep];
@@ -325,10 +353,6 @@ export default function GuideDetailPage() {
     }, 50);
     return () => clearTimeout(t);
   }, [activeStep]);
-
-  const diffColor: Record<string, string> = {
-    Beginner: 'badge--green', Intermediate: 'badge--yellow', Advanced: 'badge--orange', Expert: 'badge--red',
-  };
 
   if (error) return (
     <div className="dash-root">
@@ -392,7 +416,7 @@ export default function GuideDetailPage() {
         <main className="gd-main">
           <div className="gd-mob-head">
             <div className="gd-chip-row">
-              <span className={`badge ${diffColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
+              <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
               {guide.timeEstimate && (
                 <span className="gd-chip">
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
@@ -415,7 +439,7 @@ export default function GuideDetailPage() {
                 key={step.id} step={step} index={i}
                 active={activeStep === i}
                 onActivate={() => setActiveStep(i)}
-                guideId={params.id}
+                guideId={guide.id}
                 stepRef={stepRefs.current[i]}
                 isGuest={isGuest}
               />
@@ -426,7 +450,7 @@ export default function GuideDetailPage() {
         <aside className="gd-sidebar">
           <div className="gd-sb-card">
             <div className="gd-chip-row">
-              <span className={`badge ${diffColor[guide.difficulty] ?? 'badge--yellow'}`}>{guide.difficulty}</span>
+              <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
               {guide.timeEstimate && (
                 <span className="gd-chip">
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>

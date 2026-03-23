@@ -1,6 +1,6 @@
 import { CORS_HEADERS, errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
-import { explainStep, generateRepairGuide, synthesizeFromSource } from "../_lib/gemini.ts";
+import { explainStep, generateRepairGuide, localizeGuide, synthesizeFromSource } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 import { seedExampleGuides } from "../_lib/seed-guides.ts";
 import { getSourcePackage } from "../_lib/sources/registry.ts";
@@ -21,6 +21,211 @@ const DEMO_GUIDE_IDS = [
   "cmmd40wtg002f10jsh3jyvkbu", // Toyota Land Cruiser 200 Turbocharger (Advanced)
 ];
 
+const SUPPORTED_LANGUAGES = new Set(["en", "uk", "bg"]);
+
+const DEMO_IMAGE_PATHS: Record<string, string> = {
+  [DEMO_GUIDE_IDS[0]]: "/demo-guides/bmw-e90-oil-change.svg",
+  [DEMO_GUIDE_IDS[1]]: "/demo-guides/nissan-qashqai-brake-pads.svg",
+  [DEMO_GUIDE_IDS[2]]: "/demo-guides/toyota-land-cruiser-turbo.svg",
+};
+
+function normalizeLanguage(language?: string | null): string {
+  if (!language) return "en";
+  const normalized = language.toLowerCase() === "ua" ? "uk" : language.toLowerCase();
+  return SUPPORTED_LANGUAGES.has(normalized) ? normalized : "en";
+}
+
+function requestLanguage(req: Request): string {
+  const url = new URL(req.url);
+  return normalizeLanguage(url.searchParams.get("language"));
+}
+
+function guideCanonicalId(guide: Record<string, unknown>): string {
+  return typeof guide.canonicalGuideId === "string" && guide.canonicalGuideId
+    ? guide.canonicalGuideId
+    : String(guide.id);
+}
+
+function hydrateDemoSteps(guideId: string, steps: Array<Record<string, unknown>>) {
+  const imageUrl = DEMO_IMAGE_PATHS[guideId];
+  return steps.map((step) => ({
+    ...step,
+    imageStatus: imageUrl ? "ready" : (step.imageStatus ?? "none"),
+    imageUrl: imageUrl ?? step.imageUrl ?? null,
+  }));
+}
+
+function formatGuideResponse(
+  guide: Record<string, unknown>,
+  steps: Array<Record<string, unknown>>,
+  images: Array<Record<string, unknown>> = [],
+) {
+  const canonicalId = guideCanonicalId(guide);
+  const isDemoGuide = DEMO_GUIDE_IDS.includes(canonicalId);
+  return {
+    ...guide,
+    canonicalGuideId: canonicalId,
+    language: normalizeLanguage(typeof guide.language === "string" ? guide.language : "en"),
+    ...(isDemoGuide ? { source: "demo" } : {}),
+    vehicle: {
+      id: guide.vid,
+      model: guide.vehicle_model,
+      vin: guide.vehicle_vin,
+    },
+    part: {
+      id: guide.pid,
+      name: guide.part_name,
+      oemNumber: guide.part_oem,
+    },
+    steps: isDemoGuide ? hydrateDemoSteps(canonicalId, steps) : steps,
+    images,
+  };
+}
+
+async function fetchGuideRows(sql: ReturnType<typeof getDb>, guideId: string) {
+  const guides = await sql`
+    SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
+           p.id as pid, p.name as part_name, p."oemNumber" as part_oem
+    FROM "RepairGuide" g
+    JOIN "Vehicle" v ON v.id = g."vehicleId"
+    JOIN "Part" p ON p.id = g."partId"
+    WHERE g.id = ${guideId}
+    LIMIT 1
+  `;
+  if (guides.length === 0) return null;
+
+  const steps = await sql`
+    SELECT id, "guideId", "stepOrder", title, instruction,
+           "torqueValue", "warningNote", "imageStatus", "imageUrl", "imagePrompt", "imageError", "createdAt"
+    FROM "RepairStep"
+    WHERE "guideId" = ${guideId}
+    ORDER BY "stepOrder" ASC
+  `;
+  const images = await sql`
+    SELECT id, "guideId", "stepOrder", prompt, status, "createdAt"
+    FROM "GeneratedImage"
+    WHERE "guideId" = ${guideId}
+    ORDER BY "stepOrder" ASC
+  `;
+  return { guide: guides[0], steps, images };
+}
+
+async function resolveLocalizedGuide(
+  sql: ReturnType<typeof getDb>,
+  sourceGuideId: string,
+  requestedLanguage: string,
+) {
+  const current = await fetchGuideRows(sql, sourceGuideId);
+  if (!current) return null;
+
+  const currentGuide = current.guide;
+  const currentLanguage = normalizeLanguage(typeof currentGuide.language === "string" ? currentGuide.language : "en");
+  if (currentLanguage === requestedLanguage) return current;
+
+  const canonicalId = guideCanonicalId(currentGuide);
+  const sibling = await sql`
+    SELECT id
+    FROM "RepairGuide"
+    WHERE "canonicalGuideId" = ${canonicalId}
+      AND "language" = ${requestedLanguage}
+    LIMIT 1
+  `;
+  if (sibling.length > 0) {
+    return await fetchGuideRows(sql, sibling[0].id);
+  }
+
+  const localized = await localizeGuide({
+    title: String(currentGuide.title),
+    difficulty: String(currentGuide.difficulty),
+    timeEstimate: String(currentGuide.timeEstimate ?? ""),
+    tools: Array.isArray(currentGuide.tools) ? currentGuide.tools : [],
+    safetyNotes: Array.isArray(currentGuide.safetyNotes) ? currentGuide.safetyNotes : [],
+    partName: String(currentGuide.part_name ?? ""),
+    steps: current.steps.map((step) => ({
+      order: Number(step.stepOrder),
+      title: String(step.title),
+      instruction: String(step.instruction),
+      torqueValue: typeof step.torqueValue === "string" ? step.torqueValue : null,
+      warningNote: typeof step.warningNote === "string" ? step.warningNote : null,
+    })),
+  }, requestedLanguage);
+
+  if (!localized.steps || localized.steps.length !== current.steps.length) {
+    return current;
+  }
+
+  const now = new Date().toISOString();
+  const localizedPartId = newId();
+  await sql`
+    INSERT INTO "Part" (id, "tenantId", name, "oemNumber", "createdAt", "updatedAt")
+    VALUES (${localizedPartId}, ${currentGuide.tenantId ?? null}, ${localized.partName}, ${currentGuide.part_oem ?? null}, ${now}, ${now})
+  `;
+
+  const localizedGuideId = newId();
+  await sql`
+    INSERT INTO "RepairGuide" (
+      id, "tenantId", "userId", "vehicleId", "partId", title, difficulty,
+      "timeEstimate", "safetyNotes", tools, "inputVin", "inputModel", "inputPart",
+      "sourceType", "source", "confidence", "sourceProvider", "sourceReferences",
+      "taskType", "language", "canonicalGuideId", "createdAt", "updatedAt"
+    ) VALUES (
+      ${localizedGuideId}, ${currentGuide.tenantId ?? null}, ${currentGuide.userId}, ${currentGuide.vehicleId}, ${localizedPartId},
+      ${localized.title}, ${localized.difficulty}, ${localized.timeEstimate},
+      ${localized.safetyNotes}, ${localized.tools}, ${currentGuide.inputVin ?? null}, ${currentGuide.inputModel ?? null}, ${localized.partName},
+      ${currentGuide.sourceType}, ${currentGuide.source ?? null}, ${currentGuide.confidence ?? null}, ${currentGuide.sourceProvider ?? null},
+      ${currentGuide.sourceReferences ?? null}, ${currentGuide.taskType ?? null}, ${requestedLanguage}, ${canonicalId}, ${now}, ${now}
+    )
+  `;
+
+  for (const [index, step] of localized.steps.entries()) {
+    const sourceStep = current.steps[index];
+    const demoImageUrl = DEMO_IMAGE_PATHS[canonicalId] ?? null;
+    await sql`
+      INSERT INTO "RepairStep" (
+        id, "guideId", "stepOrder", title, instruction, "torqueValue", "warningNote",
+        "imageStatus", "imageUrl", "imagePrompt", "imageError", "createdAt"
+      ) VALUES (
+        ${newId()}, ${localizedGuideId}, ${step.order}, ${step.title}, ${step.instruction},
+        ${step.torqueValue ?? null}, ${step.warningNote ?? null},
+        ${demoImageUrl ? "ready" : (sourceStep.imageStatus ?? "none")},
+        ${demoImageUrl ?? sourceStep.imageUrl ?? null},
+        ${sourceStep.imagePrompt ?? null},
+        ${sourceStep.imageError ?? null},
+        ${now}
+      )
+    `;
+  }
+
+  for (const image of current.images) {
+    await sql`
+      INSERT INTO "GeneratedImage" (id, "guideId", "stepOrder", prompt, status, "createdAt", "updatedAt")
+      VALUES (${newId()}, ${localizedGuideId}, ${image.stepOrder}, ${image.prompt}, ${image.status}, ${image.createdAt ?? now}, ${now})
+    `;
+  }
+
+  return await fetchGuideRows(sql, localizedGuideId);
+}
+
+function pickGuidesForLanguage(
+  guides: Array<Record<string, unknown>>,
+  requestedLanguage: string,
+) {
+  const grouped = new Map<string, Array<Record<string, unknown>>>();
+  for (const guide of guides) {
+    const key = guideCanonicalId(guide);
+    const existing = grouped.get(key) ?? [];
+    existing.push(guide);
+    grouped.set(key, existing);
+  }
+
+  return Array.from(grouped.values())
+    .map((variants) =>
+      variants.find((guide) => normalizeLanguage(typeof guide.language === "string" ? guide.language : "en") === requestedLanguage)
+      ?? variants.find((guide) => normalizeLanguage(typeof guide.language === "string" ? guide.language : "en") === "en")
+      ?? variants[0])
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
 export async function handleGuides(
   req: Request,
   method: string,
@@ -33,39 +238,26 @@ export async function handleGuides(
   // Fetches from DB so step IDs are real (image generation works).
   // Falls back to static data if DB guides don't exist yet.
   if (subpath === "/demo" && method === "GET") {
+    const language = requestLanguage(req);
     try {
-      const demoGuides = await sql`
-        SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
-               p.id as pid, p.name as part_name, p."oemNumber" as part_oem
-        FROM "RepairGuide" g
-        JOIN "Vehicle" v ON v.id = g."vehicleId"
-        JOIN "Part" p ON p.id = g."partId"
-        WHERE g.id = ANY(${DEMO_GUIDE_IDS})
-        ORDER BY g."createdAt" ASC
-      `;
-      if (demoGuides.length > 0) {
-        const result = await Promise.all(demoGuides.map(async (g) => {
-          const steps = await sql`
-            SELECT id, "guideId", "stepOrder", title, instruction,
-                   "torqueValue", "warningNote", "imageStatus", "createdAt"
-            FROM "RepairStep"
-            WHERE "guideId" = ${g.id}
-            ORDER BY "stepOrder" ASC
-          `;
-          return {
-            ...g,
-            source: "demo",
-            vehicle: { id: g.vid, model: g.vehicle_model, vin: g.vehicle_vin },
-            part: { id: g.pid, name: g.part_name, oemNumber: g.part_oem },
-            steps,
-          };
-        }));
+      const localizedGuides = await Promise.all(
+        DEMO_GUIDE_IDS.map((guideId) => resolveLocalizedGuide(sql, guideId, language)),
+      );
+      const result = localizedGuides
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+        .map(({ guide, steps, images }) => formatGuideResponse(guide, steps, images));
+      if (result.length > 0) {
         return json(result);
       }
     } catch (err) {
       console.error("[guides] demo DB fetch failed, using static fallback:", err);
     }
-    return json(DEMO_GUIDES_RESPONSE);
+    return json(DEMO_GUIDES_RESPONSE.map((guide) => ({
+      ...guide,
+      language,
+      canonicalGuideId: guide.id,
+      steps: hydrateDemoSteps(guide.id, guide.steps),
+    })));
   }
 
   // POST /guides/source-backed — source-driven guide creation (Nissan/Toyota seeded)
@@ -79,6 +271,7 @@ export async function handleGuides(
     const year = typeof b.year === "number" ? b.year : (typeof b.year === "string" ? parseInt(b.year, 10) : null);
     const component = typeof b.component === "string" ? b.component.trim() : null;
     const taskType = typeof b.taskType === "string" ? b.taskType.trim() as TaskType : null;
+    const language = normalizeLanguage(typeof b.language === "string" ? b.language : "en");
 
     if (!make || !model || !year || !component || !taskType) {
       return errorResponse("make, model, year, component, taskType are required", 400);
@@ -96,8 +289,8 @@ export async function handleGuides(
 
     // Synthesize guide — from source if available, else freeform AI
     const generated = sourcePkg
-      ? await synthesizeFromSource(sourcePkg)
-      : await generateRepairGuide(normalizedVehicle, normalizedPart);
+      ? await synthesizeFromSource(sourcePkg, language)
+      : await generateRepairGuide(normalizedVehicle, normalizedPart, undefined, language);
 
     const confidence = sourcePkg ? 95 : 75;
     const sourceTag = sourcePkg ? "source-backed" : "web-fallback";
@@ -127,7 +320,7 @@ export async function handleGuides(
         id, "tenantId", "userId", "vehicleId", "partId", title, difficulty,
         "timeEstimate", "safetyNotes", tools, "inputVin", "inputModel", "inputPart",
         "sourceType", "source", "confidence", "sourceProvider", "sourceReferences",
-        "taskType", "createdAt", "updatedAt"
+        "taskType", "language", "canonicalGuideId", "createdAt", "updatedAt"
       ) VALUES (
         ${guideId}, ${user.tenantId}, ${user.sub}, ${vehicleId}, ${partId},
         ${generated.title}, ${generated.difficulty}, ${generated.timeEstimate},
@@ -135,7 +328,7 @@ export async function handleGuides(
         ${null}, ${normalizedVehicle}, ${normalizedPart},
         ${sourceType}, ${sourceTag}, ${confidence},
         ${sourceProvider}, ${sourceReferences ? JSON.stringify(sourceReferences) : null},
-        ${taskType}, ${now}, ${now}
+        ${taskType}, ${language}, ${guideId}, ${now}, ${now}
       )
     `;
 
@@ -161,7 +354,7 @@ export async function handleGuides(
       tools: generated.tools, inputVin: null, inputModel: normalizedVehicle,
       inputPart: normalizedPart, sourceType, source: sourceTag,
       confidence, sourceProvider, sourceReferences,
-      taskType, status: "READY", createdAt: now, updatedAt: now,
+      taskType, language, canonicalGuideId: guideId, status: "READY", createdAt: now, updatedAt: now,
       vehicle: { id: vehicleId, model: normalizedVehicle, vin: null },
       part: { id: partId, name: normalizedPart, oemNumber: null },
       steps: stepRows,
@@ -178,6 +371,7 @@ export async function handleGuides(
     const vehicleModel = typeof b.vehicleModel === "string" ? b.vehicleModel : undefined;
     const partName = typeof b.partName === "string" ? b.partName : undefined;
     const oemNumber = typeof b.oemNumber === "string" ? b.oemNumber : undefined;
+    const language = normalizeLanguage(typeof b.language === "string" ? b.language : "en");
 
     if (!partName) return errorResponse("partName is required", 400);
 
@@ -185,7 +379,7 @@ export async function handleGuides(
     const normalizedPart = `${partName}${oemNumber ? ` (${oemNumber})` : ""}`.trim();
     const sourceType = user.role === "ENTERPRISE_ADMIN" ? "ENTERPRISE" : "B2C";
 
-    const generated = await generateRepairGuide(normalizedVehicle, normalizedPart);
+    const generated = await generateRepairGuide(normalizedVehicle, normalizedPart, undefined, language);
 
     const now = new Date().toISOString();
 
@@ -209,13 +403,13 @@ export async function handleGuides(
       INSERT INTO "RepairGuide" (
         id, "tenantId", "userId", "vehicleId", "partId", title, difficulty,
         "timeEstimate", "safetyNotes", tools, "inputVin", "inputModel", "inputPart",
-        "sourceType", "createdAt", "updatedAt"
+        "sourceType", "language", "canonicalGuideId", "createdAt", "updatedAt"
       ) VALUES (
         ${guideId}, ${user.tenantId}, ${user.sub}, ${vehicleId}, ${partId},
         ${generated.title}, ${generated.difficulty}, ${generated.timeEstimate},
         ${generated.safetyNotes}, ${generated.tools},
         ${vin ?? null}, ${vehicleModel ?? null}, ${normalizedPart},
-        ${sourceType}, ${now}, ${now}
+        ${sourceType}, ${language}, ${guideId}, ${now}, ${now}
       )
     `;
 
@@ -268,6 +462,8 @@ export async function handleGuides(
         inputVin: vin ?? null,
         inputModel: vehicleModel ?? null,
         inputPart: normalizedPart,
+        language,
+        canonicalGuideId: guideId,
         sourceType,
         status: "READY",
         createdAt: now,
@@ -283,6 +479,7 @@ export async function handleGuides(
 
   // GET /guides — history
   if (subpath === "" && method === "GET") {
+    const language = requestLanguage(req);
     const where = user.tenantId
       ? sql`("tenantId" = ${user.tenantId} OR "userId" = ${user.sub})`
       : sql`"userId" = ${user.sub}`;
@@ -312,7 +509,7 @@ export async function handleGuides(
       // Fetch lightweight step status data for the dashboard status dot
       const seededResult = await Promise.all(seeded.map(async (g) => {
         const stepStatus = await sql`
-          SELECT id, "imageStatus" FROM "RepairStep"
+          SELECT id, "imageStatus", "imageUrl" FROM "RepairStep"
           WHERE "guideId" = ${g.id} ORDER BY "stepOrder" ASC
         `;
         return {
@@ -322,13 +519,30 @@ export async function handleGuides(
           steps: stepStatus,
         };
       }));
-      return json(seededResult);
+      const filteredSeeded = pickGuidesForLanguage(seededResult, language);
+      const localizedSeeded = language === "en"
+        ? filteredSeeded
+        : await Promise.all(filteredSeeded.map(async (guide) => {
+          const guideLanguage = normalizeLanguage(typeof guide.language === "string" ? guide.language : "en");
+          if (guideLanguage === language) return guide;
+          const resolved = await resolveLocalizedGuide(sql, String(guide.id), language);
+          if (!resolved) return guide;
+          return {
+            ...formatGuideResponse(resolved.guide, resolved.steps, resolved.images),
+            steps: resolved.steps.map((step) => ({
+              id: step.id,
+              imageStatus: step.imageStatus,
+              imageUrl: step.imageUrl ?? null,
+            })),
+          };
+        }));
+      return json(localizedSeeded);
     }
 
     // Fetch lightweight step status data for each guide (used for dashboard status dot + step count)
     const result = await Promise.all(guides.map(async (g) => {
       const stepStatus = await sql`
-        SELECT id, "imageStatus" FROM "RepairStep"
+        SELECT id, "imageStatus", "imageUrl" FROM "RepairStep"
         WHERE "guideId" = ${g.id} ORDER BY "stepOrder" ASC
       `;
       return {
@@ -339,7 +553,25 @@ export async function handleGuides(
       };
     }));
 
-    return json(result);
+    const filtered = pickGuidesForLanguage(result, language);
+    const localized = language === "en"
+      ? filtered
+      : await Promise.all(filtered.map(async (guide) => {
+        const guideLanguage = normalizeLanguage(typeof guide.language === "string" ? guide.language : "en");
+        if (guideLanguage === language) return guide;
+        const resolved = await resolveLocalizedGuide(sql, String(guide.id), language);
+        if (!resolved) return guide;
+        return {
+          ...formatGuideResponse(resolved.guide, resolved.steps, resolved.images),
+          steps: resolved.steps.map((step) => ({
+            id: step.id,
+            imageStatus: step.imageStatus,
+            imageUrl: step.imageUrl ?? null,
+          })),
+        };
+      }));
+
+    return json(localized);
   }
 
   // POST /guides/:id/ask — Ask AI about a specific step
@@ -349,6 +581,7 @@ export async function handleGuides(
     const b = await body(req);
     const stepId = typeof b.stepId === "string" ? b.stepId : null;
     const question = typeof b.question === "string" ? b.question : "";
+    const language = normalizeLanguage(typeof b.language === "string" ? b.language : "en");
 
     if (!stepId) return errorResponse("stepId is required", 400);
 
@@ -389,6 +622,7 @@ export async function handleGuides(
       guide.vehicle_model,
       guide.part_name,
       question,
+      language,
     );
 
     return json({ answer });
@@ -398,61 +632,36 @@ export async function handleGuides(
   const idMatch = subpath.match(/^\/([a-zA-Z0-9_-]+)$/);
   if (idMatch && method === "GET") {
     const guideId = idMatch[1];
+    const language = requestLanguage(req);
 
     // Demo guides: fetch from DB (no ownership check — public demo content).
     // This returns real step IDs so the image generation pipeline works.
     const isDemoGuide = DEMO_GUIDE_IDS.includes(guideId);
+    if (!isDemoGuide) {
+      const where = user.tenantId
+        ? sql`id = ${guideId} AND ("tenantId" = ${user.tenantId} OR "userId" = ${user.sub})`
+        : sql`id = ${guideId} AND "userId" = ${user.sub}`;
+      const existing = await sql`SELECT id FROM "RepairGuide" WHERE ${where} LIMIT 1`;
+      if (existing.length === 0) return errorResponse("Guide not found", 404);
+    }
 
-    const where = isDemoGuide
-      ? sql`g.id = ${guideId}`
-      : user.tenantId
-        ? sql`g.id = ${guideId} AND (g."tenantId" = ${user.tenantId} OR g."userId" = ${user.sub})`
-        : sql`g.id = ${guideId} AND (g."userId" = ${user.sub})`;
-
-    const guides = await sql`
-      SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
-             p.id as pid, p.name as part_name, p."oemNumber" as part_oem
-      FROM "RepairGuide" g
-      JOIN "Vehicle" v ON v.id = g."vehicleId"
-      JOIN "Part" p ON p.id = g."partId"
-      WHERE ${where}
-      LIMIT 1
-    `;
-    if (guides.length === 0) {
+    const resolved = await resolveLocalizedGuide(sql, guideId, language);
+    if (!resolved) {
       // Fallback to static data if demo guide isn't in DB yet
       if (isDemoGuide) {
         const demoGuide = DEMO_GUIDES_RESPONSE.find((g) => g.id === guideId);
-        if (demoGuide) return json(demoGuide);
+        if (demoGuide) {
+          return json({
+            ...demoGuide,
+            language,
+            canonicalGuideId: demoGuide.id,
+            steps: hydrateDemoSteps(demoGuide.id, demoGuide.steps),
+          });
+        }
       }
       return errorResponse("Guide not found", 404);
     }
-
-    const g = guides[0];
-    // Exclude imageUrl (can be 1-2 MB base64 per step) and imagePrompt to keep payload small.
-    // The frontend fetches full images via POST /steps/:id/generate-image on demand.
-    const steps = await sql`
-      SELECT id, "guideId", "stepOrder", title, instruction,
-             "torqueValue", "warningNote", "imageStatus", "createdAt"
-      FROM "RepairStep"
-      WHERE "guideId" = ${guideId}
-      ORDER BY "stepOrder" ASC
-    `;
-    const images = await sql`
-      SELECT id, "guideId", "stepOrder", prompt, status, "createdAt"
-      FROM "GeneratedImage"
-      WHERE "guideId" = ${guideId}
-      ORDER BY "stepOrder" ASC
-    `;
-
-    return json({
-      ...g,
-      // Ensure demo guides are tagged so frontend knows to show guest UX
-      ...(isDemoGuide ? { source: "demo" } : {}),
-      vehicle: { id: g.vid, model: g.vehicle_model, vin: g.vehicle_vin },
-      part: { id: g.pid, name: g.part_name, oemNumber: g.part_oem },
-      steps,
-      images,
-    });
+    return json(formatGuideResponse(resolved.guide, resolved.steps, resolved.images));
   }
 
   // DELETE /guides/:id

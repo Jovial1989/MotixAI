@@ -76,6 +76,8 @@ export interface GeneratedImage {
 
 export interface RepairGuide {
   id: string;
+  canonicalGuideId?: string | null;
+  language?: string;
   title: string;
   difficulty: string;
   timeEstimate: string;

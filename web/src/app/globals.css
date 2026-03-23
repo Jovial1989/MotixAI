@@ -1850,6 +1850,22 @@ input, textarea, select { font-family: inherit; outline: none; }
   display: flex; flex-direction: column;
   border-left: 1px solid var(--border);
 }
+.guide-card-thumb {
+  width: 118px;
+  min-height: 88px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.guide-card-thumb-img {
+  width: 100%;
+  height: 68px;
+  object-fit: contain;
+  display: block;
+}
 .guide-card-delete {
   flex: 1; border: none; background: transparent;
   padding: 0 16px; color: var(--text-muted);
@@ -2223,12 +2239,13 @@ input, textarea, select { font-family: inherit; outline: none; }
 /* 2-column layout */
 .gd-layout {
   display: grid;
-  grid-template-columns: 1fr 312px;
-  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) 336px;
+  gap: 28px;
   align-items: start;
-  max-width: 1080px;
+  width: 100%;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 32px 28px 80px;
+  padding: 32px 24px 80px;
 }
 .gd-main { min-width: 0; padding-bottom: 40px; }
 .gd-sidebar {
@@ -2333,12 +2350,15 @@ input, textarea, select { font-family: inherit; outline: none; }
 .simg-preview {
   position: relative; display: block; border: none; background: none;
   padding: 0; cursor: zoom-in; border-radius: var(--r-md); overflow: hidden;
-  width: 100%; max-width: 420px;
+  width: 100%; max-width: 520px;
 }
 .simg-img {
-  width: 100%; height: 200px; object-fit: contain; display: block;
+  width: 100%; height: 240px; object-fit: contain; display: block;
   border-radius: var(--r-md); border: 1px solid var(--border);
-  background: var(--bg);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+}
+.simg-img--ready {
+  animation: imageFadeIn 220ms ease;
 }
 .simg-expand {
   position: absolute; bottom: 8px; right: 8px;
@@ -2446,10 +2466,42 @@ input, textarea, select { font-family: inherit; outline: none; }
 .locked-block-cta:hover { opacity: .88; }
 
 .simg-skeleton {
-  height: 120px; border-radius: var(--r-md);
-  background: var(--bg); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  gap: 10px; color: var(--text-muted); font-size: 0.83rem;
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  min-height: 240px;
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.simg-skeleton-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.72) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  animation: imageShimmer 1.6s ease-in-out infinite;
+}
+.simg-skeleton-body {
+  position: relative;
+  z-index: 1;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  text-align: center;
+  padding: 20px;
+}
+.simg-failed-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
 }
 .simg-failed {
   padding: 10px 16px; border-radius: var(--r-md);
@@ -2473,6 +2525,15 @@ input, textarea, select { font-family: inherit; outline: none; }
   padding: 2px 8px; border-radius: var(--r-sm);
   font-size: 11px; color: var(--text-muted);
   background: var(--bg-subtle); border: 1px solid var(--border);
+}
+
+@keyframes imageShimmer {
+  to { transform: translateX(100%); }
+}
+
+@keyframes imageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ── Sidebar card ─────────────────────────────────────────────────── */
@@ -2593,7 +2654,7 @@ input, textarea, select { font-family: inherit; outline: none; }
    RESPONSIVE
 ═══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
-  .gd-layout { grid-template-columns: 1fr 280px; gap: 24px; padding: 24px 20px 80px; }
+  .gd-layout { grid-template-columns: minmax(0, 1fr) 296px; gap: 24px; padding: 24px 20px 80px; }
 }
 @media (max-width: 860px) {
   .gd-layout { grid-template-columns: 1fr; padding: 20px 16px 48px; gap: 0; }

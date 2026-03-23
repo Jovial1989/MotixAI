@@ -96,10 +96,13 @@ export interface SourceGuideInput {
   year: number;
   component: string;
   taskType: TaskType;
+  language?: string;
 }
 
 export interface RepairGuide {
   id: string;
+  canonicalGuideId?: string | null;
+  language?: string;
   title: string;
   difficulty: string;
   timeEstimate: string;

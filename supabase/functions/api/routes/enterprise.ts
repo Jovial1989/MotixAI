@@ -115,12 +115,12 @@ export async function handleEnterprise(
     await sql`
       INSERT INTO "RepairGuide" (
         id, "tenantId", "userId", "vehicleId", "partId", "manualId", title, difficulty,
-        "timeEstimate", "safetyNotes", tools, "inputModel", "inputPart", "sourceType", "createdAt", "updatedAt"
+        "timeEstimate", "safetyNotes", tools, "inputModel", "inputPart", "sourceType", "language", "canonicalGuideId", "createdAt", "updatedAt"
       ) VALUES (
         ${guideId}, ${tenantId}, ${user.sub}, ${vehicleId}, ${partId}, ${manualId},
         ${generated.title}, ${generated.difficulty}, ${generated.timeEstimate},
         ${generated.safetyNotes}, ${generated.tools},
-        ${vehicleModel}, ${normalizedPart}, ${"ENTERPRISE"}, ${now}, ${now}
+        ${vehicleModel}, ${normalizedPart}, ${"ENTERPRISE"}, ${"en"}, ${guideId}, ${now}, ${now}
       )
     `;
 

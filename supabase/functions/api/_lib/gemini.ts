@@ -18,6 +18,16 @@ export interface GeneratedGuide {
   imagePlan: string[];
 }
 
+export interface LocalizedGuide {
+  title: string;
+  difficulty: string;
+  timeEstimate: string;
+  tools: string[];
+  safetyNotes: string[];
+  partName: string;
+  steps: GuideStep[];
+}
+
 // ── Drawing specification ────────────────────────────────────────────────────
 
 export interface DrawingSpec {
@@ -31,6 +41,23 @@ export interface DrawingSpec {
   torqueNote: string | null;
   warningCallout: string | null;
   referenceContext: string;
+}
+
+// ── Language support ─────────────────────────────────────────────────────────
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: "English",
+  uk: "Ukrainian (Українська)",
+  bg: "Bulgarian (Български)",
+  de: "German (Deutsch)",
+  fr: "French (Français)",
+  es: "Spanish (Español)",
+};
+
+function languageInstruction(lang?: string): string {
+  if (!lang || lang === "en") return "";
+  const name = LANGUAGE_NAMES[lang] || lang;
+  return `\nCRITICAL LANGUAGE REQUIREMENT: Generate ALL text output (title, every step title, every instruction, all tool names, all safety notes, all warnings) in ${name}. Do NOT use English for any generated text. Every single word must be in ${name}.\n`;
 }
 
 // ── Gemini client ────────────────────────────────────────────────────────────
@@ -94,7 +121,7 @@ function mockDrawingSpec(vehicle: string, part: string, stepTitle: string): Draw
 
 import type { SourcePackage } from "./sources/types.ts";
 
-export async function synthesizeFromSource(pkg: SourcePackage): Promise<GeneratedGuide> {
+export async function synthesizeFromSource(pkg: SourcePackage, language?: string): Promise<GeneratedGuide> {
   const client = getClient();
 
   // Build structured source text to ground the prompt
@@ -131,7 +158,7 @@ export async function synthesizeFromSource(pkg: SourcePackage): Promise<Generate
 
   const prompt = `You are a technical editor reviewing a verified repair procedure sourced from ${sourceLabel}.
 Your task is to restructure the provided source text into a clean, beginner-friendly repair guide.
-
+${languageInstruction(language)}
 RULES:
 - Do NOT invent steps, torque values, or specifications not present in the source text.
 - Rephrase each source step into a clear, numbered instruction (2–4 sub-steps per step).
@@ -206,12 +233,13 @@ export async function generateRepairGuide(
   vehicle: string,
   part: string,
   context?: string,
+  language?: string,
 ): Promise<GeneratedGuide> {
   const client = getClient();
   if (!client) return mockGuide(vehicle, part);
 
   const prompt = `You are an automotive workshop technician writing a repair procedure.
-
+${languageInstruction(language)}
 Vehicle: ${vehicle}
 Part: ${part}
 ${context ? `Manual context: ${context}` : ""}
@@ -430,6 +458,7 @@ export async function explainStep(
   vehicleModel: string,
   partName: string,
   question: string,
+  language?: string,
 ): Promise<string> {
   const client = getClient();
 
@@ -441,6 +470,7 @@ export async function explainStep(
 
   try {
     const prompt = `You are an expert automotive and heavy equipment repair technician.
+${languageInstruction(language)}
 A technician is following a repair guide for: ${vehicleModel} — ${partName}
 Current step: "${stepTitle}"
 Instruction: ${instruction}
@@ -456,6 +486,64 @@ Provide a clear, concise answer (2-4 sentences) focused on practical workshop gu
     // Return a local fallback instead of crashing
     const firstLine = instruction.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
     return `This step involves: ${firstLine}. Double-check torque specs and use the correct tools listed in the guide.`;
+  }
+}
+
+export async function localizeGuide(
+  guide: LocalizedGuide,
+  language?: string,
+): Promise<LocalizedGuide> {
+  const lang = language ?? "en";
+  if (lang === "en") return guide;
+
+  const client = getClient();
+  if (!client) return guide;
+
+  try {
+    const prompt = `You are a localization editor for automotive workshop procedures.
+${languageInstruction(lang)}
+
+Translate the guide JSON below into the requested language.
+
+Rules:
+- Keep the same step count and the same order values.
+- Keep all numbering already present inside each instruction.
+- Preserve torque values, warnings, safety notes, and workshop meaning exactly.
+- Translate difficulty, time estimate, part name, tools, safety notes, step titles, and instructions.
+- Do NOT leave English text unless it is a vehicle model, OEM code, or product code.
+- Keep the tone concise and professional.
+
+Respond ONLY with valid JSON:
+{
+  "title": "string",
+  "difficulty": "string",
+  "timeEstimate": "string",
+  "tools": ["string"],
+  "safetyNotes": ["string"],
+  "partName": "string",
+  "steps": [
+    {
+      "order": 1,
+      "title": "string",
+      "instruction": "string",
+      "torqueValue": "string or null",
+      "warningNote": "string or null"
+    }
+  ]
+}
+
+Guide JSON:
+${JSON.stringify(guide)}`;
+
+    const result = await client.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+    const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+    const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    const localized = JSON.parse(json) as LocalizedGuide;
+    if (!localized.steps || localized.steps.length !== guide.steps.length) return guide;
+    return localized;
+  } catch (err) {
+    console.error("[gemini] localizeGuide failed:", err instanceof Error ? err.message : err);
+    return guide;
   }
 }
 
