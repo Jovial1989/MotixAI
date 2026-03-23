@@ -105,11 +105,9 @@ input, textarea, select { font-family: inherit; outline: none; }
   border-bottom: 1px solid var(--border);
 }
 .nav {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  display: flex; align-items: center;
   max-width: 1200px; margin: 0 auto;
-  padding: 0 32px; height: 60px; gap: 24px;
+  padding: 0 32px; height: 60px; gap: 20px;
 }
 .nav-logo {
   font-size: 1rem; font-weight: 800;
@@ -123,26 +121,29 @@ input, textarea, select { font-family: inherit; outline: none; }
   background: var(--p); color: #fff;
   font-size: 13px; font-weight: 800;
 }
-.nav-center { display: flex; align-items: center; gap: 4px; }
+.nav-center { display: flex; align-items: center; gap: 2px; flex: 1; justify-content: center; min-width: 0; }
 .nav-link {
-  font-size: 0.85rem; font-weight: 500; color: var(--text-sub);
-  padding: 6px 12px; border-radius: var(--r-sm);
+  font-size: 0.84rem; font-weight: 500; color: var(--text-sub);
+  padding: 6px 10px; border-radius: var(--r-sm);
   transition: background var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
 }
 .nav-link:hover { background: var(--bg); color: var(--text); }
-.nav-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .nav-btn-ghost {
-  font-size: 0.85rem; font-weight: 600; color: var(--text-sub);
+  font-size: 0.84rem; font-weight: 600; color: var(--text-sub);
   padding: 7px 14px; border-radius: var(--r-full);
   border: 1px solid var(--border); background: transparent;
   transition: border-color var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
 }
 .nav-btn-ghost:hover { border-color: var(--border-strong); color: var(--text); }
 .nav-btn-cta {
-  font-size: 0.85rem; font-weight: 700; color: #fff;
+  font-size: 0.84rem; font-weight: 700; color: #fff;
   padding: 8px 16px; border-radius: var(--r-full);
   background: var(--p); box-shadow: 0 1px 4px rgba(234,88,12,.3);
   transition: background var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
+  white-space: nowrap;
 }
 .nav-btn-cta:hover { background: var(--p-hover); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(234,88,12,.4); }
 .nav-avatar {
@@ -3302,7 +3303,7 @@ input, textarea, select { font-family: inherit; outline: none; }
     gap: 64px;
   }
   .sh-left {
-    flex: 1; align-items: flex-start; text-align: left;
+    flex: 1; min-width: 0; align-items: flex-start; text-align: left;
   }
   .sh-chips  { justify-content: flex-start; }
   .sh-recent { justify-content: flex-start; }
@@ -3327,8 +3328,9 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 
 .sh-h1 {
-  font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 800;
-  letter-spacing: -0.04em; line-height: 1.1; color: var(--text);
+  font-size: clamp(2.4rem, 5.5vw, 3.6rem); font-weight: 800;
+  letter-spacing: -0.04em; line-height: 1.12; color: var(--text);
+  max-width: 580px;
 }
 .sh-h1-grad {
   background: linear-gradient(135deg, var(--p) 0%, #F59E0B 100%);
@@ -3622,7 +3624,7 @@ input, textarea, select { font-family: inherit; outline: none; }
 
 /* ── Shared nav enhancements ───────────────────────────────────────── */
 .nav-link--active { background: var(--p-light); color: var(--p); font-weight: 600; }
-.nav-auth-inner { display: flex; align-items: center; justify-content: flex-end; }
+.nav-auth-inner { display: flex; align-items: center; gap: 12px; }
 .nav-mobile-btn {
   display: none; width: 36px; height: 36px; border: none;
   background: transparent; cursor: pointer; color: var(--text);
@@ -3630,8 +3632,14 @@ input, textarea, select { font-family: inherit; outline: none; }
   flex-shrink: 0;
 }
 .nav-mobile-btn:hover { background: var(--bg); }
-.nav-auth-wrap { display: flex; align-items: center; justify-content: flex-end; }
+.nav-auth-wrap { display: flex; align-items: center; flex-shrink: 0; }
 
+@media (max-width: 1080px) {
+  .nav-link { font-size: 0.8rem; padding: 6px 7px; }
+  .nav-btn-ghost { font-size: 0.8rem; padding: 6px 10px; }
+  .nav-btn-cta { font-size: 0.8rem; padding: 7px 12px; }
+  .nav { gap: 12px; padding: 0 20px; }
+}
 @media (max-width: 768px) {
   .nav-center { display: none !important; }
   .nav-auth-inner { display: none !important; }
@@ -3686,7 +3694,7 @@ input, textarea, select { font-family: inherit; outline: none; }
   display: inline-flex; align-items: center;
   background: var(--bg); border: 1px solid var(--border);
   border-radius: var(--r-full); padding: 2px; gap: 2px;
-  margin-right: 12px;
+  flex-shrink: 0;
 }
 .lang-seg-btn {
   border: none; background: none; cursor: pointer;
