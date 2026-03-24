@@ -113,7 +113,7 @@ class SBg extends S {
   String get planTrial => '7-дневен безплатен пробен период';
 
   @override
-  String get planTrialDesc => 'Пълен достъп за 7 дни. Без карта.';
+  String get planTrialDesc => 'Пълен достъп за 7 дни. Изисква се карта.';
 
   @override
   String get planTrialBadge => 'Препоръчано';
@@ -134,6 +134,31 @@ class SBg extends S {
   String get startFreeTrial => 'Започни пробен период';
 
   @override
+  String get upgradeToPro => 'Надстрой до Pro';
+
+  @override
+  String get trialBillingNote =>
+      'Изисква се карта. Днес не се таксува. Подновява се след 7 дни, ако не бъде отменено.';
+
+  @override
+  String get billingStartFailed =>
+      'Не успяхме да стартираме защитеното плащане. Моля, опитайте отново.';
+
+  @override
+  String get billingConnectionIssue =>
+      'В момента няма връзка с плащането. Проверете мрежата и опитайте отново.';
+
+  @override
+  String get billingCancelled =>
+      'Плащането е отменено. Акаунтът ви остава на Free.';
+
+  @override
+  String get billingTrialStarted => 'Вашият Pro Trial е активен.';
+
+  @override
+  String get billingUpgradeSucceeded => 'Вашият Pro план е активен.';
+
+  @override
   String get continueFree => 'Продължи безплатно';
 
   @override
@@ -150,6 +175,18 @@ class SBg extends S {
       'Въведете ремонтна заявка горе, за да генерирате първото ИИ ръководство.';
 
   @override
+  String get sampleGuidesTitle => 'Примерни ръководства';
+
+  @override
+  String get sampleGuidesSubtitle =>
+      '3 реални ръководства, създадени от Motixi — демо само за четене';
+
+  @override
+  String stepCountLabel(int count) {
+    return '$count стъпки';
+  }
+
+  @override
   String get newGuide => 'Ново ръководство';
 
   @override
@@ -163,6 +200,16 @@ class SBg extends S {
 
   @override
   String get guestBannerSignUp => 'Регистрация';
+
+  @override
+  String get guestUpgradeTitle => 'Създайте акаунт, за да отключите повече';
+
+  @override
+  String get guestUpgradeDesc =>
+      'Регистрирайте се безплатно, за да генерирате ръководства, да запазвате прогреса си и да питате ИИ за всяка стъпка.';
+
+  @override
+  String get availableInPro => 'Налично в Pro';
 
   @override
   String get deleteGuide => 'Изтрий ръководството';
@@ -225,7 +272,7 @@ class SBg extends S {
   String get webSynthesis => '🌐 Уеб синтез';
 
   @override
-  String get aiGenerated => '⚡ ИИ генерирано';
+  String get aiGenerated => 'Професионално ремонтно ръководство с ИИ';
 
   @override
   String get askAiAboutStep => 'Попитай ИИ за тази стъпка';
@@ -346,6 +393,10 @@ class SBg extends S {
   String trialDaysRemaining(int days) {
     return 'Остават $days дн.';
   }
+
+  @override
+  String get trialRenewsAfter =>
+      'След 7-дневния пробен период планът се подновява като Pro, освен ако не бъде отменен.';
 
   @override
   String get freePlan => 'Безплатен план';

@@ -11,9 +11,14 @@ class GuidesState {
   final bool isLoading;
   final String? error;
 
-  const GuidesState({this.guides = const [], this.isLoading = false, this.error});
+  const GuidesState(
+      {this.guides = const [], this.isLoading = false, this.error});
 
-  GuidesState copyWith({List<RepairGuide>? guides, bool? isLoading, String? error, bool clearError = false}) =>
+  GuidesState copyWith(
+          {List<RepairGuide>? guides,
+          bool? isLoading,
+          String? error,
+          bool clearError = false}) =>
       GuidesState(
         guides: guides ?? this.guides,
         isLoading: isLoading ?? this.isLoading,
@@ -24,19 +29,30 @@ class GuidesState {
 class GuidesNotifier extends StateNotifier<GuidesState> {
   final ApiClient _api;
   final CacheStore _cache;
+  bool _isGuest = false;
+  String? _language;
 
   GuidesNotifier(this._api, this._cache) : super(const GuidesState());
 
-  Future<void> load() async {
+  Future<void> load({bool isGuest = false, String? language}) async {
+    _isGuest = isGuest;
+    _language = language;
     state = state.copyWith(isLoading: true, clearError: true);
-    // Serve cache first
-    final cached = await _cache.loadGuides();
-    if (cached.isNotEmpty) {
-      state = state.copyWith(guides: cached, isLoading: false);
+    if (!isGuest) {
+      final cached = await _cache.loadGuides();
+      if (cached.isNotEmpty) {
+        state = state.copyWith(guides: cached, isLoading: false);
+      }
     }
     try {
-      final fresh = await _api.listGuides();
-      for (final g in fresh) { await _cache.saveGuide(g); }
+      final fresh = isGuest
+          ? await _api.getDemoGuides(language: language)
+          : await _api.listGuides(language: language);
+      if (!isGuest) {
+        for (final g in fresh) {
+          await _cache.saveGuide(g);
+        }
+      }
       state = state.copyWith(guides: fresh, isLoading: false);
     } catch (e) {
       if (state.guides.isEmpty) {
@@ -46,6 +62,8 @@ class GuidesNotifier extends StateNotifier<GuidesState> {
       }
     }
   }
+
+  Future<void> refresh() => load(isGuest: _isGuest, language: _language);
 
   Future<RepairGuide?> create(
     String vehicleModel,
@@ -82,7 +100,8 @@ class GuidesNotifier extends StateNotifier<GuidesState> {
   void clearError() => state = state.copyWith(clearError: true);
 }
 
-final guidesProvider = StateNotifierProvider<GuidesNotifier, GuidesState>((ref) {
+final guidesProvider =
+    StateNotifierProvider<GuidesNotifier, GuidesState>((ref) {
   return GuidesNotifier(
     ref.read(apiClientProvider),
     ref.read(cacheStoreProvider),
@@ -104,7 +123,12 @@ class GuideDetailState {
     this.stepIndex = 0,
   });
 
-  GuideDetailState copyWith({RepairGuide? guide, bool? isLoading, String? error, int? stepIndex, bool clearError = false}) =>
+  GuideDetailState copyWith(
+          {RepairGuide? guide,
+          bool? isLoading,
+          String? error,
+          int? stepIndex,
+          bool clearError = false}) =>
       GuideDetailState(
         guide: guide ?? this.guide,
         isLoading: isLoading ?? this.isLoading,
@@ -118,6 +142,8 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
   final CacheStore _cache;
   final String guideId;
   bool _alive = true;
+  bool _isGuest = false;
+  String? _language;
 
   GuideDetailNotifier(this._api, this._cache, this.guideId)
       : super(const GuideDetailState());
@@ -128,18 +154,25 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
     super.dispose();
   }
 
-  Future<void> load() async {
+  Future<void> load({bool isGuest = false, String? language}) async {
+    _isGuest = isGuest;
+    _language = language;
     state = state.copyWith(isLoading: true, clearError: true);
-    // Try cache first
-    final cached = await _cache.loadGuide(guideId);
-    if (cached != null) {
-      state = state.copyWith(guide: cached, isLoading: false);
+    if (!isGuest) {
+      final cached = await _cache.loadGuide(guideId);
+      if (cached != null) {
+        state = state.copyWith(guide: cached, isLoading: false);
+      }
     }
     try {
-      final fresh = await _api.getGuide(guideId);
-      await _cache.saveGuide(fresh);
+      final fresh = await _api.getGuide(guideId, language: language);
+      if (!isGuest) {
+        await _cache.saveGuide(fresh);
+      }
       state = state.copyWith(guide: fresh, isLoading: false);
-      await _triggerImages(fresh);
+      if (!isGuest) {
+        await _triggerImages(fresh);
+      }
     } catch (e) {
       if (state.guide == null) {
         state = state.copyWith(isLoading: false, error: e.toString());
@@ -169,7 +202,8 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
             force: s.imageStatus == ImageStatus.failed);
         if (!_alive) return;
         // Apply the response immediately — avoids a round-trip getGuide for the happy path.
-        final newStatus = _imageStatusFromString(result['imageStatus'] as String?);
+        final newStatus =
+            _imageStatusFromString(result['imageStatus'] as String?);
         final newUrl = result['imageUrl'] as String?;
         final current = state.guide;
         if (current != null) {
@@ -185,7 +219,7 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
     // Full refresh to pick up any steps that timed out and finished asynchronously.
     try {
       if (!_alive) return;
-      final updated = await _api.getGuide(guideId);
+      final updated = await _api.getGuide(guideId, language: _language);
       await _cache.saveGuide(updated);
       state = state.copyWith(guide: updated);
       if (updated.hasInProgress) _startPolling();
@@ -194,19 +228,20 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
 
   /// Parses the imageStatus string returned by the generate-image endpoint.
   ImageStatus _imageStatusFromString(String? s) => switch (s) {
-    'queued'         => ImageStatus.queued,
-    'searching_refs' => ImageStatus.searchingRefs,
-    'analyzing_refs' => ImageStatus.analyzingRefs,
-    'generating'     => ImageStatus.generating,
-    'ready'          => ImageStatus.ready,
-    'failed'         => ImageStatus.failed,
-    _                => ImageStatus.none,
-  };
+        'queued' => ImageStatus.queued,
+        'searching_refs' => ImageStatus.searchingRefs,
+        'analyzing_refs' => ImageStatus.analyzingRefs,
+        'generating' => ImageStatus.generating,
+        'ready' => ImageStatus.ready,
+        'failed' => ImageStatus.failed,
+        _ => ImageStatus.none,
+      };
 
   Future<void> retryStepImage(String stepId) async {
+    if (_isGuest) return;
     try {
       await _api.generateStepImage(stepId, force: true);
-      final updated = await _api.getGuide(guideId);
+      final updated = await _api.getGuide(guideId, language: _language);
       await _cache.saveGuide(updated);
       state = state.copyWith(guide: updated);
       if (updated.hasInProgress) _startPolling();
@@ -220,7 +255,7 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
       await Future.delayed(const Duration(seconds: 4));
       if (!_alive) return;
       try {
-        final updated = await _api.getGuide(guideId);
+        final updated = await _api.getGuide(guideId, language: _language);
         await _cache.saveGuide(updated);
         state = state.copyWith(guide: updated);
       } catch (_) {}
@@ -239,7 +274,8 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
 
 // Family provider keyed by guide ID
 final guideDetailProvider =
-    StateNotifierProvider.family<GuideDetailNotifier, GuideDetailState, String>((ref, id) {
+    StateNotifierProvider.family<GuideDetailNotifier, GuideDetailState, String>(
+        (ref, id) {
   return GuideDetailNotifier(
     ref.read(apiClientProvider),
     ref.read(cacheStoreProvider),

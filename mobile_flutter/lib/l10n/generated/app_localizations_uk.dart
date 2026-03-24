@@ -113,7 +113,7 @@ class SUk extends S {
   String get planTrial => '7-денний пробний період';
 
   @override
-  String get planTrialDesc => 'Повний доступ на 7 днів. Без картки.';
+  String get planTrialDesc => 'Повний доступ на 7 днів. Потрібна картка.';
 
   @override
   String get planTrialBadge => 'Рекомендовано';
@@ -134,6 +134,31 @@ class SUk extends S {
   String get startFreeTrial => 'Почати пробний період';
 
   @override
+  String get upgradeToPro => 'Оновити до Pro';
+
+  @override
+  String get trialBillingNote =>
+      'Потрібна картка. Сьогодні без списання. Через 7 днів поновиться автоматично, якщо не скасувати.';
+
+  @override
+  String get billingStartFailed =>
+      'Не вдалося відкрити безпечну оплату. Спробуйте ще раз.';
+
+  @override
+  String get billingConnectionIssue =>
+      'Зараз немає з\'єднання з білінгом. Перевірте мережу та спробуйте ще раз.';
+
+  @override
+  String get billingCancelled =>
+      'Оплату скасовано. Ваш акаунт залишається безкоштовним.';
+
+  @override
+  String get billingTrialStarted => 'Ваш Pro Trial активовано.';
+
+  @override
+  String get billingUpgradeSucceeded => 'Ваш Pro план активовано.';
+
+  @override
   String get continueFree => 'Продовжити безкоштовно';
 
   @override
@@ -150,6 +175,18 @@ class SUk extends S {
       'Введіть запит на ремонт вище, щоб згенерувати першу ШІ-інструкцію.';
 
   @override
+  String get sampleGuidesTitle => 'Демо-інструкції';
+
+  @override
+  String get sampleGuidesSubtitle =>
+      '3 реальні інструкції, створені Motixi — демо лише для перегляду';
+
+  @override
+  String stepCountLabel(int count) {
+    return '$count кроків';
+  }
+
+  @override
   String get newGuide => 'Нова інструкція';
 
   @override
@@ -163,6 +200,16 @@ class SUk extends S {
 
   @override
   String get guestBannerSignUp => 'Зареєструватися';
+
+  @override
+  String get guestUpgradeTitle => 'Створіть акаунт, щоб відкрити більше';
+
+  @override
+  String get guestUpgradeDesc =>
+      'Зареєструйтесь безкоштовно, щоб генерувати інструкції, зберігати прогрес і ставити ШІ питання по кожному кроку.';
+
+  @override
+  String get availableInPro => 'Доступно в Pro';
 
   @override
   String get deleteGuide => 'Видалити інструкцію';
@@ -225,7 +272,7 @@ class SUk extends S {
   String get webSynthesis => '🌐 Веб-синтез';
 
   @override
-  String get aiGenerated => '⚡ ШІ генерація';
+  String get aiGenerated => 'Професійна ремонтна інструкція з підтримкою ШІ';
 
   @override
   String get askAiAboutStep => 'Запитати ШІ про цей крок';
@@ -346,6 +393,10 @@ class SUk extends S {
   String trialDaysRemaining(int days) {
     return 'Залишилось $days дн.';
   }
+
+  @override
+  String get trialRenewsAfter =>
+      'Після 7-денного пробного періоду підписка поновиться як Pro, якщо її не скасувати.';
 
   @override
   String get freePlan => 'Безкоштовний план';

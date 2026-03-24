@@ -6,7 +6,7 @@ class AuthUser {
   final String role;
   final String? tenantId;
   final bool hasCompletedOnboarding;
-  final String planType;          // 'free' | 'trial' | 'premium'
+  final String planType; // 'free' | 'trial' | 'premium'
   final String? trialEndsAt;
   final String subscriptionStatus; // 'active' | 'expired' | 'none'
 
@@ -22,15 +22,15 @@ class AuthUser {
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> j) => AuthUser(
-    id: j['id'] as String,
-    email: j['email'] as String,
-    role: j['role'] as String,
-    tenantId: j['tenantId'] as String?,
-    hasCompletedOnboarding: j['hasCompletedOnboarding'] as bool? ?? false,
-    planType: j['planType'] as String? ?? 'free',
-    trialEndsAt: j['trialEndsAt'] as String?,
-    subscriptionStatus: j['subscriptionStatus'] as String? ?? 'none',
-  );
+        id: j['id'] as String,
+        email: j['email'] as String,
+        role: j['role'] as String,
+        tenantId: j['tenantId'] as String?,
+        hasCompletedOnboarding: j['hasCompletedOnboarding'] as bool? ?? false,
+        planType: j['planType'] as String? ?? 'free',
+        trialEndsAt: j['trialEndsAt'] as String?,
+        subscriptionStatus: j['subscriptionStatus'] as String? ?? 'none',
+      );
 }
 
 class AuthTokens {
@@ -38,30 +38,39 @@ class AuthTokens {
   final String? refreshToken;
   final AuthUser user;
 
-  const AuthTokens({required this.accessToken, this.refreshToken, required this.user});
+  const AuthTokens(
+      {required this.accessToken, this.refreshToken, required this.user});
 
   factory AuthTokens.fromJson(Map<String, dynamic> j) => AuthTokens(
-    accessToken: j['accessToken'] as String,
-    refreshToken: j['refreshToken'] as String?,
-    user: AuthUser.fromJson(j['user'] as Map<String, dynamic>),
-  );
+        accessToken: j['accessToken'] as String,
+        refreshToken: j['refreshToken'] as String?,
+        user: AuthUser.fromJson(j['user'] as Map<String, dynamic>),
+      );
 }
 
 // ── Guide ─────────────────────────────────────────────────────────────────────
 
 // Multi-phase illustration pipeline statuses.
 // The backend progresses through: queued → searching_refs → analyzing_refs → generating → ready | failed
-enum ImageStatus { none, queued, searchingRefs, analyzingRefs, generating, ready, failed }
+enum ImageStatus {
+  none,
+  queued,
+  searchingRefs,
+  analyzingRefs,
+  generating,
+  ready,
+  failed
+}
 
 ImageStatus _parseImageStatus(String? s) => switch (s) {
-  'queued'          => ImageStatus.queued,
-  'searching_refs'  => ImageStatus.searchingRefs,
-  'analyzing_refs'  => ImageStatus.analyzingRefs,
-  'generating'      => ImageStatus.generating,
-  'ready'           => ImageStatus.ready,
-  'failed'          => ImageStatus.failed,
-  _                 => ImageStatus.none,
-};
+      'queued' => ImageStatus.queued,
+      'searching_refs' => ImageStatus.searchingRefs,
+      'analyzing_refs' => ImageStatus.analyzingRefs,
+      'generating' => ImageStatus.generating,
+      'ready' => ImageStatus.ready,
+      'failed' => ImageStatus.failed,
+      _ => ImageStatus.none,
+    };
 
 class RepairStep {
   final String id;
@@ -87,24 +96,29 @@ class RepairStep {
   });
 
   factory RepairStep.fromJson(Map<String, dynamic> j) => RepairStep(
-    id: j['id'] as String,
-    stepOrder: j['stepOrder'] as int? ?? 0,
-    title: j['title'] as String? ?? '',
-    instruction: j['instruction'] as String? ?? '',
-    torqueValue: j['torqueValue'] as String?,
-    warningNote: j['warningNote'] as String?,
-    imageStatus: _parseImageStatus(j['imageStatus'] as String?),
-    imageUrl: j['imageUrl'] as String?,
-    imageError: j['imageError'] as String?,
-  );
+        id: j['id'] as String,
+        stepOrder: j['stepOrder'] as int? ?? 0,
+        title: j['title'] as String? ?? '',
+        instruction: j['instruction'] as String? ?? '',
+        torqueValue: j['torqueValue'] as String?,
+        warningNote: j['warningNote'] as String?,
+        imageStatus: _parseImageStatus(j['imageStatus'] as String?),
+        imageUrl: j['imageUrl'] as String?,
+        imageError: j['imageError'] as String?,
+      );
 
-  RepairStep copyWith({ImageStatus? imageStatus, String? imageUrl}) => RepairStep(
-    id: id, stepOrder: stepOrder, title: title, instruction: instruction,
-    torqueValue: torqueValue, warningNote: warningNote,
-    imageStatus: imageStatus ?? this.imageStatus,
-    imageUrl: imageUrl ?? this.imageUrl,
-    imageError: imageError,
-  );
+  RepairStep copyWith({ImageStatus? imageStatus, String? imageUrl}) =>
+      RepairStep(
+        id: id,
+        stepOrder: stepOrder,
+        title: title,
+        instruction: instruction,
+        torqueValue: torqueValue,
+        warningNote: warningNote,
+        imageStatus: imageStatus ?? this.imageStatus,
+        imageUrl: imageUrl ?? this.imageUrl,
+        imageError: imageError,
+      );
 
   bool get isPending =>
       imageStatus == ImageStatus.queued ||
@@ -142,16 +156,19 @@ class SourceReference {
   });
 
   factory SourceReference.fromJson(Map<String, dynamic> j) => SourceReference(
-    title: j['title'] as String? ?? '',
-    url: j['url'] as String? ?? '',
-    excerpt: j['excerpt'] as String? ?? '',
-  );
+        title: j['title'] as String? ?? '',
+        url: j['url'] as String? ?? '',
+        excerpt: j['excerpt'] as String? ?? '',
+      );
 
-  Map<String, dynamic> toJson() => {'title': title, 'url': url, 'excerpt': excerpt};
+  Map<String, dynamic> toJson() =>
+      {'title': title, 'url': url, 'excerpt': excerpt};
 }
 
 class RepairGuide {
   final String id;
+  final String? canonicalGuideId;
+  final String? language;
   final String title;
   final String difficulty;
   final String timeEstimate;
@@ -179,6 +196,8 @@ class RepairGuide {
 
   const RepairGuide({
     required this.id,
+    this.canonicalGuideId,
+    this.language,
     required this.title,
     required this.difficulty,
     required this.timeEstimate,
@@ -209,11 +228,14 @@ class RepairGuide {
 
     return RepairGuide(
       id: j['id'] as String,
+      canonicalGuideId: j['canonicalGuideId'] as String?,
+      language: j['language'] as String?,
       title: j['title'] as String? ?? '',
       difficulty: j['difficulty'] as String? ?? 'Intermediate',
       timeEstimate: j['timeEstimate'] as String? ?? '',
       tools: (j['tools'] as List<dynamic>?)?.cast<String>() ?? const [],
-      safetyNotes: (j['safetyNotes'] as List<dynamic>?)?.cast<String>() ?? const [],
+      safetyNotes:
+          (j['safetyNotes'] as List<dynamic>?)?.cast<String>() ?? const [],
       sourceType: j['sourceType'] as String? ?? 'B2C',
       source: j['source'] as String?,
       confidence: j['confidence'] as int?,
@@ -225,36 +247,82 @@ class RepairGuide {
       steps: ((j['steps'] as List<dynamic>?) ?? [])
           .map((s) => RepairStep.fromJson(s as Map<String, dynamic>))
           .toList()
-          ..sort((a, b) => a.stepOrder.compareTo(b.stepOrder)),
+        ..sort((a, b) => a.stepOrder.compareTo(b.stepOrder)),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id, 'title': title, 'difficulty': difficulty,
-    'timeEstimate': timeEstimate, 'tools': tools, 'safetyNotes': safetyNotes,
-    'sourceType': sourceType,
-    'source': source, 'confidence': confidence,
-    'sourceProvider': sourceProvider,
-    'sourceReferences': sourceReferences.map((r) => r.toJson()).toList(),
-    'createdAt': createdAt,
-    'vehicle': {'id': vehicle.id, 'model': vehicle.model},
-    'part': {'id': part.id, 'name': part.name},
-    'steps': steps.map((s) => {
-      'id': s.id, 'stepOrder': s.stepOrder, 'title': s.title,
-      'instruction': s.instruction, 'torqueValue': s.torqueValue,
-      'warningNote': s.warningNote, 'imageStatus': s.imageStatus.name,
-      'imageUrl': s.imageUrl, 'imageError': s.imageError,
-    }).toList(),
-  };
+        'id': id,
+        'canonicalGuideId': canonicalGuideId,
+        'language': language,
+        'title': title,
+        'difficulty': difficulty,
+        'timeEstimate': timeEstimate,
+        'tools': tools,
+        'safetyNotes': safetyNotes,
+        'sourceType': sourceType,
+        'source': source,
+        'confidence': confidence,
+        'sourceProvider': sourceProvider,
+        'sourceReferences': sourceReferences.map((r) => r.toJson()).toList(),
+        'createdAt': createdAt,
+        'vehicle': {'id': vehicle.id, 'model': vehicle.model},
+        'part': {'id': part.id, 'name': part.name},
+        'steps': steps
+            .map((s) => {
+                  'id': s.id,
+                  'stepOrder': s.stepOrder,
+                  'title': s.title,
+                  'instruction': s.instruction,
+                  'torqueValue': s.torqueValue,
+                  'warningNote': s.warningNote,
+                  'imageStatus': s.imageStatus.name,
+                  'imageUrl': s.imageUrl,
+                  'imageError': s.imageError,
+                })
+            .toList(),
+      };
 
   bool get hasInProgress => steps.any((s) => s.isPending);
 
+  bool get isDemo => source == 'demo';
+
+  String get resolvedGuideId {
+    if (canonicalGuideId != null && canonicalGuideId!.isNotEmpty) {
+      return canonicalGuideId!;
+    }
+    return id;
+  }
+
+  String? get previewImageUrl {
+    for (final step in steps) {
+      final url = step.imageUrl;
+      if (step.imageStatus == ImageStatus.ready &&
+          url != null &&
+          url.isNotEmpty) {
+        return url;
+      }
+    }
+    return null;
+  }
+
   RepairGuide withUpdatedStep(RepairStep updated) => RepairGuide(
-    id: id, title: title, difficulty: difficulty, timeEstimate: timeEstimate,
-    tools: tools, safetyNotes: safetyNotes, sourceType: sourceType,
-    source: source, confidence: confidence,
-    sourceProvider: sourceProvider, sourceReferences: sourceReferences,
-    createdAt: createdAt, vehicle: vehicle, part: part,
-    steps: steps.map((s) => s.id == updated.id ? updated : s).toList(),
-  );
+        id: id,
+        canonicalGuideId: canonicalGuideId,
+        language: language,
+        title: title,
+        difficulty: difficulty,
+        timeEstimate: timeEstimate,
+        tools: tools,
+        safetyNotes: safetyNotes,
+        sourceType: sourceType,
+        source: source,
+        confidence: confidence,
+        sourceProvider: sourceProvider,
+        sourceReferences: sourceReferences,
+        createdAt: createdAt,
+        vehicle: vehicle,
+        part: part,
+        steps: steps.map((s) => s.id == updated.id ? updated : s).toList(),
+      );
 }
