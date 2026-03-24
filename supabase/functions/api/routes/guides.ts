@@ -74,12 +74,12 @@ function needsDemoContentUpgrade(
   steps: Array<Record<string, unknown>>,
 ): boolean {
   if (!DEMO_GUIDE_IDS.includes(guideCanonicalId(guide))) return false;
-  const sample = steps
+  const sampleSteps = steps
     .slice(0, 3)
     .map((step) => typeof step.instruction === "string" ? step.instruction.trim() : "")
-    .filter(Boolean)
-    .join("\n");
-  return sample.length < 240 || !sample.includes("\n");
+    .filter(Boolean);
+  const combinedLength = sampleSteps.join("\n").length;
+  return combinedLength < 240 || sampleSteps.some((instruction) => !instruction.includes("\n"));
 }
 
 function sanitizeGuideSteps(steps: Array<Record<string, unknown>>) {
