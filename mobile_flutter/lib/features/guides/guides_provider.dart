@@ -157,11 +157,11 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
   Future<void> load({bool isGuest = false, String? language}) async {
     _isGuest = isGuest;
     _language = language;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, clearError: true, stepIndex: 0);
     if (!isGuest) {
       final cached = await _cache.loadGuide(guideId);
       if (cached != null) {
-        state = state.copyWith(guide: cached, isLoading: false);
+        state = state.copyWith(guide: cached, isLoading: false, stepIndex: 0);
       }
     }
     try {
@@ -169,7 +169,7 @@ class GuideDetailNotifier extends StateNotifier<GuideDetailState> {
       if (!isGuest) {
         await _cache.saveGuide(fresh);
       }
-      state = state.copyWith(guide: fresh, isLoading: false);
+      state = state.copyWith(guide: fresh, isLoading: false, stepIndex: 0);
       if (!isGuest) {
         await _triggerImages(fresh);
       }

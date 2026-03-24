@@ -1,16 +1,14 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/theme.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/mx_widgets.dart';
 import '../../auth/auth_provider.dart';
 import '../guides_provider.dart';
 import 'guide_create_sheet.dart';
+import 'guide_visuals.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -41,7 +39,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _loadGuidesIfNeeded() {
-    final key = '${_isGuest}:${_languageCode()}';
+    final key = '$_isGuest:${_languageCode()}';
     if (_lastLoadKey == key) return;
     _lastLoadKey = key;
     Future.microtask(_reloadGuides);
@@ -472,17 +470,25 @@ class _GuideCard extends StatelessWidget {
                     spacing: s4,
                     runSpacing: s4,
                     children: [
-                      MxMetaChip(guide.part.name),
+                      RepairMetaPill(
+                        label: guide.part.name,
+                        iconSize: 13,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: s8,
+                          vertical: s4,
+                        ),
+                      ),
                       MxMetaChip(l.stepCountLabel(guide.steps.length)),
                     ],
                   ),
                 ],
               ),
             ),
-            if (guide.previewImageUrl != null) ...[
-              const SizedBox(width: s12),
-              _GuidePreview(url: guide.previewImageUrl!),
-            ],
+            const SizedBox(width: s12),
+            GuideVehicleIllustration(
+              vehicleModel: guide.vehicle.model,
+              repairLabel: guide.part.name,
+            ),
             if (!isGuest && onDelete != null) ...[
               const SizedBox(width: s8),
               GestureDetector(
@@ -495,53 +501,6 @@ class _GuideCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GuidePreview extends StatelessWidget {
-  final String url;
-  const _GuidePreview({required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    final imageProvider = _resolvePreviewImage(url);
-    return ClipRRect(
-      borderRadius: kRadiusMd,
-      child: Image(
-        image: imageProvider,
-        width: 88,
-        height: 88,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _GuidePreviewFallback(),
-      ),
-    );
-  }
-
-  ImageProvider _resolvePreviewImage(String value) {
-    if (value.startsWith('data:')) {
-      final commaIndex = value.indexOf(',');
-      if (commaIndex != -1) {
-        try {
-          return MemoryImage(base64Decode(value.substring(commaIndex + 1)));
-        } catch (_) {}
-      }
-    }
-    return NetworkImage(value);
-  }
-}
-
-class _GuidePreviewFallback extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 88,
-        height: 88,
-        decoration: BoxDecoration(
-          color: kBg,
-          borderRadius: kRadiusMd,
-          border: Border.all(color: kBorder),
-        ),
-        child:
-            const Icon(Icons.auto_awesome_outlined, color: kPrimary, size: 28),
-      );
 }
 
 class _GuideSkeleton extends StatelessWidget {
@@ -584,7 +543,11 @@ class _GuideSkeleton extends StatelessWidget {
             ),
             if (showPreview) ...[
               const SizedBox(width: s12),
-              const MxSkeleton(width: 88, height: 88, borderRadius: kRadiusMd),
+              const MxSkeleton(
+                width: 120,
+                height: 92,
+                borderRadius: kRadiusMd,
+              ),
             ],
           ],
         ),

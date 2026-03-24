@@ -9,8 +9,8 @@ import '../../auth/auth_provider.dart';
 import '../../../shared/api/providers.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/mx_widgets.dart';
-import '../../../app/theme.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import 'guide_visuals.dart';
 
 class GuideDetailScreen extends ConsumerStatefulWidget {
   final String guideId;
@@ -41,7 +41,7 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
   }
 
   void _loadGuideIfNeeded() {
-    final key = '${widget.guideId}:${_isGuest}:${_languageCode()}';
+    final key = '${widget.guideId}:$_isGuest:${_languageCode()}';
     if (_lastLoadKey == key) return;
     _lastLoadKey = key;
     Future.microtask(_reloadGuide);
@@ -100,10 +100,13 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _GuideContextHero(guide: guide),
+                    const SizedBox(height: s16),
+
                     // Safety notes (collapsible)
                     if (guide.safetyNotes.isNotEmpty) ...[
                       MxCollapsibleCard(
-                        borderColor: kWarning.withOpacity(0.4),
+                        borderColor: kWarning.withValues(alpha: 0.4),
                         bgColor: kWarningLight,
                         header: Row(
                           children: [
@@ -234,7 +237,7 @@ class _GuideHeader extends StatelessWidget {
         color: Colors.white,
         border: Border(bottom: BorderSide(color: kBorder)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)
         ],
       ),
       child: Column(
@@ -267,8 +270,6 @@ class _GuideHeader extends StatelessWidget {
                     children: [
                       Text(guide.vehicle.model,
                           style: tsCaption.copyWith(color: kTextMuted)),
-                      Text(guide.part.name,
-                          style: tsSmallBold, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
@@ -309,14 +310,25 @@ class _GuideHeader extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
           ),
-          // Source badge
-          if (guide.source != null) ...[
-            const SizedBox(height: s4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: s16),
-              child: _SourceBadge(guide: guide),
+          const SizedBox(height: s8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: s16),
+            child: Wrap(
+              spacing: s8,
+              runSpacing: s8,
+              children: [
+                RepairMetaPill(
+                  label: guide.part.name,
+                  iconSize: 13,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: s8,
+                    vertical: s4,
+                  ),
+                ),
+                if (guide.source != null) _SourceBadge(guide: guide),
+              ],
             ),
-          ],
+          ),
           const SizedBox(height: s10),
           // Progress bar
           LinearProgressIndicator(
@@ -324,6 +336,55 @@ class _GuideHeader extends StatelessWidget {
             backgroundColor: kBorder,
             color: kPrimary,
             minHeight: 3,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuideContextHero extends StatelessWidget {
+  final RepairGuide guide;
+
+  const _GuideContextHero({required this.guide});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(s16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: kRadiusLg,
+        border: Border.all(color: kBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: s8,
+            runSpacing: s8,
+            children: [
+              MxMetaChip(guide.vehicle.model),
+              RepairMetaPill(
+                label: guide.part.name,
+                iconSize: 13,
+              ),
+            ],
+          ),
+          const SizedBox(height: s14),
+          GuideVehicleIllustration(
+            vehicleModel: guide.vehicle.model,
+            repairLabel: guide.part.name,
+            width: double.infinity,
+            height: 206,
+            padding: const EdgeInsets.all(18),
           ),
         ],
       ),
@@ -365,7 +426,7 @@ class _StepCardState extends State<_StepCard> {
         border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -589,7 +650,7 @@ class _StepImageState extends State<_StepImage>
                 padding:
                     const EdgeInsets.symmetric(horizontal: s8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.55),
+                  color: Colors.black.withValues(alpha: 0.55),
                   borderRadius: kRadiusSm,
                 ),
                 child: Text('⤢ ${l.tapToExpand}',
@@ -772,7 +833,7 @@ class _StepNavigator extends StatelessWidget {
         border: Border(top: BorderSide(color: kBorder)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, -2))
         ],
@@ -945,17 +1006,19 @@ class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
       final locale = Localizations.localeOf(context).languageCode;
       final answer = await api.askGuideStep(widget.guideId, widget.step.id, q,
           language: locale);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _answer = answer;
           _loading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
@@ -1018,7 +1081,9 @@ class _AskAiWidgetState extends ConsumerState<_AskAiWidget> {
               child: FilledButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  if (mounted) context.go('/signup');
+                  if (mounted) {
+                    context.go('/signup');
+                  }
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFEA580C),
