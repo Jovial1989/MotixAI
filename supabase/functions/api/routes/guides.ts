@@ -69,6 +69,19 @@ function isLegacyPlaceholderImageUrl(url: unknown): boolean {
   return LEGACY_PLACEHOLDER_IMAGE_MARKERS.some((marker) => url.includes(marker));
 }
 
+function needsDemoContentUpgrade(
+  guide: Record<string, unknown>,
+  steps: Array<Record<string, unknown>>,
+): boolean {
+  if (!DEMO_GUIDE_IDS.includes(guideCanonicalId(guide))) return false;
+  const sample = steps
+    .slice(0, 3)
+    .map((step) => typeof step.instruction === "string" ? step.instruction.trim() : "")
+    .filter(Boolean)
+    .join("\n");
+  return sample.length < 240 || !sample.includes("\n");
+}
+
 function sanitizeGuideSteps(steps: Array<Record<string, unknown>>) {
   return steps.map((step) => {
     if (!isLegacyPlaceholderImageUrl(step.imageUrl)) return step;
@@ -186,27 +199,18 @@ async function resolveLocalizedGuide(
   `;
   if (sibling.length > 0) {
     const siblingGuide = await fetchGuideRows(sql, sibling[0].id);
-    if (siblingGuide && guideLooksLocalized(siblingGuide.guide, siblingGuide.steps, requestedLanguage)) {
+    if (
+      siblingGuide &&
+      guideLooksLocalized(siblingGuide.guide, siblingGuide.steps, requestedLanguage) &&
+      !needsDemoContentUpgrade(siblingGuide.guide, siblingGuide.steps)
+    ) {
       return siblingGuide;
     }
     await sql`DELETE FROM "RepairGuide" WHERE id = ${sibling[0].id}`;
   }
 
-  const localized = await localizeGuide({
-    title: String(currentGuide.title),
-    difficulty: String(currentGuide.difficulty),
-    timeEstimate: String(currentGuide.timeEstimate ?? ""),
-    tools: Array.isArray(currentGuide.tools) ? currentGuide.tools : [],
-    safetyNotes: Array.isArray(currentGuide.safetyNotes) ? currentGuide.safetyNotes : [],
-    partName: String(currentGuide.part_name ?? ""),
-    steps: current.steps.map((step) => ({
-      order: Number(step.stepOrder),
-      title: String(step.title),
-      instruction: String(step.instruction),
-      torqueValue: typeof step.torqueValue === "string" ? step.torqueValue : null,
-      warningNote: typeof step.warningNote === "string" ? step.warningNote : null,
-    })),
-  }, requestedLanguage);
+  const localizationSeed = buildLocalizationSeed(currentGuide, current.steps);
+  const localized = await localizeGuide(localizationSeed, requestedLanguage);
 
   if (!localized.steps || localized.steps.length !== current.steps.length) {
     return current;
@@ -856,5 +860,46 @@ function applyCuratedDemoGuideContent(response: Record<string, unknown>) {
         warningNote: curatedStep.warningNote,
       };
     }),
+  };
+}
+
+function buildLocalizationSeed(
+  guide: Record<string, unknown>,
+  steps: Array<Record<string, unknown>>,
+) {
+  const canonicalId = guideCanonicalId(guide);
+  const curated = DEMO_GUIDES_RESPONSE.find((entry) => entry.id === canonicalId);
+  if (!curated) {
+    return {
+      title: String(guide.title),
+      difficulty: String(guide.difficulty),
+      timeEstimate: String(guide.timeEstimate ?? ""),
+      tools: Array.isArray(guide.tools) ? guide.tools : [],
+      safetyNotes: Array.isArray(guide.safetyNotes) ? guide.safetyNotes : [],
+      partName: String(guide.part_name ?? ""),
+      steps: steps.map((step) => ({
+        order: Number(step.stepOrder),
+        title: String(step.title),
+        instruction: String(step.instruction),
+        torqueValue: typeof step.torqueValue === "string" ? step.torqueValue : null,
+        warningNote: typeof step.warningNote === "string" ? step.warningNote : null,
+      })),
+    };
+  }
+
+  return {
+    title: curated.title,
+    difficulty: curated.difficulty,
+    timeEstimate: curated.timeEstimate,
+    tools: curated.tools,
+    safetyNotes: curated.safetyNotes,
+    partName: curated.part.name,
+    steps: curated.steps.map((step) => ({
+      order: step.stepOrder,
+      title: step.title,
+      instruction: step.instruction,
+      torqueValue: step.torqueValue,
+      warningNote: step.warningNote,
+    })),
   };
 }
