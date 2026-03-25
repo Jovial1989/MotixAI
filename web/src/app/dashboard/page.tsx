@@ -356,63 +356,65 @@ function GuidesView({
             const href = guideHref(guide);
             const vehicleModel = guide.vehicle?.model ?? '—';
             const partName = guide.part?.name ?? '—';
+            const statusTitle = dot === 'yellow'
+              ? t.dash.imagesGenerating
+              : dot === 'red'
+                ? t.dash.imagesFailed
+                : t.dash.ready;
             return (
-              <div key={guide.id} className="guide-card guide-card--v2">
-                {!isGuest && dot && (
-                  <div className={`gcard-dot gcard-dot--${dot}`} title={dot === 'yellow' ? t.dash.imagesGenerating : dot === 'red' ? t.dash.imagesFailed : t.dash.ready} />
-                )}
-                <Link href={href} className="guide-card-main guide-card-main--stack">
-                  <div className="guide-card-meta">
-                    <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
-                    <span className="guide-card-time">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2"/>
-                        <path d="M6 3.5v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <div key={guide.id} className="guide-card guide-card--v3">
+                {!isGuest && (
+                  <button
+                    className="guide-card-delete guide-card-delete--floating"
+                    onClick={() => onDeleteGuide(guide.id)}
+                    disabled={deleting === guide.id}
+                    title={t.dash.deleteGuide}
+                  >
+                    {deleting === guide.id ? <span className="gen-spinner" /> : (
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                        <path d="M2 4h11M6 4V2.5h3V4M5 4v8a1 1 0 001 1h3a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                      {guide.timeEstimate ?? '—'}
-                    </span>
-                    <span className="guide-card-time">{guide.steps?.length ?? 0} {t.common.steps}</span>
+                    )}
+                  </button>
+                )}
+                <Link href={href} className="guide-card-shell">
+                  <div className="guide-card-copy">
+                    <div className="guide-card-meta">
+                      <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
+                      <span className="guide-card-time">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                          <path d="M6 3.5v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                        </svg>
+                        {guide.timeEstimate ?? '—'}
+                      </span>
+                      <span className="guide-card-time">{guide.steps?.length ?? 0} {t.common.steps}</span>
+                      {!isGuest && dot && (
+                        <span
+                          className={`guide-card-status guide-card-status--${dot}`}
+                          title={statusTitle}
+                          aria-label={statusTitle}
+                        />
+                      )}
+                    </div>
+                    <div className="guide-card-title-block">
+                      <h2 className="guide-card-vehicle-name">{vehicleModel}</h2>
+                      <p className="guide-card-repair-title">{guide.title}</p>
+                    </div>
                   </div>
-                  <div className="guide-card-identity">
-                    <span className="guide-card-kicker">{t.common.vehicle}</span>
-                    <h2 className="guide-card-vehicle-name">{vehicleModel}</h2>
-                  </div>
-                  <div className="guide-card-visual">
+                  <div className="guide-card-media">
                     <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
                   </div>
-                  <div className="guide-card-context">
-                    <span className="guide-card-context-label">{t.guideForm.repairLabel}</span>
-                    <p className="guide-card-part-name">{partName}</p>
-                    <p className="guide-card-task">{guide.title}</p>
+                  <div className="guide-card-tags">
+                    <span className="guide-card-tag">
+                      <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
+                      <span className="guide-card-tag-value">{partName}</span>
+                    </span>
+                    {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
+                      <span className="guide-card-tag guide-card-tag--accent">{t.dash.sampleGuides}</span>
+                    )}
                   </div>
                 </Link>
-                <div className="guide-card-actions">
-                  {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
-                    <Link href={href} className="guide-card-thumb" aria-label={guide.title}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={guide.steps[0].imageUrl ?? ''} alt={guide.title} className="guide-card-thumb-img" />
-                    </Link>
-                  )}
-                  {!isGuest && (
-                    <button
-                      className="guide-card-delete"
-                      onClick={() => onDeleteGuide(guide.id)}
-                      disabled={deleting === guide.id}
-                      title={t.dash.deleteGuide}
-                    >
-                      {deleting === guide.id ? <span className="gen-spinner" /> : (
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                          <path d="M2 4h11M6 4V2.5h3V4M5 4v8a1 1 0 001 1h3a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </button>
-                  )}
-                  <Link href={href} className="guide-card-arrow">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
-                </div>
               </div>
             );
           })
@@ -471,24 +473,25 @@ function GarageView({ vehicles, loading }: { vehicles: VehicleWithHistory[]; loa
       ) : (
         <div className="vehicle-list">
           {merged.map((v) => (
-            <div key={v.id} className="vehicle-card">
-              <div className="vehicle-card-head">
-                <div className="vehicle-card-copy">
-                  <span className="guide-card-kicker">{t.common.vehicle}</span>
+            <div key={v.id} className="vehicle-card vehicle-card--v2">
+              <div className="vehicle-card-copy vehicle-card-copy--v2">
+                <div className="vehicle-card-head">
                   <p className="vehicle-card-model">{v.model}</p>
-                  {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}
+                  <div className="vehicle-card-counts">
+                    <span className="vehicle-count-pill">{v.guides.length} {v.guides.length !== 1 ? t.garage.guidesCount : t.garage.guideCount}</span>
+                  </div>
                 </div>
-                <div className="vehicle-card-counts">
-                  <span className="vehicle-count-pill">{v.guides.length} {v.guides.length !== 1 ? t.garage.guidesCount : t.garage.guideCount}</span>
-                </div>
+                {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}
               </div>
-              <div className="vehicle-card-visual">
+              <div className="vehicle-card-media">
                 <VehicleImage vehicleId={v.id} imageUrl={v.imageUrl} model={v.model} />
               </div>
               {v.guides[0] && (
-                <div className="vehicle-card-context">
-                  <span className="vehicle-card-context-label">{t.guideForm.repairLabel}</span>
-                  <p className="vehicle-card-part">{v.guides[0].part.name}</p>
+                <div className="vehicle-card-tags">
+                  <span className="guide-card-tag">
+                    <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
+                    <span className="guide-card-tag-value">{v.guides[0].part.name}</span>
+                  </span>
                 </div>
               )}
               {v.guides.length > 0 && (
