@@ -330,10 +330,20 @@ class SBg extends S {
   String get selectMakeFirst => 'Първо изберете марка';
 
   @override
+  String get modelInputPlaceholder => 'напр. Qashqai, F-150…';
+
+  @override
   String get partRepairDesc => 'Част / описание на ремонт';
 
   @override
+  String get partInputPlaceholder =>
+      'напр. Хидравлична помпа, спирачки, смяна на масло…';
+
+  @override
   String get oemPartNumber => 'OEM / номер на част';
+
+  @override
+  String get oemInputPlaceholder => 'напр. 4633891';
 
   @override
   String get didYouMean => 'Имахте предвид:';

@@ -328,10 +328,19 @@ class SEn extends S {
   String get selectMakeFirst => 'Select make first';
 
   @override
+  String get modelInputPlaceholder => 'e.g. Qashqai, F-150…';
+
+  @override
   String get partRepairDesc => 'Part / repair description';
 
   @override
+  String get partInputPlaceholder => 'e.g. Hydraulic pump, brakes, oil change…';
+
+  @override
   String get oemPartNumber => 'OEM / part number';
+
+  @override
+  String get oemInputPlaceholder => 'e.g. 4633891';
 
   @override
   String get didYouMean => 'Did you mean:';

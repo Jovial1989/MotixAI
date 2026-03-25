@@ -330,10 +330,20 @@ class SUk extends S {
   String get selectMakeFirst => 'Спочатку оберіть марку';
 
   @override
+  String get modelInputPlaceholder => 'напр. Qashqai, F-150…';
+
+  @override
   String get partRepairDesc => 'Деталь / опис ремонту';
 
   @override
+  String get partInputPlaceholder =>
+      'напр. Гідравлічний насос, гальма, заміна масла…';
+
+  @override
   String get oemPartNumber => 'OEM / номер деталі';
+
+  @override
+  String get oemInputPlaceholder => 'напр. 4633891';
 
   @override
   String get didYouMean => 'Можливо ви мали на увазі:';

@@ -350,6 +350,7 @@ class _GuideContextHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = S.of(context)!;
     return Container(
       padding: const EdgeInsets.all(s16),
       decoration: BoxDecoration(
@@ -367,24 +368,35 @@ class _GuideContextHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: s8,
-            runSpacing: s8,
-            children: [
-              MxMetaChip(guide.vehicle.model),
-              RepairMetaPill(
-                label: guide.part.name,
-                iconSize: 13,
-              ),
-            ],
+          Text(l.vehicle, style: tsLabel),
+          const SizedBox(height: 6),
+          Text(
+            guide.vehicle.model,
+            style: tsSectionHead,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: s14),
           GuideVehicleIllustration(
             vehicleModel: guide.vehicle.model,
             repairLabel: guide.part.name,
             width: double.infinity,
-            height: 206,
-            padding: const EdgeInsets.all(18),
+            height: 220,
+            padding: const EdgeInsets.all(20),
+          ),
+          const SizedBox(height: s14),
+          Text(l.repair, style: tsLabel),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: s8,
+            runSpacing: s8,
+            children: [
+              RepairMetaPill(
+                label: guide.part.name,
+                iconSize: 13,
+              ),
+              if (guide.source != null) _SourceBadge(guide: guide),
+            ],
           ),
         ],
       ),

@@ -76,9 +76,9 @@ class GuideVehicleIllustration extends StatelessWidget {
     super.key,
     required this.vehicleModel,
     required this.repairLabel,
-    this.width = 120,
-    this.height = 92,
-    this.padding = const EdgeInsets.all(10),
+    this.width = 156,
+    this.height = 116,
+    this.padding = const EdgeInsets.all(14),
   });
 
   @override
@@ -88,7 +88,14 @@ class GuideVehicleIllustration extends StatelessWidget {
       height: height,
       padding: padding,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FBFF),
+            Color(0xFFEEF4FB),
+          ],
+        ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),

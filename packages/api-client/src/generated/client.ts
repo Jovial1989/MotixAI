@@ -232,8 +232,11 @@ export class MotixApiClient {
 
   // ── Analytics ─────────────────────────────────────────────────────────────
 
-  getAnalytics() {
-    return this.request<AnalyticsData>('/analytics');
+  getAnalytics(language?: string) {
+    const qs = new URLSearchParams();
+    if (language) qs.set('language', language);
+    const query = qs.toString();
+    return this.request<AnalyticsData>(`/analytics${query ? `?${query}` : ''}`);
   }
 
   // ── Vehicles ──────────────────────────────────────────────────────────────

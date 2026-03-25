@@ -1,11 +1,20 @@
 import { json } from "../_lib/cors.ts";
 import { getDb } from "../_lib/db.ts";
+import { localizeTextList } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 
 const TIME_SAVED_PER_GUIDE_MIN = 45;
 
+function normalizeLanguage(raw: string | null | undefined): string {
+  if (!raw) return "en";
+  const lc = raw.trim().toLowerCase();
+  if (lc === "uk" || lc === "ua") return "uk";
+  if (lc === "bg") return "bg";
+  return "en";
+}
+
 export async function handleAnalytics(
-  _req: Request,
+  req: Request,
   method: string,
   subpath: string,
   user: TokenPayload,
@@ -15,6 +24,7 @@ export async function handleAnalytics(
   }
 
   const sql = getDb();
+  const language = normalizeLanguage(new URL(req.url).searchParams.get("language"));
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
   const where = user.tenantId
@@ -49,11 +59,24 @@ export async function handleAnalytics(
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 8);
 
+  const localizedParts = language === "en"
+    ? topParts.map((p) => String(p.name))
+    : await localizeTextList(topParts.map((p) => String(p.name)), language);
+  const localizedActivityTitles = language === "en"
+    ? recentActivity.map((item) => String(item.title))
+    : await localizeTextList(recentActivity.map((item) => String(item.title)), language);
+
   return json({
     guidesThisMonth: thisMonth[0]?.count ?? 0,
     timeSavedMinutes: (allGuides[0]?.count ?? 0) * TIME_SAVED_PER_GUIDE_MIN,
     activeVehicles: vehicleCount[0]?.count ?? 0,
-    mostCommonRepairs: topParts.map((p) => ({ partName: p.name, count: p.count })),
-    recentActivity,
+    mostCommonRepairs: topParts.map((p, index) => ({
+      partName: localizedParts[index] ?? p.name,
+      count: p.count,
+    })),
+    recentActivity: recentActivity.map((item, index) => ({
+      ...item,
+      title: localizedActivityTitles[index] ?? item.title,
+    })),
   });
 }

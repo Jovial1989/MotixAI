@@ -448,6 +448,7 @@ export interface Translations {
     vinDecode: string;
     vinOptional: string;
     vinNumber: string;
+    vinPlaceholder: string;
     decode: string;
     vinError11: string;
     couldNotDecodeVin: string;
@@ -458,6 +459,7 @@ export interface Translations {
     partPlaceholder: string;
     didYouMean: string;
     oemPartNumber: string;
+    oemPlaceholder: string;
     review: string;
     // Step 3
     step3title: string;
@@ -1206,6 +1208,7 @@ const en: Translations = {
     vinDecode: 'VIN decode',
     vinOptional: 'VIN',
     vinNumber: 'VIN number',
+    vinPlaceholder: 'e.g. 1HGBH41JXMN109186',
     decode: 'Decode',
     vinError11: 'Enter at least 11 characters',
     couldNotDecodeVin: 'Could not decode VIN — check the number and try again',
@@ -1215,6 +1218,7 @@ const en: Translations = {
     partPlaceholder: 'e.g. Hydraulic pump, brakes, oil change…',
     didYouMean: 'Did you mean:',
     oemPartNumber: 'OEM / part number',
+    oemPlaceholder: 'e.g. 4633891',
     review: 'Review',
     step3title: 'Step 3 of 3 — Confirm & generate',
     vehicleLabel: 'Vehicle',
@@ -1978,6 +1982,7 @@ const uk: Translations = {
     vinDecode: 'Декодування VIN',
     vinOptional: 'VIN',
     vinNumber: 'VIN номер',
+    vinPlaceholder: 'напр. 1HGBH41JXMN109186',
     decode: 'Декодувати',
     vinError11: 'Введіть щонайменше 11 символів',
     couldNotDecodeVin: 'Не вдалося декодувати VIN — перевірте номер і спробуйте знову',
@@ -1987,6 +1992,7 @@ const uk: Translations = {
     partPlaceholder: 'напр. Гідравлічний насос, гальма, заміна масла…',
     didYouMean: 'Можливо ви мали на увазі:',
     oemPartNumber: 'OEM / номер деталі',
+    oemPlaceholder: 'напр. 4633891',
     review: 'Перевірити',
     step3title: 'Крок 3 з 3 — Підтвердити та генерувати',
     vehicleLabel: 'Транспорт',
@@ -2750,6 +2756,7 @@ const bg: Translations = {
     vinDecode: 'VIN декодиране',
     vinOptional: 'VIN',
     vinNumber: 'VIN номер',
+    vinPlaceholder: 'напр. 1HGBH41JXMN109186',
     decode: 'Декодирай',
     vinError11: 'Въведете поне 11 символа',
     couldNotDecodeVin: 'Не може да се декодира VIN — проверете номера и опитайте отново',
@@ -2759,6 +2766,7 @@ const bg: Translations = {
     partPlaceholder: 'напр. Хидравлична помпа, спирачки, смяна на масло…',
     didYouMean: 'Имахте предвид:',
     oemPartNumber: 'OEM / номер на част',
+    oemPlaceholder: 'напр. 4633891',
     review: 'Преглед',
     step3title: 'Стъпка 3 от 3 — Потвърди и генерирай',
     vehicleLabel: 'Превозно средство',

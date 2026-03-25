@@ -1,6 +1,6 @@
 import { errorResponse, json } from "../_lib/cors.ts";
 import { getDb } from "../_lib/db.ts";
-import { generateVehicleImage } from "../_lib/gemini.ts";
+import { generateVehicleImage, localizeTextList } from "../_lib/gemini.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 
 function normalizeLanguage(raw: string | null | undefined): string {
@@ -74,7 +74,9 @@ export async function handleVehicles(
         const [guides, jobs] = await Promise.all([
           // Prefer guides in the requested language, fallback to English
           sql`
-            SELECT g.id, g.title, g."createdAt", g."language", p.name as part_name
+            SELECT g.id, g.title, g."createdAt", g."language",
+                   COALESCE(g."canonicalGuideId", g.id) as canonical_id,
+                   p.name as part_name
             FROM "RepairGuide" g
             JOIN "Part" p ON p.id = g."partId"
             WHERE g."vehicleId" = ${v.id} AND ${guideWhere}
@@ -99,15 +101,32 @@ export async function handleVehicles(
         // same canonical guide, only show the localized one
         const seen = new Set<string>();
         const deduped = guides.filter((g) => {
-          const canonicalId = (g.canonicalGuideId as string) || (g.id as string);
+          const canonicalId = (g.canonical_id as string) || (g.id as string);
           if (seen.has(canonicalId)) return false;
           seen.add(canonicalId);
           return true;
         });
 
+        const localizedGuideCopy = language === "en"
+          ? deduped
+          : (() => {
+              const sourceValues = deduped.flatMap((g) => [
+                String(g.title ?? ""),
+                String(g.part_name ?? ""),
+              ]);
+              return localizeTextList(sourceValues, language).then((localizedValues) =>
+                deduped.map((g, index) => ({
+                  ...g,
+                  title: localizedValues[index * 2] ?? g.title,
+                  part_name: localizedValues[index * 2 + 1] ?? g.part_name,
+                }))
+              );
+            })();
+        const localizedGuides = await localizedGuideCopy;
+
         return {
           ...v,
-          guides: deduped.map((g) => ({
+          guides: localizedGuides.map((g) => ({
             id: g.id,
             title: g.title,
             createdAt: g.createdAt,

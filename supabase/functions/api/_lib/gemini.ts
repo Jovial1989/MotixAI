@@ -543,6 +543,55 @@ ${JSON.stringify(guide)}`;
   }
 }
 
+export async function localizeTextList(
+  values: string[],
+  language?: string,
+): Promise<string[]> {
+  const lang = language ?? "en";
+  if (lang === "en" || values.length === 0) return values;
+
+  const client = getClient();
+  if (!client) return values;
+
+  try {
+    const prompt = `You are a localization editor for automotive workshop UI copy.
+${languageInstruction(lang)}
+
+Translate the JSON array below into the requested language.
+
+Rules:
+- Keep the exact same array length and item order.
+- Preserve vehicle model names, OEM codes, product codes, and measurements.
+- Do NOT leave English text unless it is a vehicle model, OEM code, or product code.
+- For Ukrainian and Bulgarian, use Cyrillic script for every translated item.
+- Keep the wording concise and natural for a workshop app UI.
+
+Respond ONLY with a valid JSON array of strings.
+
+JSON:
+${JSON.stringify(values)}`;
+
+    const result = await client.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+    const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    const localized = JSON.parse(json) as unknown;
+
+    if (!Array.isArray(localized) || localized.length !== values.length) {
+      return values;
+    }
+
+    return localized.map((value, index) =>
+      typeof value === "string" && value.trim().length > 0 ? value : values[index],
+    );
+  } catch (err) {
+    console.error("[gemini] localizeTextList failed:", err instanceof Error ? err.message : err);
+    return values;
+  }
+}
+
 // ── Vehicle illustration generation ──────────────────────────────────────────
 
 const VEHICLE_IMAGE_TIMEOUT_MS = 25_000;

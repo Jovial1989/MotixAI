@@ -269,8 +269,9 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
   }
 
   void _onPartChanged(String text) {
+    final locale = Localizations.localeOf(context).languageCode;
     setState(() {
-      _disambig = text.length >= 2 ? _getDisambig(text) : null;
+      _disambig = locale == 'en' && text.length >= 2 ? _getDisambig(text) : null;
     });
   }
 
@@ -394,8 +395,9 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
             onChanged: (v) =>
                 setState(() => _selModel = v.trim().isEmpty ? null : v.trim()),
             enabled: _selMake != null,
-            decoration: _inputDec(
-                _selMake == null ? l.selectMakeFirst : 'e.g. Qashqai, F-150…'),
+            decoration: _inputDec(_selMake == null
+                ? l.selectMakeFirst
+                : l.modelInputPlaceholder),
           ),
         const SizedBox(height: 14),
         _Label(l.year, required: false),
@@ -456,7 +458,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
           controller: _partCtrl,
           onChanged: _onPartChanged,
           autofocus: true,
-          decoration: _inputDec('e.g. Hydraulic pump, brakes, oil change…'),
+          decoration: _inputDec(l.partInputPlaceholder),
         ),
         if (_disambig != null && _disambig!.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -482,7 +484,7 @@ class _GuideCreateSheetState extends State<_GuideCreateSheet> {
         const SizedBox(height: 16),
         _Label(l.oemPartNumber, required: false),
         const SizedBox(height: 6),
-        TextField(controller: _oemCtrl, decoration: _inputDec('e.g. 4633891')),
+        TextField(controller: _oemCtrl, decoration: _inputDec(l.oemInputPlaceholder)),
       ];
 
   // ── Step 2: Confirm ───────────────────────────────────────────────────────

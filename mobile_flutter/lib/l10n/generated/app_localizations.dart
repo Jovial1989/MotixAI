@@ -693,17 +693,35 @@ abstract class S {
   /// **'Select make first'**
   String get selectMakeFirst;
 
+  /// No description provided for @modelInputPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Qashqai, F-150…'**
+  String get modelInputPlaceholder;
+
   /// No description provided for @partRepairDesc.
   ///
   /// In en, this message translates to:
   /// **'Part / repair description'**
   String get partRepairDesc;
 
+  /// No description provided for @partInputPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Hydraulic pump, brakes, oil change…'**
+  String get partInputPlaceholder;
+
   /// No description provided for @oemPartNumber.
   ///
   /// In en, this message translates to:
   /// **'OEM / part number'**
   String get oemPartNumber;
+
+  /// No description provided for @oemInputPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 4633891'**
+  String get oemInputPlaceholder;
 
   /// No description provided for @didYouMean.
   ///

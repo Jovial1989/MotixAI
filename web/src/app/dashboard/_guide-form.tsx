@@ -146,9 +146,9 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
           <VehicleSelector value={{ make: selMake, model: selModel, year: selYear }}
             onChange={(next) => { setSelMake(next.make); setSelModel(next.model); setSelYear(next.year); }} required />
           <div className="gen-input-wrap">
-            <label className="gen-label">{t.guideForm.vinOptional} <span className="gen-label-or">optional</span></label>
+            <label className="gen-label">{t.guideForm.vinOptional} <span className="gen-label-or">{t.common.optional}</span></label>
             <input className="gen-input" value={vinInput} onChange={(e) => setVinInput(e.target.value.toUpperCase())}
-              placeholder="e.g. 1HGBH41JXMN109186" maxLength={17} />
+              placeholder={t.guideForm.vinPlaceholder} maxLength={17} />
           </div>
         </div>
       ) : (
@@ -158,7 +158,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
             <div className="sgf-vin-row">
               <input className="gen-input" value={vinInput}
                 onChange={(e) => { setVinInput(e.target.value.toUpperCase()); setDecodedVin(null); setVinError(''); }}
-                placeholder="e.g. 1HGBH41JXMN109186" maxLength={17} />
+                placeholder={t.guideForm.vinPlaceholder} maxLength={17} />
               <button type="button" className="sgf-decode-btn" onClick={handleVinDecode}
                 disabled={vinDecoding || vinInput.trim().length < 11}>
                 {vinDecoding ? <span className="gen-spinner" /> : t.guideForm.decode}
@@ -176,7 +176,7 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
               </div>
               <div>
                 <p className="sgf-decoded-model">{decodedVin.ModelYear} {decodedVin.Make} {decodedVin.Model}</p>
-                <p className="sgf-decoded-sub">{decodedVin.Manufacturer} · {decodedVin.BodyClass || 'Vehicle'}</p>
+                <p className="sgf-decoded-sub">{decodedVin.Manufacturer} · {decodedVin.BodyClass || t.guideForm.vehicleLabel}</p>
               </div>
               <button type="button" className="sgf-clear-btn" onClick={() => { setDecodedVin(null); setVinInput(''); }}>✕</button>
             </div>
@@ -234,8 +234,8 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
           )}
         </div>
         <div className="gen-input-wrap">
-          <label className="gen-label">{t.guideForm.oemPartNumber} <span className="gen-label-or">optional</span></label>
-          <input className="gen-input" value={oemNumber} onChange={(e) => setOemNumber(e.target.value)} placeholder="e.g. 4633891" />
+          <label className="gen-label">{t.guideForm.oemPartNumber} <span className="gen-label-or">{t.common.optional}</span></label>
+          <input className="gen-input" value={oemNumber} onChange={(e) => setOemNumber(e.target.value)} placeholder={t.guideForm.oemPlaceholder} />
         </div>
       </div>
 

@@ -116,7 +116,7 @@ function VehicleImage({ vehicleId, imageUrl, model }: { vehicleId?: string; imag
   const type = detectVehicleType(model);
   return (
     <div className="gcard-vehicle-icon">
-      <svg width="48" height="28" viewBox="0 0 48 28" fill="none">
+      <svg viewBox="0 0 48 28" fill="none" className="gcard-vehicle-svg">
         {type === 'suv' ? (
           <>
             <path d="M6 20h36M8 20l3-8h10l2 3h10l3-3h4l2 8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
@@ -354,13 +354,14 @@ function GuidesView({
           filtered.map((guide) => {
             const dot = guideStatusDot(guide);
             const href = guideHref(guide);
+            const vehicleModel = guide.vehicle?.model ?? '—';
+            const partName = guide.part?.name ?? '—';
             return (
               <div key={guide.id} className="guide-card guide-card--v2">
                 {!isGuest && dot && (
                   <div className={`gcard-dot gcard-dot--${dot}`} title={dot === 'yellow' ? t.dash.imagesGenerating : dot === 'red' ? t.dash.imagesFailed : t.dash.ready} />
                 )}
-                <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
-                <Link href={href} className="guide-card-main">
+                <Link href={href} className="guide-card-main guide-card-main--stack">
                   <div className="guide-card-meta">
                     <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
                     <span className="guide-card-time">
@@ -372,12 +373,18 @@ function GuidesView({
                     </span>
                     <span className="guide-card-time">{guide.steps?.length ?? 0} {t.common.steps}</span>
                   </div>
-                  <h2 className="guide-card-title">{guide.title}</h2>
-                  <p className="guide-card-sub">
-                    {guide.vehicle?.model ?? '—'}
-                    <span className="guide-card-dot">·</span>
-                    {guide.part?.name ?? '—'}
-                  </p>
+                  <div className="guide-card-identity">
+                    <span className="guide-card-kicker">{t.common.vehicle}</span>
+                    <h2 className="guide-card-vehicle-name">{vehicleModel}</h2>
+                  </div>
+                  <div className="guide-card-visual">
+                    <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
+                  </div>
+                  <div className="guide-card-context">
+                    <span className="guide-card-context-label">{t.guideForm.repairLabel}</span>
+                    <p className="guide-card-part-name">{partName}</p>
+                    <p className="guide-card-task">{guide.title}</p>
+                  </div>
                 </Link>
                 <div className="guide-card-actions">
                   {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
@@ -466,8 +473,8 @@ function GarageView({ vehicles, loading }: { vehicles: VehicleWithHistory[]; loa
           {merged.map((v) => (
             <div key={v.id} className="vehicle-card">
               <div className="vehicle-card-head">
-                <VehicleImage vehicleId={v.id} imageUrl={v.imageUrl} model={v.model} />
-                <div>
+                <div className="vehicle-card-copy">
+                  <span className="guide-card-kicker">{t.common.vehicle}</span>
                   <p className="vehicle-card-model">{v.model}</p>
                   {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}
                 </div>
@@ -475,6 +482,15 @@ function GarageView({ vehicles, loading }: { vehicles: VehicleWithHistory[]; loa
                   <span className="vehicle-count-pill">{v.guides.length} {v.guides.length !== 1 ? t.garage.guidesCount : t.garage.guideCount}</span>
                 </div>
               </div>
+              <div className="vehicle-card-visual">
+                <VehicleImage vehicleId={v.id} imageUrl={v.imageUrl} model={v.model} />
+              </div>
+              {v.guides[0] && (
+                <div className="vehicle-card-context">
+                  <span className="vehicle-card-context-label">{t.guideForm.repairLabel}</span>
+                  <p className="vehicle-card-part">{v.guides[0].part.name}</p>
+                </div>
+              )}
               {v.guides.length > 0 && (
                 <div className="vehicle-history">
                   {v.guides.slice(0, 3).map((g) => (
@@ -1331,7 +1347,7 @@ function DashboardInner() {
     Promise.all([
       guestMode ? webApi.getDemoGuides(locale) : webApi.listGuides(locale),
       guestMode ? Promise.resolve([] as VehicleWithHistory[]) : webApi.listVehicles({ language: locale }).catch(() => [] as VehicleWithHistory[]),
-      guestMode ? Promise.resolve(null) : webApi.getAnalytics().catch(() => null),
+      guestMode ? Promise.resolve(null) : webApi.getAnalytics(locale).catch(() => null),
     ]).then(([g, v, a]) => {
       setGuides(g); setVehicles(v); setAnalytics(a);
     }).catch((err: unknown) => {
@@ -1362,7 +1378,7 @@ function DashboardInner() {
           });
       setGuides((prev) => [created, ...prev]);
       webApi.listVehicles({ language: getLocale() }).then(setVehicles).catch(() => {});
-      webApi.getAnalytics().then(setAnalytics).catch(() => {});
+      webApi.getAnalytics(getLocale()).then(setAnalytics).catch(() => {});
       setView('guides');
     } catch (err: unknown) {
       setGuideError(err instanceof Error ? err.message : 'Failed to create guide');

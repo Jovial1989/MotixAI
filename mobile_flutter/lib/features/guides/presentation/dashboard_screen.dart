@@ -269,7 +269,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         padding: const EdgeInsets.fromLTRB(s16, s8, s16, s32),
         itemCount: isGuest ? 3 : 4,
         separatorBuilder: (_, __) => const SizedBox(height: s12),
-        itemBuilder: (_, __) => _GuideSkeleton(showPreview: isGuest),
+        itemBuilder: (_, __) => const _GuideSkeleton(),
       );
     }
 
@@ -416,21 +416,16 @@ class _GuideCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(guide.title,
-                      style: tsSubhead,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: s8),
-                  Wrap(
-                    spacing: s12,
-                    runSpacing: s4,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: s8,
+                    runSpacing: s8,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Row(
@@ -442,12 +437,11 @@ class _GuideCard extends StatelessWidget {
                         ],
                       ),
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 104),
+                        constraints: const BoxConstraints(maxWidth: 120),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.access_time,
-                                size: 13, color: kTextMuted),
+                            Icon(Icons.access_time, size: 13, color: kTextMuted),
                             const SizedBox(width: s4),
                             Flexible(
                               child: Text(
@@ -460,42 +454,50 @@ class _GuideCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: s8),
-                  Text(guide.vehicle.model,
-                      style: tsCaption, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: s8),
-                  Wrap(
-                    spacing: s4,
-                    runSpacing: s4,
-                    children: [
-                      RepairMetaPill(
-                        label: guide.part.name,
-                        iconSize: 13,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: s8,
-                          vertical: s4,
-                        ),
-                      ),
                       MxMetaChip(l.stepCountLabel(guide.steps.length)),
                     ],
                   ),
-                ],
-              ),
+                ),
+                if (!isGuest && onDelete != null)
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Icon(Icons.delete_outline, size: 18, color: kTextMuted),
+                  ),
+              ],
             ),
-            const SizedBox(width: s12),
+            const SizedBox(height: s14),
+            Text(
+              guide.vehicle.model,
+              style: tsSectionHead,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: s14),
             GuideVehicleIllustration(
               vehicleModel: guide.vehicle.model,
               repairLabel: guide.part.name,
+              width: double.infinity,
+              height: 156,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             ),
-            if (!isGuest && onDelete != null) ...[
-              const SizedBox(width: s8),
-              GestureDetector(
-                onTap: onDelete,
-                child: Icon(Icons.delete_outline, size: 18, color: kTextMuted),
+            const SizedBox(height: s14),
+            Text(l.repair, style: tsLabel),
+            const SizedBox(height: 6),
+            RepairMetaPill(
+              label: guide.part.name,
+              iconSize: 13,
+            ),
+            const SizedBox(height: s10),
+            Text(
+              guide.title,
+              style: tsBody.copyWith(
+                color: kTextSub,
+                fontWeight: FontWeight.w500,
+                height: 1.45,
               ),
-            ],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -504,8 +506,7 @@ class _GuideCard extends StatelessWidget {
 }
 
 class _GuideSkeleton extends StatelessWidget {
-  final bool showPreview;
-  const _GuideSkeleton({this.showPreview = false});
+  const _GuideSkeleton();
 
   @override
   Widget build(BuildContext context) => Container(
@@ -515,40 +516,48 @@ class _GuideSkeleton extends StatelessWidget {
           borderRadius: kRadiusLg,
           border: Border.all(color: kBorder),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  MxSkeleton(
-                      width: double.infinity,
-                      height: 20,
-                      borderRadius: kRadiusSm),
-                  const SizedBox(height: s8),
-                  MxSkeleton(width: 200, height: 14, borderRadius: kRadiusSm),
-                  const SizedBox(height: s12),
-                  Row(
-                    children: [
-                      MxSkeleton(
-                          width: 60, height: 22, borderRadius: kRadiusFull),
-                      const SizedBox(width: s8),
-                      MxSkeleton(
-                          width: 80, height: 22, borderRadius: kRadiusFull),
-                    ],
-                  ),
-                ],
-              ),
+            Row(
+              children: [
+                MxSkeleton(width: 64, height: 22, borderRadius: kRadiusFull),
+                const SizedBox(width: s8),
+                MxSkeleton(width: 96, height: 22, borderRadius: kRadiusFull),
+                const Spacer(),
+                MxSkeleton(width: 82, height: 22, borderRadius: kRadiusFull),
+              ],
             ),
-            if (showPreview) ...[
-              const SizedBox(width: s12),
-              const MxSkeleton(
-                width: 120,
-                height: 92,
-                borderRadius: kRadiusMd,
-              ),
-            ],
+            const SizedBox(height: s14),
+            const MxSkeleton(
+              width: 220,
+              height: 22,
+              borderRadius: kRadiusSm,
+            ),
+            const SizedBox(height: s14),
+            const MxSkeleton(
+              width: double.infinity,
+              height: 156,
+              borderRadius: kRadiusMd,
+            ),
+            const SizedBox(height: s14),
+            const MxSkeleton(
+              width: 58,
+              height: 12,
+              borderRadius: kRadiusSm,
+            ),
+            const SizedBox(height: s8),
+            const MxSkeleton(
+              width: 148,
+              height: 28,
+              borderRadius: kRadiusFull,
+            ),
+            const SizedBox(height: s10),
+            const MxSkeleton(
+              width: double.infinity,
+              height: 18,
+              borderRadius: kRadiusSm,
+            ),
           ],
         ),
       );
