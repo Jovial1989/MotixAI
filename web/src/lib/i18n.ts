@@ -393,6 +393,7 @@ export interface Translations {
     trialActive: string;
     trialRenewsAs: string;
     manageSubscription: string;
+    addPaymentMethod: string;
     contactBillingSupport: string;
     startTrialCta: string;
     guidesThisMonth: string;
@@ -1157,6 +1158,7 @@ const en: Translations = {
     trialActive: 'Pro trial active',
     trialRenewsAs: 'Card on file · Renews as Pro unless canceled.',
     manageSubscription: 'Manage subscription',
+    addPaymentMethod: 'Add payment method',
     contactBillingSupport: 'Contact billing support',
     startTrialCta: 'Start 7-day free trial — $39/mo after',
     guidesThisMonth: 'Guides this month',
@@ -1931,6 +1933,7 @@ const uk: Translations = {
     trialActive: 'Pro пробний період активний',
     trialRenewsAs: 'Картка збережена · Після пробного періоду підписка поновиться як Pro, якщо її не скасувати.',
     manageSubscription: 'Керувати підпискою',
+    addPaymentMethod: 'Додати спосіб оплати',
     contactBillingSupport: 'Зв’язатися з білінг-підтримкою',
     startTrialCta: '7 днів безкоштовно — потім $39/міс',
     guidesThisMonth: 'Інструкції цього місяця',
@@ -2705,6 +2708,7 @@ const bg: Translations = {
     trialActive: 'Pro пробен период активен',
     trialRenewsAs: 'Картата е запазена · След пробния период планът се подновява като Pro, освен ако не бъде отменен.',
     manageSubscription: 'Управление на абонамента',
+    addPaymentMethod: 'Добавете метод на плащане',
     contactBillingSupport: 'Свържете се с billing поддръжката',
     startTrialCta: '7 дни безплатно — след това $39/мес',
     guidesThisMonth: 'Ръководства този месец',

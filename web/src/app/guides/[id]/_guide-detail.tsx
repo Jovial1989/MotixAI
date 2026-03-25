@@ -23,6 +23,29 @@ function difficultyBadgeClass(value: string): string {
   return 'badge--yellow';
 }
 
+function instructionChecklist(instruction: string): string[] {
+  const rawLines = instruction
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/^(\d+[\).\s-]+|[-*•]\s+)/u, '').trim())
+    .filter(Boolean);
+
+  const sourceLines = rawLines.length > 0 ? rawLines : instruction
+    .split(/(?<=[.!?])\s+/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (sourceLines.length === 1) {
+    return sourceLines[0]
+      .split(/(?<=[.!?])\s+/u)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  return sourceLines;
+}
+
 /* ── Image viewer ────────────────────────────────────────────────────── */
 function StepImage({ step, canRegenerate = true }: { step: RepairStep; canRegenerate?: boolean }) {
   const t = useT();
@@ -251,6 +274,8 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
   stepRef: React.RefObject<HTMLDivElement>; isGuest?: boolean;
 }) {
   const t = useT();
+  const checklist = instructionChecklist(step.instruction);
+
   return (
     <div ref={stepRef} className={`sc${active ? ' sc--open sc--active' : ''}`}>
       <button className="sc-hd" onClick={onActivate}>
@@ -264,49 +289,45 @@ function StepCard({ step, index, active, onActivate, guideId, stepRef, isGuest }
 
       {active && (
         <div className="sc-bd">
-          <div>
-            <StepImage step={step} canRegenerate={!isGuest} />
-            <div className="sc-inst">
-              {(() => {
-                const lines = step.instruction.split('\n').filter(Boolean);
-                const isNumbered = lines.some((l) => /^\d+\.\s/.test(l));
-                if (isNumbered) {
-                  return (
-                    <div className="sc-inst-list">
-                      {lines.map((line, i) => {
-                        const m = line.match(/^(\d+)\.\s+(.*)/);
-                        return m ? (
-                          <div key={i} className="sc-inst-item">
-                            <span className="sc-inst-num">{m[1]}</span>
-                            <span>{m[2]}</span>
-                          </div>
-                        ) : (
-                          <span key={i} style={{ display: 'block' }}>{line}</span>
-                        );
-                      })}
-                    </div>
-                  );
-                }
-                return lines.map((line, i) => <span key={i} style={{ display: 'block' }}>{line}</span>);
-              })()}
+          <div className="sc-stage">
+            <div className="sc-visual-block">
+              <StepImage step={step} canRegenerate={!isGuest} />
             </div>
-            {(isMeaningfulString(step.torqueValue) || isMeaningfulString(step.warningNote)) && (
-              <div className="sc-specs">
-                {isMeaningfulString(step.warningNote) && (
-                  <div className="sc-spec sc-spec--warn">
-                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1L10.5 10H.5L5.5 1Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 4.5v2M5.5 8v.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                    {step.warningNote}
-                  </div>
-                )}
-                {isMeaningfulString(step.torqueValue) && (
-                  <div className="sc-spec sc-spec--ok">
-                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                    {t.guideDetail.torque}: {step.torqueValue}
-                  </div>
-                )}
-              </div>
-            )}
-            <AskAiPanel step={step} guideId={guideId} isGuest={isGuest} />
+
+            <div className="sc-content-block">
+              <ul className="sc-checklist">
+                {checklist.map((line, i) => (
+                  <li key={`${step.id}-${i}`} className="sc-check">
+                    <span className="sc-check-dot">{i + 1}</span>
+                    <span className="sc-check-text">{line}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {(isMeaningfulString(step.warningNote) || isMeaningfulString(step.torqueValue)) && (
+                <div className="sc-callouts">
+                  {isMeaningfulString(step.warningNote) && (
+                    <div className="sc-warning">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 1.25L11 10.75H1L6 1.25Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
+                        <path d="M6 4.25v2.4M6 8.6v.15" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+                      </svg>
+                      <span>{step.warningNote}</span>
+                    </div>
+                  )}
+                  {isMeaningfulString(step.torqueValue) && (
+                    <div className="sc-meta-row">
+                      <div className="sc-spec sc-spec--ok">
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.1"/><path d="M3.5 7.5c1-2 3-2 4-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                        {t.guideDetail.torque}: {step.torqueValue}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <AskAiPanel step={step} guideId={guideId} isGuest={isGuest} />
+            </div>
           </div>
         </div>
       )}
@@ -420,8 +441,9 @@ export default function GuideDetailPage() {
                 </span>
               )}
             </div>
-            <h1 className="gd-mob-title">{guide.title}</h1>
-            <p className="gd-mob-sub">{guide.vehicle.model} · {guide.part.name}</p>
+            <h1 className="gd-mob-title">{guide.vehicle.model}</h1>
+            <p className="gd-mob-sub">{guide.title}</p>
+            <p className="gd-mob-meta">{guide.part.name} · {steps.length} {t.common.steps}</p>
           </div>
 
           <div className="gd-steps-hd">
@@ -444,84 +466,100 @@ export default function GuideDetailPage() {
         </main>
 
         <aside className="gd-sidebar">
-          <div className="gd-sb-card">
-            <div className="gd-chip-row">
-              <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
-              {guide.timeEstimate && (
-                <span className="gd-chip">
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                  {guide.timeEstimate}
-                </span>
-              )}
-              <span className="gd-chip">{guide.vehicle.model}</span>
-            </div>
-            <h2 className="gd-sb-title">{guide.title}</h2>
-            <p className="gd-sb-sub">{guide.part.name} · {steps.length} {t.common.steps}</p>
-            <div className="gd-ai-meta">
-              <span className="ai-source-chip">{t.guideDetail.aiGeneratedLabel}</span>
-            </div>
-            <div className="gd-prog-track">
-              <div className="gd-prog-fill" style={{ width: `${pct}%` }} />
-            </div>
-            <p className="gd-prog-label">{t.guideDetail.step} {activeStep + 1} {t.guideDetail.stepOf} {steps.length}</p>
-          </div>
-
-          {guide.tools && guide.tools.length > 0 && (
-            <div className="gd-sb-card">
-              <p className="gd-sb-section">{t.guideDetail.toolsRequired}</p>
-              <div className="gd-tools">
-                {toolsVisible?.map((tool) => <span key={tool} className="gd-tool">{tool}</span>)}
-                {!toolsOpen && toolsExtra > 0 && (
-                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(true)}>+{toolsExtra} {t.guideDetail.moreTools}</button>
-                )}
-                {toolsOpen && (
-                  <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(false)}>{t.guideDetail.showLess} ↑</button>
+          <div className="gd-sidebar-shell">
+            <section className="gd-sidebar-section gd-sidebar-section--summary">
+              <p className="gd-side-eyebrow">{t.guideDetail.overview}</p>
+              <h2 className="gd-side-vehicle">{guide.vehicle.model}</h2>
+              <p className="gd-side-repair">{guide.title}</p>
+              <div className="gd-chip-row">
+                <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
+                {guide.timeEstimate && (
+                  <span className="gd-chip">
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                    {guide.timeEstimate}
+                  </span>
                 )}
               </div>
-            </div>
-          )}
+              <div className="gd-side-meta">
+                <span className="gd-side-part">{guide.part.name}</span>
+                <span className="ai-source-chip">{t.guideDetail.aiGeneratedLabel}</span>
+              </div>
+            </section>
 
-          {guide.safetyNotes && guide.safetyNotes.length > 0 && (
-            <div className={`gd-safety${safetyOpen ? ' gd-safety--open' : ''}`}>
-              <button className="gd-safety-btn" onClick={() => setSafetyOpen(o => !o)}>
-                <span className="gd-safety-ico">
-                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5L11.5 4.5V8c0 2.2-2 4.2-5 5C2 12.2.5 10.2.5 8V4.5L6.5 1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M4.5 7l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </span>
-                <span className="gd-safety-ttl">
-                  {safetyOpen ? t.guideDetail.safetyNotes : `${guide.safetyNotes.length} ${t.guideDetail.nSafetyNotes}`}
-                </span>
-                <svg className="gd-safety-chv" width="14" height="14" viewBox="0 0 14 14" fill="none"
-                  style={{ transform: safetyOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-              {safetyOpen && (
-                <ul className="gd-safety-list">
-                  {guide.safetyNotes.map((n, i) => <li key={i} className="gd-safety-item">{n}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
+            <section className="gd-sidebar-section">
+              <div className="gd-side-progress-row">
+                <div>
+                  <p className="gd-side-section-title">{t.guideDetail.step} {activeStep + 1} {t.guideDetail.stepOf} {steps.length}</p>
+                  <p className="gd-side-section-sub">{steps[activeStep]?.title}</p>
+                </div>
+                <span className="gd-side-progress-value">{pct}%</span>
+              </div>
+              <div className="gd-prog-track">
+                <div className="gd-prog-fill" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="gd-prog-label">{guide.part.name} · {steps.length} {t.common.steps}</p>
+            </section>
 
-          <div className="gd-sb-card gd-nav">
-            <button className="gd-nav-prev" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              {t.guideDetail.prev}
-            </button>
-            <span className="gd-nav-pos">{activeStep + 1} / {steps.length}</span>
-            {activeStep >= steps.length - 1 ? (
-              <Link href="/dashboard" className="gd-nav-next gd-nav-done">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                {t.guideDetail.done}
-              </Link>
-            ) : (
-              <button className="gd-nav-next" onClick={() => setActiveStep(s => s + 1)}>
-                {t.guideDetail.next}
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
+            {guide.tools && guide.tools.length > 0 && (
+              <section className="gd-sidebar-section">
+                <p className="gd-sb-section">{t.guideDetail.toolsRequired}</p>
+                <div className="gd-tools">
+                  {toolsVisible?.map((tool) => <span key={tool} className="gd-tool">{tool}</span>)}
+                  {!toolsOpen && toolsExtra > 0 && (
+                    <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(true)}>+{toolsExtra} {t.guideDetail.moreTools}</button>
+                  )}
+                  {toolsOpen && (
+                    <button className="gd-tool gd-tool--more" onClick={() => setToolsOpen(false)}>{t.guideDetail.showLess} ↑</button>
+                  )}
+                </div>
+              </section>
             )}
-          </div>
 
+            {guide.safetyNotes && guide.safetyNotes.length > 0 && (
+              <section className="gd-sidebar-section">
+                <div className={`gd-safety gd-safety--panel${safetyOpen ? ' gd-safety--open' : ''}`}>
+                  <button className="gd-safety-btn" onClick={() => setSafetyOpen(o => !o)}>
+                    <span className="gd-safety-ico">
+                      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5L11.5 4.5V8c0 2.2-2 4.2-5 5C2 12.2.5 10.2.5 8V4.5L6.5 1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M4.5 7l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                    <span className="gd-safety-ttl">
+                      {safetyOpen ? t.guideDetail.safetyNotes : `${guide.safetyNotes.length} ${t.guideDetail.nSafetyNotes}`}
+                    </span>
+                    <svg className="gd-safety-chv" width="14" height="14" viewBox="0 0 14 14" fill="none"
+                      style={{ transform: safetyOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
+                      <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  {safetyOpen && (
+                    <ul className="gd-safety-list">
+                      {guide.safetyNotes.map((n, i) => <li key={i} className="gd-safety-item">{n}</li>)}
+                    </ul>
+                  )}
+                </div>
+              </section>
+            )}
+
+            <section className="gd-sidebar-section gd-sidebar-section--nav">
+              <div className="gd-nav">
+                <button className="gd-nav-prev" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {t.guideDetail.prev}
+                </button>
+                <span className="gd-nav-pos">{activeStep + 1} / {steps.length}</span>
+                {activeStep >= steps.length - 1 ? (
+                  <Link href="/dashboard" className="gd-nav-next gd-nav-done">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    {t.guideDetail.done}
+                  </Link>
+                ) : (
+                  <button className="gd-nav-next" onClick={() => setActiveStep(s => s + 1)}>
+                    {t.guideDetail.next}
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                )}
+              </div>
+            </section>
+          </div>
         </aside>
       </div>
     </div>

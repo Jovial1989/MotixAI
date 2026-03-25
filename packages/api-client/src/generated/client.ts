@@ -123,7 +123,7 @@ export class MotixApiClient {
     });
   }
 
-  createPortalSession(body?: { returnUrl?: string }) {
+  createPortalSession(body?: { returnUrl?: string; flowType?: 'payment_method_update' }) {
     return this.request<PortalSessionResponse>('/billing/portal-session', {
       method: 'POST',
       body: JSON.stringify(body ?? {}),

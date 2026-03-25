@@ -108,6 +108,7 @@ function ProfileInner() {
     subscriptionStatus: string;
     trialEndsAt: string | null;
     currentPeriodEnd: string | null;
+    hasBillingAccount: boolean;
     canManageSubscription: boolean;
     paymentMethodBrand: string | null;
     paymentMethodLast4: string | null;
@@ -119,6 +120,7 @@ function ProfileInner() {
     subscriptionStatus: 'none',
     trialEndsAt: null,
     currentPeriodEnd: null,
+    hasBillingAccount: false,
     canManageSubscription: false,
     paymentMethodBrand: null,
     paymentMethodLast4: null,
@@ -152,6 +154,7 @@ function ProfileInner() {
           subscriptionStatus: summary.subscriptionStatus,
           trialEndsAt: summary.trialEndsAt,
           currentPeriodEnd: summary.currentPeriodEnd,
+          hasBillingAccount: summary.hasBillingAccount,
           canManageSubscription: summary.canManageSubscription,
           paymentMethodBrand: summary.paymentMethodBrand,
           paymentMethodLast4: summary.paymentMethodLast4,
@@ -180,11 +183,37 @@ function ProfileInner() {
     : null;
   const priceText = formatMoney(billingSummary.priceAmount, billingSummary.priceCurrency);
   const cadenceText = `${priceText}/${billingSummary.priceInterval === 'month' ? t.profilePage.perMonthShort : billingSummary.priceInterval}`;
+  const hasPaymentMethod = Boolean(billingSummary.paymentMethodLast4);
+  const proBillingActionLabel = hasPaymentMethod ? t.profilePage.manageSubscription : t.profilePage.addPaymentMethod;
 
   function usageWidth(used: number, limit: number): string {
     if (!Number.isFinite(limit)) return '100%';
     if (limit <= 0) return '0%';
     return `${Math.min(100, Math.round((used / limit) * 100))}%`;
+  }
+
+  async function startCheckout() {
+    try {
+      const { url } = await webApi.createCheckoutSession({
+        successUrl: `${window.location.origin}/profile?billing=success`,
+        cancelUrl: `${window.location.origin}/profile?billing=cancelled`,
+      });
+      if (url) window.location.href = url;
+    } catch {
+      // Ignore and keep the current view stable.
+    }
+  }
+
+  async function openBillingPortal(preferPaymentMethod = false) {
+    try {
+      const { url } = await webApi.createPortalSession({
+        returnUrl: `${window.location.origin}/profile`,
+        flowType: preferPaymentMethod ? 'payment_method_update' : undefined,
+      });
+      if (url) window.location.href = url;
+    } catch {
+      // Ignore and keep the current view stable.
+    }
   }
 
   function handleChange(field: keyof ProfileData, value: string | number) {
@@ -318,15 +347,7 @@ function ProfileInner() {
                     type="button"
                     className="gen-btn"
                     style={{ width: 'fit-content' }}
-                    onClick={async () => {
-                      try {
-                        const { url } = await webApi.createCheckoutSession({
-                          successUrl: `${window.location.origin}/profile?billing=success`,
-                          cancelUrl: `${window.location.origin}/profile?billing=cancelled`,
-                        });
-                        if (url) window.location.href = url;
-                      } catch { /* ignore */ }
-                    }}
+                    onClick={startCheckout}
                   >
                     {t.profilePage.startTrialCta}
                   </button>
@@ -366,26 +387,13 @@ function ProfileInner() {
                     </p>
                   )}
                   <div className="profile-inline-actions">
-                    {billingSummary.canManageSubscription ? (
-                      <button
-                        type="button"
-                        className="gen-btn"
-                        onClick={async () => {
-                          try {
-                            const { url } = await webApi.createPortalSession({
-                              returnUrl: `${window.location.origin}/profile`,
-                            });
-                            if (url) window.location.href = url;
-                          } catch { /* ignore */ }
-                        }}
-                      >
-                        {t.profilePage.manageSubscription}
-                      </button>
-                    ) : (
-                      <a href="mailto:hello@motixi.com?subject=Motixi billing support" className="gen-btn" style={{ width: 'fit-content', textDecoration: 'none' }}>
-                        {t.profilePage.contactBillingSupport}
-                      </a>
-                    )}
+                    <button
+                      type="button"
+                      className="gen-btn"
+                      onClick={() => openBillingPortal(!hasPaymentMethod)}
+                    >
+                      {proBillingActionLabel}
+                    </button>
                   </div>
                 </>
               )}
@@ -481,38 +489,19 @@ function ProfileInner() {
                     type="button"
                     className="profile-inline-link"
                     style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer' }}
-                    onClick={async () => {
-                      try {
-                        const { url } = await webApi.createCheckoutSession({
-                          successUrl: `${window.location.origin}/profile?billing=success`,
-                          cancelUrl: `${window.location.origin}/profile?billing=cancelled`,
-                        });
-                        if (url) window.location.href = url;
-                      } catch { /* ignore */ }
-                    }}
+                    onClick={startCheckout}
                   >
                     {t.profilePage.upgradeToPro}
                   </button>
-                ) : billingSummary.canManageSubscription ? (
+                ) : (
                   <button
                     type="button"
                     className="profile-inline-link"
                     style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer' }}
-                    onClick={async () => {
-                      try {
-                        const { url } = await webApi.createPortalSession({
-                          returnUrl: `${window.location.origin}/profile`,
-                        });
-                        if (url) window.location.href = url;
-                      } catch { /* ignore */ }
-                    }}
+                    onClick={() => openBillingPortal(!hasPaymentMethod)}
                   >
-                    {t.profilePage.manageSubscription}
+                    {proBillingActionLabel}
                   </button>
-                ) : (
-                  <a href="mailto:hello@motixi.com?subject=Motixi billing support" className="profile-inline-link">
-                    {t.profilePage.contactBillingSupport}
-                  </a>
                 )}
               </div>
             </div>

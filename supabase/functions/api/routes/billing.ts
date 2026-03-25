@@ -43,6 +43,76 @@ function priceSummaryFromPrice(price: Stripe.Price | Stripe.DeletedPrice | null 
   };
 }
 
+async function loadBillingUser(sql: ReturnType<typeof getDb>, userId: string) {
+  const rows = await sql`
+    SELECT id, email, "stripeCustomerId" FROM "User" WHERE id = ${userId} LIMIT 1
+  `;
+  return rows[0] ?? null;
+}
+
+async function ensureStripeCustomer(
+  sql: ReturnType<typeof getDb>,
+  stripe: Stripe,
+  userId: string,
+): Promise<string | null> {
+  const dbUser = await loadBillingUser(sql, userId);
+  if (!dbUser) return null;
+
+  let customerId = dbUser.stripeCustomerId as string | null;
+  if (customerId) return customerId;
+
+  const customer = await stripe.customers.create({
+    email: dbUser.email as string,
+    metadata: { userId },
+  });
+
+  customerId = customer.id;
+  const now = new Date().toISOString();
+  await sql`
+    UPDATE "User" SET "stripeCustomerId" = ${customerId}, "updatedAt" = ${now}
+    WHERE id = ${userId}
+  `;
+
+  return customerId;
+}
+
+async function ensurePortalConfiguration(stripe: Stripe): Promise<string> {
+  const configPayload = {
+    business_profile: {
+      headline: "Motixi — Manage your subscription",
+    },
+    features: {
+      customer_update: {
+        enabled: true,
+        allowed_updates: ["address", "email", "name", "tax_id"],
+      },
+      invoice_history: {
+        enabled: true,
+      },
+      payment_method_update: {
+        enabled: true,
+      },
+      subscription_cancel: {
+        enabled: true,
+      },
+    },
+    metadata: {
+      motixi_portal: "true",
+    },
+  } satisfies Stripe.BillingPortal.ConfigurationCreateParams;
+
+  const configs = await stripe.billingPortal.configurations.list({ limit: 10 });
+  const existing = configs.data.find((config) => config.metadata?.motixi_portal === "true");
+
+  if (existing) {
+    const updated = await stripe.billingPortal.configurations.update(existing.id, configPayload);
+    return updated.id;
+  }
+
+  const created = await stripe.billingPortal.configurations.create(configPayload);
+  return created.id;
+}
+
 export async function handleBilling(
   req: Request,
   method: string,
@@ -62,26 +132,8 @@ export async function handleBilling(
     const priceId = Deno.env.get("STRIPE_PRO_PRICE_ID");
     if (!priceId) return errorResponse("Stripe price not configured", 500);
 
-    // Find or create Stripe customer
-    const rows = await sql`
-      SELECT id, email, "stripeCustomerId" FROM "User" WHERE id = ${user.sub} LIMIT 1
-    `;
-    if (!rows.length) return errorResponse("User not found", 404);
-    const dbUser = rows[0];
-
-    let customerId = dbUser.stripeCustomerId as string | null;
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: dbUser.email as string,
-        metadata: { userId: user.sub },
-      });
-      customerId = customer.id;
-      const now = new Date().toISOString();
-      await sql`
-        UPDATE "User" SET "stripeCustomerId" = ${customerId}, "updatedAt" = ${now}
-        WHERE id = ${user.sub}
-      `;
-    }
+    const customerId = await ensureStripeCustomer(sql, stripe, user.sub);
+    if (!customerId) return errorResponse("User not found", 404);
 
     // Build subscription data
     const subscriptionData: Stripe.Checkout.SessionCreateParams["subscription_data"] = {
@@ -106,40 +158,31 @@ export async function handleBilling(
 
   // POST /billing/portal-session
   if (subpath === "/portal-session" && method === "POST") {
-    const { returnUrl } = await body(req);
+    const { returnUrl, flowType } = await body(req);
     const stripe = getStripe();
 
-    const rows = await sql`
-      SELECT "stripeCustomerId" FROM "User" WHERE id = ${user.sub} LIMIT 1
-    `;
-    if (!rows.length) return errorResponse("User not found", 404);
-    const customerId = rows[0].stripeCustomerId as string | null;
-    if (!customerId) return errorResponse("No billing account found", 400);
+    const customerId = await ensureStripeCustomer(sql, stripe, user.sub);
+    if (!customerId) return errorResponse("User not found", 404);
 
+    let configurationId: string | undefined;
     try {
-      // Ensure a portal configuration exists (idempotent — Stripe allows multiple)
-      const configs = await stripe.billingPortal.configurations.list({ limit: 1 });
-      if (configs.data.length === 0) {
-        await stripe.billingPortal.configurations.create({
-          business_profile: {
-            headline: "Motixi — Manage your subscription",
-          },
-          features: {
-            subscription_cancel: { enabled: true },
-            payment_method_update: { enabled: true },
-            invoice_history: { list: { enabled: true } },
-          },
-        });
-        console.log("[billing] created Stripe billing portal configuration");
-      }
+      configurationId = await ensurePortalConfiguration(stripe);
     } catch (configErr) {
-      console.warn("[billing] portal config check failed (non-fatal):", configErr);
+      console.warn("[billing] portal config setup failed (non-fatal):", configErr);
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const sessionParams: Stripe.BillingPortal.SessionCreateParams = {
       customer: customerId,
       return_url: (returnUrl as string) || "https://www.motixi.com/dashboard",
-    });
+    };
+    if (configurationId) {
+      sessionParams.configuration = configurationId;
+    }
+    if (flowType === "payment_method_update") {
+      sessionParams.flow_data = { type: "payment_method_update" };
+    }
+
+    const session = await stripe.billingPortal.sessions.create(sessionParams);
 
     return json({ url: session.url });
   }

@@ -1022,6 +1022,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     subscriptionStatus: string;
     trialEndsAt: string | null;
     currentPeriodEnd: string | null;
+    hasBillingAccount: boolean;
     canManageSubscription: boolean;
     paymentMethodLast4: string | null;
     paymentMethodBrand: string | null;
@@ -1033,6 +1034,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     subscriptionStatus: 'none',
     trialEndsAt: null,
     currentPeriodEnd: null,
+    hasBillingAccount: false,
     canManageSubscription: false,
     paymentMethodLast4: null,
     paymentMethodBrand: null,
@@ -1062,6 +1064,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
           subscriptionStatus: summary.subscriptionStatus,
           trialEndsAt: summary.trialEndsAt,
           currentPeriodEnd: summary.currentPeriodEnd,
+          hasBillingAccount: summary.hasBillingAccount,
           canManageSubscription: summary.canManageSubscription,
           paymentMethodLast4: summary.paymentMethodLast4,
           paymentMethodBrand: summary.paymentMethodBrand,
@@ -1112,6 +1115,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
         subscriptionStatus: res.subscriptionStatus,
         trialEndsAt: null,
         currentPeriodEnd: null,
+        hasBillingAccount: false,
         canManageSubscription: false,
         paymentMethodLast4: null,
         paymentMethodBrand: null,
@@ -1154,26 +1158,28 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     setBillingLoading(false);
   }
 
-  async function handleManageBilling() {
+  async function handleManageBilling(preferPaymentMethod = false) {
     setBillingLoading(true);
     setBillingError(null);
     try {
       const { url } = await webApi.createPortalSession({
         returnUrl: `${window.location.origin}/dashboard`,
+        flowType: preferPaymentMethod ? 'payment_method_update' : undefined,
       });
-      if (url) window.location.href = url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
     } catch (err) {
       setBillingError(err instanceof Error ? err.message : t.settingsView.billingStartFailed);
     }
     setBillingLoading(false);
   }
 
-  function handleBillingSupport() {
-    window.location.href = `mailto:hello@motixi.com?subject=${encodeURIComponent('Motixi billing support')}`;
-  }
-
   const planBadgeLabel = isEnterprise ? 'Enterprise' : isPremium ? 'Pro' : isTrial ? 'Pro Trial' : 'Free';
   const planBadgeClass = isEnterprise ? 'sett-plan-badge--enterprise' : isPremium ? 'sett-plan-badge--pro' : isTrial ? 'sett-plan-badge--trial' : 'sett-plan-badge--free';
+  const hasPaymentMethod = Boolean(planInfo.paymentMethodLast4);
+  const paidBillingActionLabel = hasPaymentMethod ? t.settingsView.manageSubscription : t.settingsView.addPaymentMethod;
 
   return (
     <div className="dv-guides">
@@ -1235,15 +1241,17 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
               <div className="sett-detail-list">
                 <div className="sett-detail-row"><span>{t.settingsView.priceLabel}</span><strong>{cadenceText}</strong></div>
                 <div className="sett-detail-row"><span>{t.settingsView.nextBillingDate}</span><strong>{renewalDate}</strong></div>
-                <div className="sett-detail-row"><span>{t.settingsView.paymentMethod}</span><strong>{planInfo.paymentMethodLast4 ? `${planInfo.paymentMethodBrand ?? t.settingsView.cardLabel} •••• ${planInfo.paymentMethodLast4}` : t.settingsView.noPaymentMethod}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.paymentMethod}</span><strong className={hasPaymentMethod ? '' : 'sett-detail-value--missing'}>{planInfo.paymentMethodLast4 ? `${planInfo.paymentMethodBrand ?? t.settingsView.cardLabel} •••• ${planInfo.paymentMethodLast4}` : t.settingsView.noPaymentMethod}</strong></div>
               </div>
-              <button
-                className="sett-billing-btn"
-                onClick={planInfo.canManageSubscription ? handleManageBilling : handleBillingSupport}
-                disabled={billingLoading}
-              >
-                {planInfo.canManageSubscription ? t.settingsView.manageSubscription : t.settingsView.contactBillingSupport}
-              </button>
+              <div className="sett-billing-actions">
+                <button
+                  className="sett-billing-btn sett-billing-btn--primary"
+                  onClick={() => handleManageBilling(!hasPaymentMethod)}
+                  disabled={billingLoading}
+                >
+                  {paidBillingActionLabel}
+                </button>
+              </div>
             </>
           ) : isTrial ? (
             <>
@@ -1257,14 +1265,17 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
                 <div className="sett-detail-row"><span>{t.settingsView.priceAfterTrial}</span><strong>{cadenceText}</strong></div>
                 <div className="sett-detail-row"><span>{t.settingsView.trialDaysLeft}</span><strong>{trialDaysLeft ?? '—'}</strong></div>
                 <div className="sett-detail-row"><span>{t.settingsView.renewsOn}</span><strong>{trialEndDate}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.paymentMethod}</span><strong className={hasPaymentMethod ? '' : 'sett-detail-value--missing'}>{planInfo.paymentMethodLast4 ? `${planInfo.paymentMethodBrand ?? t.settingsView.cardLabel} •••• ${planInfo.paymentMethodLast4}` : t.settingsView.noPaymentMethod}</strong></div>
               </div>
-              <button
-                className="sett-billing-btn"
-                onClick={planInfo.canManageSubscription ? handleManageBilling : handleBillingSupport}
-                disabled={billingLoading}
-              >
-                {planInfo.canManageSubscription ? t.settingsView.manageSubscription : t.settingsView.contactBillingSupport}
-              </button>
+              <div className="sett-billing-actions">
+                <button
+                  className="sett-billing-btn sett-billing-btn--primary"
+                  onClick={() => handleManageBilling(!hasPaymentMethod)}
+                  disabled={billingLoading}
+                >
+                  {paidBillingActionLabel}
+                </button>
+              </div>
             </>
           ) : (
             <>
