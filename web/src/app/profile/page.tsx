@@ -6,6 +6,7 @@ import { webApi } from '@/lib/api';
 import AuthGuard from '@/app/_auth-guard';
 import VehicleSelector, { type VehicleSelection } from '../_vehicle-selector';
 import { useT } from '@/lib/i18n';
+import SettingsLanguageSelector from '../_settings-language-selector';
 
 type PlanTier = 'FREE' | 'PRO' | 'ENTERPRISE';
 
@@ -84,6 +85,15 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+function formatMoney(amount: number | null, currency: string): string {
+  if (amount == null) return '$39';
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: currency || 'USD',
+    maximumFractionDigits: 0,
+  }).format(amount / 100);
+}
+
 export default function ProfilePage() {
   return <AuthGuard><ProfileInner /></AuthGuard>;
 }
@@ -93,6 +103,29 @@ function ProfileInner() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('USER');
   const [profile, setProfile] = useState<ProfileData>(emptyProfile());
+  const [billingSummary, setBillingSummary] = useState<{
+    planType: string;
+    subscriptionStatus: string;
+    trialEndsAt: string | null;
+    currentPeriodEnd: string | null;
+    canManageSubscription: boolean;
+    paymentMethodBrand: string | null;
+    paymentMethodLast4: string | null;
+    priceAmount: number | null;
+    priceCurrency: string;
+    priceInterval: string;
+  }>({
+    planType: 'free',
+    subscriptionStatus: 'none',
+    trialEndsAt: null,
+    currentPeriodEnd: null,
+    canManageSubscription: false,
+    paymentMethodBrand: null,
+    paymentMethodLast4: null,
+    priceAmount: 3900,
+    priceCurrency: 'USD',
+    priceInterval: 'month',
+  });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -111,17 +144,42 @@ function ProfileInner() {
       .catch(() => {
         // Keep locally stored values when analytics is not reachable.
       });
+
+    webApi.getBillingSummary()
+      .then((summary) => {
+        setBillingSummary({
+          planType: summary.planType,
+          subscriptionStatus: summary.subscriptionStatus,
+          trialEndsAt: summary.trialEndsAt,
+          currentPeriodEnd: summary.currentPeriodEnd,
+          canManageSubscription: summary.canManageSubscription,
+          paymentMethodBrand: summary.paymentMethodBrand,
+          paymentMethodLast4: summary.paymentMethodLast4,
+          priceAmount: summary.priceAmount,
+          priceCurrency: summary.priceCurrency,
+          priceInterval: summary.priceInterval,
+        });
+      })
+      .catch(() => {
+        // Keep a stable fallback view even if billing summary is unreachable.
+      });
   }, []);
 
   const activePlan: PlanTier = useMemo(() => {
     if (role === 'ENTERPRISE_ADMIN') return 'ENTERPRISE';
-    return profile.plan;
-  }, [profile.plan, role]);
+    return billingSummary.planType === 'premium' || billingSummary.planType === 'trial' ? 'PRO' : 'FREE';
+  }, [billingSummary.planType, role]);
 
   const guideLimit = activePlan === 'FREE' ? 5 : Infinity;
   const imageLimit = activePlan === 'FREE' ? 25 : Infinity;
   const guidesUsed = profile.guidesUsedThisMonth;
   const imageUsed = profile.imageGenerationsThisMonth;
+  const isTrial = billingSummary.planType === 'trial' && billingSummary.subscriptionStatus === 'active';
+  const trialDaysLeft = isTrial && billingSummary.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(billingSummary.trialEndsAt).getTime() - Date.now()) / 86400000))
+    : null;
+  const priceText = formatMoney(billingSummary.priceAmount, billingSummary.priceCurrency);
+  const cadenceText = `${priceText}/${billingSummary.priceInterval === 'month' ? t.profilePage.perMonthShort : billingSummary.priceInterval}`;
 
   function usageWidth(used: number, limit: number): string {
     if (!Number.isFinite(limit)) return '100%';
@@ -228,9 +286,13 @@ function ProfileInner() {
               {activePlan === 'FREE' && (
                 <>
                   <div className="profile-plan-title-row">
-                    <p className="profile-plan-title">{t.profilePage.freePlan}</p>
+                    <p className="profile-plan-title">{t.profilePage.freePlanTitle}</p>
                     <span className="profile-plan-badge">$0 {t.profilePage.perMonth}</span>
                   </div>
+                  <p className="profile-usage-head">
+                    <span>{t.profilePage.includesLabel}</span>
+                    <span>{t.profilePage.freePlanIncludes}</span>
+                  </p>
 
                   <div className="profile-usage-row">
                     <div className="profile-usage-head">
@@ -266,7 +328,7 @@ function ProfileInner() {
                       } catch { /* ignore */ }
                     }}
                   >
-                    {t.profilePage.upgradeToProPrice}
+                    {t.profilePage.startTrialCta}
                   </button>
                 </>
               )}
@@ -274,34 +336,56 @@ function ProfileInner() {
               {activePlan === 'PRO' && (
                 <>
                   <div className="profile-plan-title-row">
-                    <p className="profile-plan-title">{t.profilePage.proPlan}</p>
-                    <span className="profile-plan-badge">{t.profilePage.active}</span>
+                    <p className="profile-plan-title">{isTrial ? t.profilePage.trialPlanTitle : t.profilePage.proPlanTitle}</p>
+                    <span className="profile-plan-badge">{isTrial ? t.profilePage.trialActive : t.profilePage.active}</span>
                   </div>
                   <ul className="profile-plan-list">
-                    <li>{t.common.guides}: {t.profilePage.unlimited}</li>
-                    <li>{t.profilePage.imageGeneration}: {t.profilePage.priorityImage}</li>
-                    <li>{t.profilePage.mobileEnabled}</li>
-                    <li>{t.profilePage.apiEnabled}</li>
+                    <li>{t.profilePage.unlimitedGuides}</li>
+                    <li>{t.profilePage.priorityImageGeneration}</li>
+                    <li>{t.profilePage.fullGuideHistory}</li>
                   </ul>
                   <p className="profile-usage-head">
-                    <span>{t.profilePage.nextBilling}</span>
-                    <span>{formatDate(profile.nextBillingDate)}</span>
+                    <span>{isTrial ? t.profilePage.priceAfterTrial : t.profilePage.priceLabel}</span>
+                    <span>{cadenceText}</span>
                   </p>
+                  {isTrial ? (
+                    <>
+                      <p className="profile-usage-head">
+                        <span>{t.profilePage.trialDaysLeft}</span>
+                        <span>{trialDaysLeft ?? '—'}</span>
+                      </p>
+                      <p className="profile-usage-head">
+                        <span>{t.profilePage.renewsOn}</span>
+                        <span>{formatDate(billingSummary.trialEndsAt ?? '')}</span>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="profile-usage-head">
+                      <span>{t.profilePage.nextBilling}</span>
+                      <span>{formatDate(billingSummary.currentPeriodEnd ?? '')}</span>
+                    </p>
+                  )}
                   <div className="profile-inline-actions">
-                    <button
-                      type="button"
-                      className="gen-btn"
-                      onClick={async () => {
-                        try {
-                          const { url } = await webApi.createPortalSession({
-                            returnUrl: `${window.location.origin}/profile`,
-                          });
-                          if (url) window.location.href = url;
-                        } catch { /* ignore */ }
-                      }}
-                    >
-                      {t.profilePage.manageSubscription}
-                    </button>
+                    {billingSummary.canManageSubscription ? (
+                      <button
+                        type="button"
+                        className="gen-btn"
+                        onClick={async () => {
+                          try {
+                            const { url } = await webApi.createPortalSession({
+                              returnUrl: `${window.location.origin}/profile`,
+                            });
+                            if (url) window.location.href = url;
+                          } catch { /* ignore */ }
+                        }}
+                      >
+                        {t.profilePage.manageSubscription}
+                      </button>
+                    ) : (
+                      <a href="mailto:hello@motixi.com?subject=Motixi billing support" className="gen-btn" style={{ width: 'fit-content', textDecoration: 'none' }}>
+                        {t.profilePage.contactBillingSupport}
+                      </a>
+                    )}
                   </div>
                 </>
               )}
@@ -333,6 +417,10 @@ function ProfileInner() {
           <div className="gen-form">
             <p className="profile-section-title">{t.profilePage.preferences} <span className="gen-label-or">optional</span></p>
             <div className="gen-inputs">
+              <div className="gen-input-wrap" style={{ gridColumn: '1 / -1' }}>
+                <label className="gen-label">{t.profilePage.languageLabel}</label>
+                <SettingsLanguageSelector />
+              </div>
               <div className="gen-input-wrap">
                 <label className="gen-label">{t.profilePage.country}</label>
                 <input
@@ -359,21 +447,18 @@ function ProfileInner() {
             <div className="gen-inputs" style={{ marginTop: 12 }}>
               <div className="gen-input-wrap">
                 <label className="gen-label">{t.profilePage.currentPlan}</label>
-                <input value={activePlan === 'FREE' ? 'Free — $0/mo' : activePlan === 'PRO' ? 'Pro — $39/mo' : 'Enterprise — Custom'} readOnly className="gen-input" />
+                <input value={activePlan === 'FREE' ? `${t.profilePage.freePlanTitle} — $0${t.profilePage.perMonth}` : activePlan === 'PRO' ? `${isTrial ? t.profilePage.trialPlanTitle : t.profilePage.proPlanTitle} — ${cadenceText}` : 'Enterprise — Custom'} readOnly className="gen-input" />
               </div>
               <div className="gen-input-wrap">
                 <label className="gen-label">{t.profilePage.nextBillingDate}</label>
-                <input value={activePlan === 'FREE' ? '—' : formatDate(profile.nextBillingDate)} readOnly className="gen-input" />
+                <input value={activePlan === 'FREE' ? '—' : formatDate(isTrial ? (billingSummary.trialEndsAt ?? '') : (billingSummary.currentPeriodEnd ?? ''))} readOnly className="gen-input" />
               </div>
               <div className="gen-input-wrap" style={{ gridColumn: '1 / -1' }}>
                 <label className="gen-label">{t.profilePage.paymentMethod}</label>
                 <div className="profile-email-val">
-                  {profile.paymentMethodLast4 ? `${t.profilePage.cardEndingIn} ${profile.paymentMethodLast4}` : t.profilePage.noPaymentMethod}
+                  {billingSummary.paymentMethodLast4 ? `${billingSummary.paymentMethodBrand ?? t.profilePage.cardLabel} •••• ${billingSummary.paymentMethodLast4}` : t.profilePage.noPaymentMethod}
                 </div>
               </div>
-              {!profile.paymentMethodLast4 && (
-                <button type="button" className="gen-btn" style={{ width: 'fit-content', background: 'var(--bg-subtle)', color: 'var(--text-sub)', border: '1px solid var(--border)' }}>{t.profilePage.addPaymentMethod}</button>
-              )}
               <div className="gen-input-wrap">
                 <label className="gen-label">{t.profilePage.companyName}</label>
                 <input value={profile.companyName} onChange={(e) => handleChange('companyName', e.target.value)} placeholder="e.g. AutoShop Ltd" className="gen-input" />
@@ -391,7 +476,6 @@ function ProfileInner() {
                 <input value={profile.billingAddress} onChange={(e) => handleChange('billingAddress', e.target.value)} placeholder="Street, City, Country" className="gen-input" />
               </div>
               <div className="profile-inline-actions" style={{ gridColumn: '1 / -1' }}>
-                <a href="#" className="profile-inline-link">{t.profilePage.billingHistory}</a>
                 {activePlan === 'FREE' ? (
                   <button
                     type="button"
@@ -409,7 +493,7 @@ function ProfileInner() {
                   >
                     {t.profilePage.upgradeToPro}
                   </button>
-                ) : (
+                ) : billingSummary.canManageSubscription ? (
                   <button
                     type="button"
                     className="profile-inline-link"
@@ -425,6 +509,10 @@ function ProfileInner() {
                   >
                     {t.profilePage.manageSubscription}
                   </button>
+                ) : (
+                  <a href="mailto:hello@motixi.com?subject=Motixi billing support" className="profile-inline-link">
+                    {t.profilePage.contactBillingSupport}
+                  </a>
                 )}
               </div>
             </div>

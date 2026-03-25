@@ -381,6 +381,24 @@ abstract class S {
   /// **'Your Pro plan is active.'**
   String get billingUpgradeSucceeded;
 
+  /// No description provided for @billingCheckoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing'**
+  String get billingCheckoutTitle;
+
+  /// No description provided for @billingProfileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No billing profile is set up yet.'**
+  String get billingProfileUnavailable;
+
+  /// No description provided for @billingSupportUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t open billing support right now.'**
+  String get billingSupportUnavailable;
+
   /// No description provided for @continueFree.
   ///
   /// In en, this message translates to:
@@ -804,7 +822,7 @@ abstract class S {
   /// No description provided for @proActiveDesc.
   ///
   /// In en, this message translates to:
-  /// **'Unlimited guides · Priority images · API access'**
+  /// **'Unlimited guides · Priority image generation · Full guide history'**
   String get proActiveDesc;
 
   /// No description provided for @trialActive.
@@ -822,7 +840,7 @@ abstract class S {
   /// No description provided for @trialRenewsAfter.
   ///
   /// In en, this message translates to:
-  /// **'Renews as Pro after the 7-day trial unless canceled.'**
+  /// **'Card on file. Renews as Pro after the 7-day trial unless canceled.'**
   String get trialRenewsAfter;
 
   /// No description provided for @freePlan.
@@ -834,8 +852,134 @@ abstract class S {
   /// No description provided for @freePlanDesc.
   ///
   /// In en, this message translates to:
-  /// **'5 guides/month. Use a promo code to unlock Pro.'**
+  /// **'Read-only access with 5 guides per month.'**
   String get freePlanDesc;
+
+  /// No description provided for @languageSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageSection;
+
+  /// No description provided for @currentLanguageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current language'**
+  String get currentLanguageLabel;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageUkrainian.
+  ///
+  /// In en, this message translates to:
+  /// **'Українська'**
+  String get languageUkrainian;
+
+  /// No description provided for @languageBulgarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Български'**
+  String get languageBulgarian;
+
+  /// No description provided for @planLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get planLabel;
+
+  /// No description provided for @priceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get priceLabel;
+
+  /// No description provided for @priceAfterTrialLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price after trial'**
+  String get priceAfterTrialLabel;
+
+  /// No description provided for @trialDaysLeftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trial days left'**
+  String get trialDaysLeftLabel;
+
+  /// No description provided for @renewsOnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews on'**
+  String get renewsOnLabel;
+
+  /// No description provided for @nextBillingDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Next billing date'**
+  String get nextBillingDateLabel;
+
+  /// No description provided for @paymentMethodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get paymentMethodLabel;
+
+  /// No description provided for @noPaymentMethodAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No card on file yet'**
+  String get noPaymentMethodAdded;
+
+  /// No description provided for @cardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get cardLabel;
+
+  /// No description provided for @includesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes'**
+  String get includesLabel;
+
+  /// No description provided for @freePlanIncludes.
+  ///
+  /// In en, this message translates to:
+  /// **'5 guides/month'**
+  String get freePlanIncludes;
+
+  /// No description provided for @proTrialPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro Trial'**
+  String get proTrialPlan;
+
+  /// No description provided for @proPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get proPlanTitle;
+
+  /// No description provided for @contactBillingSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact billing support'**
+  String get contactBillingSupport;
+
+  /// No description provided for @manageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage subscription'**
+  String get manageSubscription;
+
+  /// No description provided for @perMonthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'month'**
+  String get perMonthShort;
 
   /// No description provided for @guideHistory.
   ///

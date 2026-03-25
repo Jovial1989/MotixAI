@@ -159,6 +159,17 @@ class SUk extends S {
   String get billingUpgradeSucceeded => 'Ваш Pro план активовано.';
 
   @override
+  String get billingCheckoutTitle => 'Білінг';
+
+  @override
+  String get billingProfileUnavailable =>
+      'Профіль для оплати ще не налаштовано.';
+
+  @override
+  String get billingSupportUnavailable =>
+      'Зараз не вдалося відкрити підтримку білінгу.';
+
+  @override
   String get continueFree => 'Продовжити безкоштовно';
 
   @override
@@ -384,7 +395,7 @@ class SUk extends S {
 
   @override
   String get proActiveDesc =>
-      'Безлімітні інструкції · Пріоритетні зображення · Доступ до API';
+      'Безлімітні інструкції · Пріоритетна генерація зображень · Повна історія інструкцій';
 
   @override
   String get trialActive => 'Пробний період активний';
@@ -396,13 +407,77 @@ class SUk extends S {
 
   @override
   String get trialRenewsAfter =>
-      'Після 7-денного пробного періоду підписка поновиться як Pro, якщо її не скасувати.';
+      'Картку збережено. Після 7-денного пробного періоду підписка поновиться як Pro, якщо її не скасувати.';
 
   @override
   String get freePlan => 'Безкоштовний план';
 
   @override
-  String get freePlanDesc => '5 інструкцій/місяць. Введіть промокод для Pro.';
+  String get freePlanDesc =>
+      'Режим лише для читання з 5 інструкціями на місяць.';
+
+  @override
+  String get languageSection => 'Мова';
+
+  @override
+  String get currentLanguageLabel => 'Поточна мова';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageUkrainian => 'Українська';
+
+  @override
+  String get languageBulgarian => 'Български';
+
+  @override
+  String get planLabel => 'План';
+
+  @override
+  String get priceLabel => 'Ціна';
+
+  @override
+  String get priceAfterTrialLabel => 'Ціна після пробного періоду';
+
+  @override
+  String get trialDaysLeftLabel => 'Днів пробного періоду';
+
+  @override
+  String get renewsOnLabel => 'Поновлення';
+
+  @override
+  String get nextBillingDateLabel => 'Наступна дата списання';
+
+  @override
+  String get paymentMethodLabel => 'Спосіб оплати';
+
+  @override
+  String get noPaymentMethodAdded => 'Картку ще не додано';
+
+  @override
+  String get cardLabel => 'Картка';
+
+  @override
+  String get includesLabel => 'Включено';
+
+  @override
+  String get freePlanIncludes => '5 інструкцій/місяць';
+
+  @override
+  String get proTrialPlan => 'Pro Trial';
+
+  @override
+  String get proPlanTitle => 'Pro';
+
+  @override
+  String get contactBillingSupport => 'Зв’язатися з білінг-підтримкою';
+
+  @override
+  String get manageSubscription => 'Керувати підпискою';
+
+  @override
+  String get perMonthShort => 'міс';
 
   @override
   String get guideHistory => 'Історія інструкцій';

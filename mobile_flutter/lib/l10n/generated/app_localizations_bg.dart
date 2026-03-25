@@ -159,6 +159,17 @@ class SBg extends S {
   String get billingUpgradeSucceeded => 'Вашият Pro план е активен.';
 
   @override
+  String get billingCheckoutTitle => 'Плащане';
+
+  @override
+  String get billingProfileUnavailable =>
+      'Профилът за плащане все още не е настроен.';
+
+  @override
+  String get billingSupportUnavailable =>
+      'В момента не успяхме да отворим billing поддръжката.';
+
+  @override
   String get continueFree => 'Продължи безплатно';
 
   @override
@@ -384,7 +395,7 @@ class SBg extends S {
 
   @override
   String get proActiveDesc =>
-      'Неограничени ръководства · Приоритетни изображения · Достъп до API';
+      'Неограничени ръководства · Приоритетно генериране на изображения · Пълна история на ръководствата';
 
   @override
   String get trialActive => 'Пробният период е активен';
@@ -396,14 +407,76 @@ class SBg extends S {
 
   @override
   String get trialRenewsAfter =>
-      'След 7-дневния пробен период планът се подновява като Pro, освен ако не бъде отменен.';
+      'Картата е запазена. След 7-дневния пробен период планът се подновява като Pro, освен ако не бъде отменен.';
 
   @override
   String get freePlan => 'Безплатен план';
 
   @override
-  String get freePlanDesc =>
-      '5 ръководства/месец. Използвайте промо код за Pro.';
+  String get freePlanDesc => 'Режим само за четене с 5 ръководства на месец.';
+
+  @override
+  String get languageSection => 'Език';
+
+  @override
+  String get currentLanguageLabel => 'Текущ език';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageUkrainian => 'Українська';
+
+  @override
+  String get languageBulgarian => 'Български';
+
+  @override
+  String get planLabel => 'План';
+
+  @override
+  String get priceLabel => 'Цена';
+
+  @override
+  String get priceAfterTrialLabel => 'Цена след пробния период';
+
+  @override
+  String get trialDaysLeftLabel => 'Оставащи дни';
+
+  @override
+  String get renewsOnLabel => 'Подновява се на';
+
+  @override
+  String get nextBillingDateLabel => 'Следваща дата на плащане';
+
+  @override
+  String get paymentMethodLabel => 'Метод на плащане';
+
+  @override
+  String get noPaymentMethodAdded => 'Все още няма добавена карта';
+
+  @override
+  String get cardLabel => 'Карта';
+
+  @override
+  String get includesLabel => 'Включва';
+
+  @override
+  String get freePlanIncludes => '5 ръководства/месец';
+
+  @override
+  String get proTrialPlan => 'Pro Trial';
+
+  @override
+  String get proPlanTitle => 'Pro';
+
+  @override
+  String get contactBillingSupport => 'Свържете се с billing поддръжката';
+
+  @override
+  String get manageSubscription => 'Управлявай абонамента';
+
+  @override
+  String get perMonthShort => 'мес';
 
   @override
   String get guideHistory => 'История на ръководствата';

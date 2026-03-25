@@ -139,135 +139,222 @@ class _VehicleIllustrationPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
     final stroke = Paint()
-      ..color = const Color(0xFF1F2937)
-      ..strokeWidth = size.width * 0.024
+      ..color = const Color(0xFF334155)
+      ..strokeWidth = w * 0.022
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    final guide = Paint()
+    final lightStroke = Paint()
       ..color = const Color(0xFFCBD5E1)
-      ..strokeWidth = size.width * 0.018
+      ..strokeWidth = w * 0.014
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     final accent = Paint()
       ..color = kPrimary
-      ..strokeWidth = size.width * 0.022
+      ..strokeWidth = w * 0.020
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
+    final windowFill = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..style = PaintingStyle.fill;
 
-    final baseY = size.height * 0.72;
-    final leftWheel = Offset(size.width * 0.28, baseY);
-    final rightWheel = Offset(size.width * 0.72, baseY);
-    final wheelRadius = size.width * 0.12;
+    final baseY = h * 0.74;
+    final leftWheelX = w * 0.26;
+    final rightWheelX = w * 0.74;
+    final wheelR = w * 0.10;
 
+    // Draw body silhouette
     final body = Path();
     switch (silhouette) {
-      case _VehicleSilhouetteType.pickup:
+      case _VehicleSilhouetteType.sedan:
         body
-          ..moveTo(size.width * 0.12, baseY)
-          ..lineTo(size.width * 0.22, size.height * 0.48)
-          ..lineTo(size.width * 0.50, size.height * 0.48)
-          ..lineTo(size.width * 0.60, size.height * 0.38)
-          ..lineTo(size.width * 0.78, size.height * 0.38)
-          ..lineTo(size.width * 0.78, size.height * 0.58)
-          ..lineTo(size.width * 0.88, size.height * 0.58)
-          ..lineTo(size.width * 0.88, baseY);
-        break;
-      case _VehicleSilhouetteType.van:
-        body
-          ..moveTo(size.width * 0.10, baseY)
-          ..lineTo(size.width * 0.18, size.height * 0.44)
-          ..lineTo(size.width * 0.68, size.height * 0.44)
-          ..lineTo(size.width * 0.82, size.height * 0.52)
-          ..lineTo(size.width * 0.88, baseY);
+          ..moveTo(w * 0.08, baseY)
+          ..lineTo(w * 0.16, h * 0.52)
+          ..lineTo(w * 0.30, h * 0.36)
+          ..lineTo(w * 0.62, h * 0.36)
+          ..lineTo(w * 0.78, h * 0.50)
+          ..lineTo(w * 0.90, h * 0.56)
+          ..lineTo(w * 0.92, baseY);
+        // Windows
+        final sedanWin = Path()
+          ..moveTo(w * 0.31, h * 0.38)
+          ..lineTo(w * 0.18, h * 0.50)
+          ..lineTo(w * 0.46, h * 0.50)
+          ..lineTo(w * 0.46, h * 0.38)
+          ..close();
+        canvas.drawPath(sedanWin, windowFill);
+        canvas.drawPath(sedanWin, lightStroke);
+        final sedanWin2 = Path()
+          ..moveTo(w * 0.48, h * 0.38)
+          ..lineTo(w * 0.48, h * 0.50)
+          ..lineTo(w * 0.72, h * 0.50)
+          ..lineTo(w * 0.60, h * 0.38)
+          ..close();
+        canvas.drawPath(sedanWin2, windowFill);
+        canvas.drawPath(sedanWin2, lightStroke);
         break;
       case _VehicleSilhouetteType.suv:
         body
-          ..moveTo(size.width * 0.10, baseY)
-          ..lineTo(size.width * 0.18, size.height * 0.50)
-          ..lineTo(size.width * 0.34, size.height * 0.40)
-          ..lineTo(size.width * 0.56, size.height * 0.40)
-          ..lineTo(size.width * 0.74, size.height * 0.50)
-          ..lineTo(size.width * 0.88, size.height * 0.58)
-          ..lineTo(size.width * 0.92, baseY);
+          ..moveTo(w * 0.06, baseY)
+          ..lineTo(w * 0.14, h * 0.48)
+          ..lineTo(w * 0.28, h * 0.32)
+          ..lineTo(w * 0.64, h * 0.32)
+          ..lineTo(w * 0.78, h * 0.44)
+          ..lineTo(w * 0.90, h * 0.52)
+          ..lineTo(w * 0.94, baseY);
+        // Windows
+        final suvWin = Path()
+          ..moveTo(w * 0.29, h * 0.34)
+          ..lineTo(w * 0.16, h * 0.46)
+          ..lineTo(w * 0.42, h * 0.46)
+          ..lineTo(w * 0.42, h * 0.34)
+          ..close();
+        canvas.drawPath(suvWin, windowFill);
+        canvas.drawPath(suvWin, lightStroke);
+        final suvWin2 = Path()
+          ..moveTo(w * 0.44, h * 0.34)
+          ..lineTo(w * 0.44, h * 0.46)
+          ..lineTo(w * 0.68, h * 0.46)
+          ..lineTo(w * 0.62, h * 0.34)
+          ..close();
+        canvas.drawPath(suvWin2, windowFill);
+        canvas.drawPath(suvWin2, lightStroke);
         break;
-      case _VehicleSilhouetteType.sedan:
+      case _VehicleSilhouetteType.pickup:
         body
-          ..moveTo(size.width * 0.12, baseY)
-          ..lineTo(size.width * 0.22, size.height * 0.52)
-          ..lineTo(size.width * 0.40, size.height * 0.42)
-          ..lineTo(size.width * 0.60, size.height * 0.42)
-          ..lineTo(size.width * 0.75, size.height * 0.54)
-          ..lineTo(size.width * 0.88, size.height * 0.58)
-          ..lineTo(size.width * 0.90, baseY);
+          ..moveTo(w * 0.08, baseY)
+          ..lineTo(w * 0.18, h * 0.46)
+          ..lineTo(w * 0.34, h * 0.32)
+          ..lineTo(w * 0.50, h * 0.32)
+          ..lineTo(w * 0.56, h * 0.46)
+          ..lineTo(w * 0.80, h * 0.46)
+          ..lineTo(w * 0.80, h * 0.56)
+          ..lineTo(w * 0.90, h * 0.56)
+          ..lineTo(w * 0.92, baseY);
+        // Cab window
+        final pickWin = Path()
+          ..moveTo(w * 0.35, h * 0.34)
+          ..lineTo(w * 0.20, h * 0.46)
+          ..lineTo(w * 0.49, h * 0.46)
+          ..lineTo(w * 0.49, h * 0.34)
+          ..close();
+        canvas.drawPath(pickWin, windowFill);
+        canvas.drawPath(pickWin, lightStroke);
+        // Bed line
+        canvas.drawLine(
+          Offset(w * 0.58, h * 0.48),
+          Offset(w * 0.78, h * 0.48),
+          lightStroke,
+        );
+        break;
+      case _VehicleSilhouetteType.van:
+        body
+          ..moveTo(w * 0.06, baseY)
+          ..lineTo(w * 0.08, h * 0.36)
+          ..lineTo(w * 0.28, h * 0.36)
+          ..lineTo(w * 0.28, h * 0.36)
+          ..lineTo(w * 0.70, h * 0.36)
+          ..lineTo(w * 0.82, h * 0.48)
+          ..lineTo(w * 0.92, h * 0.56)
+          ..lineTo(w * 0.94, baseY);
+        // Side windows
+        final vanWin1 = Path()
+          ..moveTo(w * 0.10, h * 0.38)
+          ..lineTo(w * 0.10, h * 0.50)
+          ..lineTo(w * 0.24, h * 0.50)
+          ..lineTo(w * 0.24, h * 0.38)
+          ..close();
+        canvas.drawPath(vanWin1, windowFill);
+        canvas.drawPath(vanWin1, lightStroke);
+        final vanWin2 = Path()
+          ..moveTo(w * 0.28, h * 0.38)
+          ..lineTo(w * 0.28, h * 0.50)
+          ..lineTo(w * 0.42, h * 0.50)
+          ..lineTo(w * 0.42, h * 0.38)
+          ..close();
+        canvas.drawPath(vanWin2, windowFill);
+        canvas.drawPath(vanWin2, lightStroke);
+        // Windshield
+        final vanWs = Path()
+          ..moveTo(w * 0.72, h * 0.38)
+          ..lineTo(w * 0.72, h * 0.50)
+          ..lineTo(w * 0.82, h * 0.50)
+          ..lineTo(w * 0.78, h * 0.38)
+          ..close();
+        canvas.drawPath(vanWs, windowFill);
+        canvas.drawPath(vanWs, lightStroke);
         break;
     }
 
+    // Draw body outline
     canvas.drawPath(body, stroke);
-    canvas.drawLine(
-      Offset(size.width * 0.12, baseY),
-      Offset(size.width * 0.92, baseY),
-      stroke,
-    );
-    canvas.drawCircle(leftWheel, wheelRadius, stroke);
-    canvas.drawCircle(rightWheel, wheelRadius, stroke);
+    // Ground line
+    canvas.drawLine(Offset(w * 0.06, baseY), Offset(w * 0.94, baseY), stroke);
+    // Wheels with hub detail
+    final wheelStroke = Paint()
+      ..color = const Color(0xFF334155)
+      ..strokeWidth = w * 0.022
+      ..style = PaintingStyle.stroke;
+    final hubStroke = Paint()
+      ..color = const Color(0xFF94A3B8)
+      ..strokeWidth = w * 0.012
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(Offset(leftWheelX, baseY), wheelR, wheelStroke);
+    canvas.drawCircle(Offset(leftWheelX, baseY), wheelR * 0.4, hubStroke);
+    canvas.drawCircle(Offset(rightWheelX, baseY), wheelR, wheelStroke);
+    canvas.drawCircle(Offset(rightWheelX, baseY), wheelR * 0.4, hubStroke);
 
-    canvas.drawLine(
-      Offset(size.width * 0.74, size.height * 0.22),
-      Offset(size.width * 0.92, size.height * 0.22),
-      guide,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.74, size.height * 0.30),
-      Offset(size.width * 0.90, size.height * 0.30),
-      guide,
-    );
+    // Repair annotation — clean accent pointer
+    final anchor = _repairAnchor(size, leftWheelX, rightWheelX, baseY);
+    final tag = Offset(w * 0.50, h * 0.16);
+    // Pointer line
+    canvas.drawLine(anchor, tag, accent);
+    // Anchor circle
+    canvas.drawCircle(anchor, w * 0.030, accent);
+    // Tag dot
     canvas.drawCircle(
-      Offset(size.width * 0.70, size.height * 0.22),
-      size.width * 0.02,
-      accent..style = PaintingStyle.fill,
-    );
+        tag, w * 0.016, accent..style = PaintingStyle.fill);
     accent.style = PaintingStyle.stroke;
 
-    final anchor = _repairAnchor(size, leftWheel, rightWheel, baseY);
-    final target = Offset(size.width * 0.54, size.height * 0.18);
-    canvas.drawCircle(anchor, size.width * 0.036, accent);
-    canvas.drawLine(anchor, target, accent);
-    canvas.drawCircle(
-        target, size.width * 0.018, accent..style = PaintingStyle.fill);
-    accent.style = PaintingStyle.stroke;
-
+    // Small crosshair at top-left
     canvas.drawLine(
-      Offset(size.width * 0.18, size.height * 0.18),
-      Offset(size.width * 0.22, size.height * 0.26),
-      accent,
+      Offset(w * 0.12, h * 0.14),
+      Offset(w * 0.18, h * 0.14),
+      lightStroke,
     );
     canvas.drawLine(
-      Offset(size.width * 0.22, size.height * 0.18),
-      Offset(size.width * 0.18, size.height * 0.26),
-      accent,
+      Offset(w * 0.15, h * 0.11),
+      Offset(w * 0.15, h * 0.17),
+      lightStroke,
     );
   }
 
   Offset _repairAnchor(
-      Size size, Offset leftWheel, Offset rightWheel, double baseY) {
+      Size size, double leftWX, double rightWX, double baseY) {
+    final w = size.width;
+    final h = size.height;
     switch (repairType) {
       case _RepairVisualType.brakes:
-        return Offset(rightWheel.dx, rightWheel.dy);
+        return Offset(rightWX, baseY);
       case _RepairVisualType.oil:
       case _RepairVisualType.filter:
-        return Offset(size.width * 0.48, baseY - size.height * 0.06);
+        return Offset(w * 0.46, baseY - h * 0.08);
       case _RepairVisualType.turbo:
-      case _RepairVisualType.battery:
       case _RepairVisualType.engine:
+        return Offset(w * 0.40, h * 0.48);
+      case _RepairVisualType.battery:
+        return Offset(w * 0.32, h * 0.44);
       case _RepairVisualType.cooling:
-        return Offset(size.width * 0.42, size.height * 0.50);
+        return Offset(w * 0.82, h * 0.52);
       case _RepairVisualType.suspension:
-        return Offset(leftWheel.dx, leftWheel.dy - size.height * 0.08);
+        return Offset(leftWX, baseY - h * 0.10);
       case _RepairVisualType.generic:
-        return Offset(size.width * 0.48, size.height * 0.52);
+        return Offset(w * 0.48, h * 0.50);
     }
   }
 
@@ -282,7 +369,8 @@ _RepairVisualType _classifyRepair(String label) {
   final text = label.toLowerCase();
   if (text.contains('brake') ||
       text.contains('гальм') ||
-      text.contains('спирач')) {
+      text.contains('спирач') ||
+      text.contains('колодк')) {
     return _RepairVisualType.brakes;
   }
   if (text.contains('turbo') || text.contains('турбо')) {
@@ -309,7 +397,10 @@ _RepairVisualType _classifyRepair(String label) {
       text.contains('окач')) {
     return _RepairVisualType.suspension;
   }
-  if (text.contains('oil') || text.contains('маст') || text.contains('масл')) {
+  if (text.contains('oil') ||
+      text.contains('олив') ||
+      text.contains('маст') ||
+      text.contains('масл')) {
     return _RepairVisualType.oil;
   }
   if (text.contains('engine') || text.contains('двиг')) {
@@ -320,24 +411,13 @@ _RepairVisualType _classifyRepair(String label) {
 
 _VehicleSilhouetteType _classifyVehicle(String model) {
   final text = model.toLowerCase();
-  if (text.contains('van') ||
-      text.contains('transit') ||
-      text.contains('sprinter') ||
-      text.contains('bus')) {
+  if (RegExp(r'van|transit|sprinter|metris|promaster|express|savana|caravan|sienna|odyssey|pacifica|carnival|staria|transporter|crafter|vito|ducato|bus').hasMatch(text)) {
     return _VehicleSilhouetteType.van;
   }
-  if (text.contains('pickup') ||
-      text.contains('hilux') ||
-      text.contains('ranger') ||
-      text.contains('f-150')) {
+  if (RegExp(r'pickup|hilux|ranger|f-150|f150|silverado|ram|tundra|tacoma|colorado|frontier|titan|ridgeline|maverick|gladiator|navara|amarok|l200|triton').hasMatch(text)) {
     return _VehicleSilhouetteType.pickup;
   }
-  if (text.contains('suv') ||
-      text.contains('cruiser') ||
-      text.contains('qashqai') ||
-      text.contains('rav4') ||
-      text.contains('x5') ||
-      text.contains('yaris cross')) {
+  if (RegExp(r'suv|land cruiser|cruiser|4runner|rav4|qashqai|x[357]|tucson|sportage|cx-|tiguan|escape|explorer|cherokee|wrangler|outlander|forester|pilot|highlander|tahoe|suburban|blazer|bronco|defender|range rover|discovery|cayenne|q[357]|gl[cse]|xc[469]0|yaris cross').hasMatch(text)) {
     return _VehicleSilhouetteType.suv;
   }
   return _VehicleSilhouetteType.sedan;

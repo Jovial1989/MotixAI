@@ -118,17 +118,25 @@ Typed HTTP client wrapping the backend REST API. Used by both web and mobile.
 
 ### Figma MCP
 
-The project has Figma MCP configured in `.mcp.json`. It uses the official `@figma/mcp` package via `npx`.
+The project has Figma MCP configured in the repo-level `.mcp.json`. The workspace uses `npx` to start the Figma MCP server for local editor clients.
 
 **Setup:**
 
 1. Generate a Figma personal access token at **Figma → Settings → Security → Personal access tokens**. Ensure the token has `File content` (read) scope.
-2. Export the token before starting Claude Code:
+2. Copy the local example file and paste your real key there:
    ```bash
-   export FIGMA_ACCESS_TOKEN=your_token_here
+   cp .env.mcp.local.example .env.mcp.local
    ```
-   Or add it to your shell profile (`~/.bashrc`, `~/.zshrc`).
-3. Restart Claude Code — it will automatically pick up the Figma MCP server.
+   Then edit `.env.mcp.local` and replace the placeholder value for:
+   ```bash
+   FIGMA_API_KEY=PASTE_YOUR_KEY_HERE
+   ```
+3. Load the variable into your shell before starting Codex / Claude Code:
+   ```bash
+   export $(grep -v '^#' .env.mcp.local | xargs)
+   ```
+   Or add the same variable to your shell profile (`~/.bashrc`, `~/.zshrc`).
+4. Restart Codex / Claude Code so the MCP client reloads `.mcp.json`.
 
 **What it enables:**
 
@@ -136,7 +144,7 @@ The project has Figma MCP configured in `.mcp.json`. It uses the official `@figm
 - Reference Figma designs when building UI in the `web/` and `mobile/` workspaces
 - Extract design tokens and component specs without leaving the editor
 
-**Local overrides:** If you need to store MCP config locally (e.g., hardcode a token for testing), create `.mcp.local.json` — it is git-ignored.
+**Local overrides:** If you need a local-only MCP override, create `.mcp.local.json` — it is git-ignored.
 
 ## Key Patterns
 

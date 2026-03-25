@@ -39,6 +39,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._api, this._tokens, this._cache) : super(const AuthState());
 
+  Future<void> _persistTokens(AuthTokens tokens) async {
+    await _tokens.save(tokens.accessToken, tokens.refreshToken);
+    await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
+    await _tokens.savePlan(
+      tokens.user.planType,
+      tokens.user.subscriptionStatus,
+      tokens.user.trialEndsAt,
+    );
+  }
+
   /// Called on app boot — loads persisted tokens and onboarding status.
   Future<AuthBootResult> bootstrap() async {
     final access  = await _tokens.accessToken();
@@ -76,9 +86,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.withLoading();
     try {
       final tokens = await _api.login(email, password);
-      await _tokens.save(tokens.accessToken, tokens.refreshToken);
-      await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
-      await _tokens.savePlan(tokens.user.planType, tokens.user.subscriptionStatus, tokens.user.trialEndsAt);
+      await _persistTokens(tokens);
       state = AuthState(tokens: tokens);
     } catch (e) {
       state = state.withError(e.toString());
@@ -89,9 +97,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.withLoading();
     try {
       final tokens = await _api.signup(email, password);
-      await _tokens.save(tokens.accessToken, tokens.refreshToken);
-      await _tokens.saveOnboardingDone(tokens.user.hasCompletedOnboarding);
-      await _tokens.savePlan(tokens.user.planType, tokens.user.subscriptionStatus, tokens.user.trialEndsAt);
+      await _persistTokens(tokens);
       state = AuthState(tokens: tokens);
     } catch (e) {
       state = state.withError(e.toString());
@@ -99,10 +105,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Update plan state in-memory and persist it (called after promo redemption).
-  Future<void> updatePlan(String planType, String subStatus) async {
+  Future<void> updatePlan(String planType, String subStatus, [String? trialEndsAt]) async {
     final current = state.tokens;
     if (current == null) return;
-    await _tokens.savePlan(planType, subStatus, null);
+    await _tokens.savePlan(planType, subStatus, trialEndsAt);
     final updatedUser = AuthUser(
       id: current.user.id,
       email: current.user.email,
@@ -110,7 +116,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       tenantId: current.user.tenantId,
       hasCompletedOnboarding: current.user.hasCompletedOnboarding,
       planType: planType,
-      trialEndsAt: null,
+      trialEndsAt: trialEndsAt,
       subscriptionStatus: subStatus,
     );
     state = state.copyWith(
@@ -179,6 +185,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  Future<AuthTokens?> refreshSession() async {
+    final current = state.tokens;
+    if (current == null) return null;
+    try {
+      final tokens = await _api.refreshSession();
+      await _persistTokens(tokens);
+      state = AuthState(tokens: tokens);
+      return tokens;
+    } catch (e) {
+      state = state.withError(e.toString());
+      return null;
+    }
+  }
+
   void clearError() => state = state.copyWith(clearError: true);
 
   // ── JWT decode (payload only, no verification) ────────────────────────────
@@ -209,7 +229,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final i = table.indexOf(c);
       return i < 0 ? 0 : i;
     }
-    while (chunk.length < 4) chunk += '=';
+    while (chunk.length < 4) {
+      chunk += '=';
+    }
     final b0 = decode(chunk[0]);
     final b1 = decode(chunk[1]);
     final b2 = decode(chunk[2]);

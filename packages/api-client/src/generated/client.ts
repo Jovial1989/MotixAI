@@ -1,6 +1,7 @@
 import type {
   AnalyticsData,
   AuthTokens,
+  BillingSummaryResponse,
   CreateGuideInput,
   CreateJobInput,
   CreateRequestInput,
@@ -129,6 +130,10 @@ export class MotixApiClient {
     });
   }
 
+  getBillingSummary() {
+    return this.request<BillingSummaryResponse>('/billing/summary');
+  }
+
   // ── Steps ─────────────────────────────────────────────────────────────────
 
   generateStepImage(stepId: string, force = false) {
@@ -233,8 +238,9 @@ export class MotixApiClient {
 
   // ── Vehicles ──────────────────────────────────────────────────────────────
 
-  listVehicles() {
-    return this.request<VehicleWithHistory[]>('/vehicles');
+  listVehicles(params?: { language?: string }) {
+    const qs = params?.language ? `?language=${params.language}` : '';
+    return this.request<VehicleWithHistory[]>(`/vehicles${qs}`);
   }
 
   // ── Enterprise ────────────────────────────────────────────────────────────

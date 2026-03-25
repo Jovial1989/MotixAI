@@ -6,6 +6,7 @@ import type { AnalyticsData, GuideRequest, ManualDocument, RepairGuide, RepairJo
 import { webApi } from '@/lib/api';
 import { useT, getLocale } from '@/lib/i18n';
 import AuthGuard from '@/app/_auth-guard';
+import SettingsLanguageSelector from '@/app/_settings-language-selector';
 import SmartGuideForm from './_guide-form';
 import Sidebar, { type DashView } from './_sidebar';
 
@@ -60,6 +61,59 @@ function difficultyBadgeClass(value: string): string {
 function isPremiumGuideThumb(url: string | null | undefined): boolean {
   if (!url) return false;
   return !url.includes('/demo-guides/') && !url.includes('placehold.co') && !url.includes('fallback-illustration');
+}
+
+function detectVehicleType(model: string | undefined | null): 'suv' | 'truck' | 'van' | 'sedan' {
+  if (!model) return 'sedan';
+  const m = model.toLowerCase();
+  if (/suv|land cruiser|4runner|rav4|qashqai|x3|x5|x7|tucson|sportage|cx-|tiguan|escape|explorer|cherokee|wrangler|outlander|forester|pilot|highlander|tahoe|suburban|blazer|bronco|defender|range rover|discovery|cayenne|q[357]|glc|gle|gls|xc[469]0/i.test(m)) return 'suv';
+  if (/truck|pickup|f-150|f150|f-250|silverado|ram|tundra|tacoma|ranger|colorado|frontier|titan|ridgeline|maverick|gladiator|hilux|navara|amarok|l200|triton/i.test(m)) return 'truck';
+  if (/van|transit|sprinter|metris|promaster|express|savana|caravan|sienna|odyssey|pacifica|carnival|staria|transporter|crafter|vito|ducato/i.test(m)) return 'van';
+  return 'sedan';
+}
+
+function VehicleTypeIcon({ model }: { model?: string | null }) {
+  const type = detectVehicleType(model);
+  return (
+    <div className="gcard-vehicle-icon">
+      <svg width="48" height="28" viewBox="0 0 48 28" fill="none">
+        {type === 'suv' ? (
+          <>
+            <path d="M6 20h36M8 20l3-8h10l2 3h10l3-3h4l2 8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+            <rect x="12" y="10" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <rect x="25" y="10" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <circle cx="14" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="36" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+          </>
+        ) : type === 'truck' ? (
+          <>
+            <path d="M4 20h40M6 20l2-6h14v6M22 14h8l4 6h6" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+            <rect x="8" y="11" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <rect x="24" y="10" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <circle cx="12" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="38" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+          </>
+        ) : type === 'van' ? (
+          <>
+            <path d="M5 20h38M7 20V10a2 2 0 012-2h18v12M27 8h6l4 5v7h4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+            <rect x="10" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <rect x="17" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <rect x="29" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <circle cx="13" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="37" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+          </>
+        ) : (
+          <>
+            <path d="M5 20h38M8 20l2-5h6l3-5h10l3 5h6l2 5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+            <rect x="14" y="9" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <rect x="24" y="9" width="7" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <circle cx="13" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="37" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
+          </>
+        )}
+      </svg>
+    </div>
+  );
 }
 
 // ── Guide list with search + filter ──────────────────────────────────────────
@@ -274,6 +328,7 @@ function GuidesView({
                 {!isGuest && dot && (
                   <div className={`gcard-dot gcard-dot--${dot}`} title={dot === 'yellow' ? t.dash.imagesGenerating : dot === 'red' ? t.dash.imagesFailed : t.dash.ready} />
                 )}
+                <VehicleTypeIcon model={guide.vehicle?.model} />
                 <Link href={href} className="guide-card-main">
                   <div className="guide-card-meta">
                     <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
@@ -380,14 +435,7 @@ function GarageView({ vehicles, loading }: { vehicles: VehicleWithHistory[]; loa
           {merged.map((v) => (
             <div key={v.id} className="vehicle-card">
               <div className="vehicle-card-head">
-                <div className="vehicle-card-icon">
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M3 11l2-5h8l2 5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-                    <rect x="2" y="11" width="14" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-                    <circle cx="5.5" cy="15" r="1" fill="currentColor"/>
-                    <circle cx="12.5" cy="15" r="1" fill="currentColor"/>
-                  </svg>
-                </div>
+                <VehicleTypeIcon model={v.model} />
                 <div>
                   <p className="vehicle-card-model">{v.model}</p>
                   {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}
@@ -809,29 +857,89 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
   email: string; isEnterprise: boolean; guidesUsed: number; guidesLimit: number;
 }) {
   const t = useT();
-  const [planInfo, setPlanInfo] = useState<{ planType: string; subscriptionStatus: string; trialEndsAt: string | null }>({
-    planType: 'free', subscriptionStatus: 'none', trialEndsAt: null,
+  const [planInfo, setPlanInfo] = useState<{
+    planType: string;
+    subscriptionStatus: string;
+    trialEndsAt: string | null;
+    currentPeriodEnd: string | null;
+    canManageSubscription: boolean;
+    paymentMethodLast4: string | null;
+    paymentMethodBrand: string | null;
+    priceAmount: number | null;
+    priceCurrency: string;
+    priceInterval: string;
+  }>({
+    planType: 'free',
+    subscriptionStatus: 'none',
+    trialEndsAt: null,
+    currentPeriodEnd: null,
+    canManageSubscription: false,
+    paymentMethodLast4: null,
+    paymentMethodBrand: null,
+    priceAmount: 3900,
+    priceCurrency: 'USD',
+    priceInterval: 'month',
   });
   const [promoCode, setPromoCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem('motix_user');
-      if (stored) setPlanInfo(JSON.parse(stored) as typeof planInfo);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Partial<typeof planInfo>;
+        setPlanInfo((current) => ({ ...current, ...parsed }));
+      }
     } catch { /* ignore */ }
+    webApi.getBillingSummary()
+      .then((summary) => {
+        setPlanInfo({
+          planType: summary.planType,
+          subscriptionStatus: summary.subscriptionStatus,
+          trialEndsAt: summary.trialEndsAt,
+          currentPeriodEnd: summary.currentPeriodEnd,
+          canManageSubscription: summary.canManageSubscription,
+          paymentMethodLast4: summary.paymentMethodLast4,
+          paymentMethodBrand: summary.paymentMethodBrand,
+          priceAmount: summary.priceAmount,
+          priceCurrency: summary.priceCurrency,
+          priceInterval: summary.priceInterval,
+        });
+        localStorage.setItem('motix_user', JSON.stringify({
+          planType: summary.planType,
+          subscriptionStatus: summary.subscriptionStatus,
+          trialEndsAt: summary.trialEndsAt,
+        }));
+      })
+      .catch(() => {
+        setBillingError(t.settingsView.billingSummaryUnavailable);
+      });
   }, []);
 
   const isPremium = planInfo.planType === 'premium' || isEnterprise;
   const isTrial = planInfo.planType === 'trial' && planInfo.subscriptionStatus === 'active';
-  const isFree = !isPremium && !isTrial;
 
   const trialDaysLeft = isTrial && planInfo.trialEndsAt
     ? Math.max(0, Math.ceil((new Date(planInfo.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
+  const priceText = planInfo.priceAmount
+    ? new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: planInfo.priceCurrency || 'USD',
+      maximumFractionDigits: 0,
+    }).format(planInfo.priceAmount / 100)
+    : '$39';
+  const cadenceText = `${priceText}/${planInfo.priceInterval === 'month' ? t.settingsView.perMonthShort : planInfo.priceInterval}`;
+  const renewalDate = planInfo.currentPeriodEnd
+    ? new Date(planInfo.currentPeriodEnd).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+    : '—';
+  const trialEndDate = planInfo.trialEndsAt
+    ? new Date(planInfo.trialEndsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+    : '—';
 
   async function handlePromoRedeem() {
     if (!promoCode.trim()) return;
@@ -839,9 +947,24 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     setPromoError(null);
     try {
       const res = await webApi.redeemPromo(promoCode.trim());
-      const updated = { planType: res.planType, subscriptionStatus: res.subscriptionStatus, trialEndsAt: null };
+      const updated = {
+        planType: res.planType,
+        subscriptionStatus: res.subscriptionStatus,
+        trialEndsAt: null,
+        currentPeriodEnd: null,
+        canManageSubscription: false,
+        paymentMethodLast4: null,
+        paymentMethodBrand: null,
+        priceAmount: planInfo.priceAmount,
+        priceCurrency: planInfo.priceCurrency,
+        priceInterval: planInfo.priceInterval,
+      };
       setPlanInfo(updated);
-      localStorage.setItem('motix_user', JSON.stringify(updated));
+      localStorage.setItem('motix_user', JSON.stringify({
+        planType: updated.planType,
+        subscriptionStatus: updated.subscriptionStatus,
+        trialEndsAt: updated.trialEndsAt,
+      }));
       setPromoSuccess(true);
       setPromoCode('');
     } catch (err) {
@@ -854,6 +977,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
   async function handleUpgrade(trial: boolean) {
     setBillingLoading(true);
     setPromoError(null);
+    setBillingError(null);
     try {
       const { url } = await webApi.createCheckoutSession({
         successUrl: `${window.location.origin}/dashboard?billing=${trial ? 'trial-started' : 'success'}`,
@@ -865,20 +989,27 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
         return; // navigating away
       }
     } catch (err) {
-      setPromoError(err instanceof Error ? err.message : 'Failed to start checkout');
+      setBillingError(err instanceof Error ? err.message : t.settingsView.billingStartFailed);
     }
     setBillingLoading(false);
   }
 
   async function handleManageBilling() {
     setBillingLoading(true);
+    setBillingError(null);
     try {
       const { url } = await webApi.createPortalSession({
         returnUrl: `${window.location.origin}/dashboard`,
       });
       if (url) window.location.href = url;
-    } catch { /* ignore */ }
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : t.settingsView.billingStartFailed);
+    }
     setBillingLoading(false);
+  }
+
+  function handleBillingSupport() {
+    window.location.href = `mailto:hello@motixi.com?subject=${encodeURIComponent('Motixi billing support')}`;
   }
 
   const planBadgeLabel = isEnterprise ? 'Enterprise' : isPremium ? 'Pro' : isTrial ? 'Pro Trial' : 'Free';
@@ -910,6 +1041,10 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
             <span className="settings-label">{t.settingsView.planLabel}</span>
             <span className={`sett-plan-badge ${planBadgeClass}`}>{planBadgeLabel}</span>
           </div>
+          <div className="settings-row settings-row--stack">
+            <span className="settings-label">{t.settingsView.languageLabel}</span>
+            <SettingsLanguageSelector />
+          </div>
           {isTrial && trialDaysLeft !== null && (
             <div className="sett-trial-notice">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.4"/><path d="M7 4v3.5l2 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
@@ -932,51 +1067,61 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
           {isPremium ? (
             <>
               <div className="sett-pro-banner">
-                <div className="sett-pro-banner-icon">⚡</div>
                 <div>
-                  <p className="sett-pro-banner-title">{t.settingsView.proActive}</p>
+                  <p className="sett-pro-banner-title">{t.settingsView.proPlanTitle}</p>
                   <p className="sett-pro-banner-sub">{t.settingsView.proActiveDesc}</p>
                 </div>
               </div>
+              <div className="sett-detail-list">
+                <div className="sett-detail-row"><span>{t.settingsView.priceLabel}</span><strong>{cadenceText}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.nextBillingDate}</span><strong>{renewalDate}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.paymentMethod}</span><strong>{planInfo.paymentMethodLast4 ? `${planInfo.paymentMethodBrand ?? t.settingsView.cardLabel} •••• ${planInfo.paymentMethodLast4}` : t.settingsView.noPaymentMethod}</strong></div>
+              </div>
               <button
                 className="sett-billing-btn"
-                onClick={handleManageBilling}
+                onClick={planInfo.canManageSubscription ? handleManageBilling : handleBillingSupport}
                 disabled={billingLoading}
               >
-                {t.settingsView.manageSubscription}
+                {planInfo.canManageSubscription ? t.settingsView.manageSubscription : t.settingsView.contactBillingSupport}
               </button>
             </>
           ) : isTrial ? (
             <>
               <div className="sett-pro-banner sett-pro-banner--trial">
-                <div className="sett-pro-banner-icon">🚀</div>
                 <div>
-                  <p className="sett-pro-banner-title">{t.settingsView.trialActive}</p>
-                  <p className="sett-pro-banner-sub">
-                    {t.settingsView.trialRenewsAs}
-                  </p>
+                  <p className="sett-pro-banner-title">{t.settingsView.trialPlanTitle}</p>
+                  <p className="sett-pro-banner-sub">{t.settingsView.trialRenewsAs}</p>
                 </div>
+              </div>
+              <div className="sett-detail-list">
+                <div className="sett-detail-row"><span>{t.settingsView.priceAfterTrial}</span><strong>{cadenceText}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.trialDaysLeft}</span><strong>{trialDaysLeft ?? '—'}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.renewsOn}</span><strong>{trialEndDate}</strong></div>
               </div>
               <button
                 className="sett-billing-btn"
-                onClick={handleManageBilling}
+                onClick={planInfo.canManageSubscription ? handleManageBilling : handleBillingSupport}
                 disabled={billingLoading}
               >
-                {t.settingsView.manageSubscription}
+                {planInfo.canManageSubscription ? t.settingsView.manageSubscription : t.settingsView.contactBillingSupport}
               </button>
             </>
           ) : (
             <>
-              <div className="plan-usage-row">
-                <div className="plan-usage-labels">
-                  <span>{t.settingsView.guidesThisMonth}</span>
-                  <span>{guidesUsed} / {guidesLimit}</span>
-                </div>
-                <div className="plan-usage-track">
-                  <div
-                    className={`plan-usage-bar${guidesUsed >= guidesLimit ? ' plan-usage-bar--full' : ''}`}
-                    style={{ width: `${Math.min(100, guidesUsed / guidesLimit * 100)}%` }}
-                  />
+              <div className="sett-free-summary">
+                <div className="sett-detail-row"><span>{t.settingsView.planLabel}</span><strong>{t.settingsView.freePlanTitle}</strong></div>
+                <div className="sett-detail-row"><span>{t.settingsView.includesLabel}</span><strong>{t.settingsView.freePlanIncludes}</strong></div>
+                <div className="plan-usage-row">
+                  <div className="plan-usage-labels">
+                    <span>{t.settingsView.guidesThisMonth}</span>
+                    <span>{guidesUsed} / {guidesLimit}</span>
+                  </div>
+                  <div className="plan-usage-track">
+                    <div
+                      className={`plan-usage-bar${guidesUsed >= guidesLimit ? ' plan-usage-bar--full' : ''}`}
+                      style={{ width: `${Math.min(100, guidesUsed / guidesLimit * 100)}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1008,7 +1153,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
                       onClick={handlePromoRedeem}
                       disabled={promoLoading || !promoCode.trim()}
                     >
-                      {promoLoading ? <span className="gen-spinner" /> : t.settingsView.apply}
+                  {promoLoading ? <span className="gen-spinner" /> : t.settingsView.apply}
                     </button>
                   </div>
                   {promoError && <p className="sett-promo-error">{promoError}</p>}
@@ -1016,6 +1161,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
               )}
             </>
           )}
+          {billingError && <p className="sett-promo-error">{billingError}</p>}
         </div>
 
       </div>
@@ -1153,7 +1299,7 @@ function DashboardInner() {
     const guestMode = readJwt().role === 'GUEST';
     Promise.all([
       guestMode ? webApi.getDemoGuides(locale) : webApi.listGuides(locale),
-      guestMode ? Promise.resolve([] as VehicleWithHistory[]) : webApi.listVehicles().catch(() => [] as VehicleWithHistory[]),
+      guestMode ? Promise.resolve([] as VehicleWithHistory[]) : webApi.listVehicles({ language: locale }).catch(() => [] as VehicleWithHistory[]),
       guestMode ? Promise.resolve(null) : webApi.getAnalytics().catch(() => null),
     ]).then(([g, v, a]) => {
       setGuides(g); setVehicles(v); setAnalytics(a);
@@ -1184,7 +1330,7 @@ function DashboardInner() {
             language: getLocale(),
           });
       setGuides((prev) => [created, ...prev]);
-      webApi.listVehicles().then(setVehicles).catch(() => {});
+      webApi.listVehicles({ language: getLocale() }).then(setVehicles).catch(() => {});
       webApi.getAnalytics().then(setAnalytics).catch(() => {});
       setView('guides');
     } catch (err: unknown) {

@@ -64,23 +64,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 borderRadius: kRadiusXl,
               ),
               child: const Center(
-                child: Text('M', style: TextStyle(
-                  fontSize: 40, fontWeight: FontWeight.w900, color: kPrimary,
-                )),
+                child: Text('M',
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                      color: kPrimary,
+                    )),
               ),
             ),
             const SizedBox(height: s24),
-            Text(l?.appName ?? 'Motixi', style: const TextStyle(
-              fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white,
-              letterSpacing: -0.5,
-            )),
+            Text(l?.appName ?? 'Motixi',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                )),
             const SizedBox(height: s8),
-            Text(l?.aiPoweredRepairGuides ?? 'AI-Powered Repair Guides', style: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.w500,
-              color: Colors.white.withOpacity(0.7),
-            )),
+            Text(l?.aiPoweredRepairGuides ?? 'AI-Powered Repair Guides',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.7),
+                )),
             const SizedBox(height: s48),
-            const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+            const CircularProgressIndicator(
+                color: Colors.white, strokeWidth: 2),
           ],
         ),
       ),

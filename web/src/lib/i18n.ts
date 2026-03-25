@@ -379,18 +379,36 @@ export interface Translations {
     account: string;
     emailLabel: string;
     planLabel: string;
+    languageLabel: string;
     trialEndsIn: string;
     day: string;
     days: string;
     planAndUsage: string;
     planPro: string;
+    proPlanTitle: string;
+    trialPlanTitle: string;
+    freePlanTitle: string;
     proActive: string;
     proActiveDesc: string;
     trialActive: string;
     trialRenewsAs: string;
     manageSubscription: string;
+    contactBillingSupport: string;
     startTrialCta: string;
     guidesThisMonth: string;
+    includesLabel: string;
+    freePlanIncludes: string;
+    priceLabel: string;
+    priceAfterTrial: string;
+    trialDaysLeft: string;
+    renewsOn: string;
+    nextBillingDate: string;
+    paymentMethod: string;
+    noPaymentMethod: string;
+    cardLabel: string;
+    perMonthShort: string;
+    billingSummaryUnavailable: string;
+    billingStartFailed: string;
     havePromoCode: string;
     enterCode: string;
     apply: string;
@@ -553,15 +571,22 @@ export interface Translations {
     freePlan: string;
     proPlan: string;
     enterprisePlan: string;
+    freePlanTitle: string;
+    proPlanTitle: string;
+    trialPlanTitle: string;
+    trialActive: string;
+    languageLabel: string;
     guidesThisMonth: string;
     imageGeneration: string;
     upgradeToProPrice: string;
+    startTrialCta: string;
     unlimited: string;
     priorityImage: string;
     mobileEnabled: string;
     apiEnabled: string;
     nextBilling: string;
     manageSubscription: string;
+    contactBillingSupport: string;
     teamMembers: string;
     manualsUploaded: string;
     customSla: string;
@@ -586,8 +611,19 @@ export interface Translations {
     saved: string;
     saveProfile: string;
     perMonth: string;
+    perMonthShort: string;
     active: string;
     organization: string;
+    includesLabel: string;
+    freePlanIncludes: string;
+    priceLabel: string;
+    priceAfterTrial: string;
+    trialDaysLeft: string;
+    renewsOn: string;
+    unlimitedGuides: string;
+    priorityImageGeneration: string;
+    fullGuideHistory: string;
+    cardLabel: string;
   };
 
   // Nav auth dropdown
@@ -898,7 +934,7 @@ const en: Translations = {
     planProItem1: 'Unlimited guides',
     planProItem2: 'Priority image generation',
     planProItem3: 'Web + mobile',
-    planProItem4: 'API access',
+    planProItem4: 'Full guide history',
     planProItem5: 'Email support',
     planProStartTrial: 'Start free trial',
     planProMostPopular: 'Most popular',
@@ -1105,18 +1141,36 @@ const en: Translations = {
     account: 'Account',
     emailLabel: 'Email',
     planLabel: 'Plan',
+    languageLabel: 'Language',
     trialEndsIn: 'Trial ends in',
     day: 'day',
     days: 'days',
     planAndUsage: 'Plan & Usage',
     planPro: 'Plan — Pro',
+    proPlanTitle: 'Pro',
+    trialPlanTitle: 'Pro Trial',
+    freePlanTitle: 'Free',
     proActive: 'Pro plan active',
-    proActiveDesc: 'Unlimited guides · Priority image generation · API access',
+    proActiveDesc: 'Unlimited guides · Priority image generation · Full guide history',
     trialActive: 'Pro trial active',
-    trialRenewsAs: 'Renews as Pro ($39/mo) after trial unless canceled.',
+    trialRenewsAs: 'Card on file · Renews as Pro unless canceled.',
     manageSubscription: 'Manage subscription',
+    contactBillingSupport: 'Contact billing support',
     startTrialCta: 'Start 7-day free trial — $39/mo after',
     guidesThisMonth: 'Guides this month',
+    includesLabel: 'Includes',
+    freePlanIncludes: '5 guides/month',
+    priceLabel: 'Price',
+    priceAfterTrial: 'Price after trial',
+    trialDaysLeft: 'Trial days left',
+    renewsOn: 'Renews on',
+    nextBillingDate: 'Next billing date',
+    paymentMethod: 'Payment method',
+    noPaymentMethod: 'No card on file yet',
+    cardLabel: 'Card',
+    perMonthShort: 'month',
+    billingSummaryUnavailable: 'Billing details are temporarily unavailable.',
+    billingStartFailed: 'We couldn’t open billing right now.',
     havePromoCode: 'Have a promo code?',
     enterCode: 'Enter code…',
     apply: 'Apply',
@@ -1269,15 +1323,22 @@ const en: Translations = {
     freePlan: '⚡ Free Plan',
     proPlan: '⚡ Pro Plan — $39/mo',
     enterprisePlan: '🏢 Enterprise Plan',
+    freePlanTitle: 'Free',
+    proPlanTitle: 'Pro',
+    trialPlanTitle: 'Pro Trial',
+    trialActive: 'Trial active',
+    languageLabel: 'Language',
     guidesThisMonth: 'Guides this month',
     imageGeneration: 'Image generation',
     upgradeToProPrice: 'Upgrade to Pro — $39/mo →',
+    startTrialCta: 'Start 7-day free trial',
     unlimited: 'Unlimited',
     priorityImage: 'Priority',
     mobileEnabled: 'Mobile app: Enabled',
     apiEnabled: 'API access: Enabled',
     nextBilling: 'Next billing',
     manageSubscription: 'Manage subscription',
+    contactBillingSupport: 'Contact billing support',
     teamMembers: 'Team members: 4 / 10',
     manualsUploaded: 'Manuals uploaded: 2',
     customSla: 'Custom SLA: Enabled',
@@ -1302,8 +1363,19 @@ const en: Translations = {
     saved: '✓ Saved',
     saveProfile: 'Save profile',
     perMonth: '/mo',
+    perMonthShort: 'month',
     active: 'Active',
     organization: 'Organization',
+    includesLabel: 'Includes',
+    freePlanIncludes: '5 guides/month',
+    priceLabel: 'Price',
+    priceAfterTrial: 'Price after trial',
+    trialDaysLeft: 'Trial days left',
+    renewsOn: 'Renews on',
+    unlimitedGuides: 'Unlimited guides',
+    priorityImageGeneration: 'Priority image generation',
+    fullGuideHistory: 'Full guide history',
+    cardLabel: 'Card',
   },
 
   navAuth: {
@@ -1634,7 +1706,7 @@ const uk: Translations = {
     planProItem1: 'Безлімітні інструкції',
     planProItem2: 'Пріоритетна генерація зображень',
     planProItem3: 'Веб + мобільний',
-    planProItem4: 'Доступ до API',
+    planProItem4: 'Повна історія інструкцій',
     planProItem5: 'Підтримка по email',
     planProStartTrial: 'Спробувати безкоштовно',
     planProMostPopular: 'Найпопулярніший',
@@ -1841,18 +1913,36 @@ const uk: Translations = {
     account: 'Акаунт',
     emailLabel: 'Електронна пошта',
     planLabel: 'План',
+    languageLabel: 'Мова',
     trialEndsIn: 'Пробний період закінчується через',
     day: 'день',
     days: 'днів',
     planAndUsage: 'План та використання',
     planPro: 'План — Pro',
+    proPlanTitle: 'Pro',
+    trialPlanTitle: 'Pro Trial',
+    freePlanTitle: 'Безкоштовний',
     proActive: 'Pro план активний',
-    proActiveDesc: 'Безлімітні інструкції · Пріоритетна генерація зображень · Доступ до API',
+    proActiveDesc: 'Безлімітні інструкції · Пріоритетна генерація зображень · Повна історія інструкцій',
     trialActive: 'Pro пробний період активний',
-    trialRenewsAs: 'Поновлюється як Pro ($39/міс) після пробного періоду, якщо не скасувати.',
+    trialRenewsAs: 'Картка збережена · Після пробного періоду підписка поновиться як Pro, якщо її не скасувати.',
     manageSubscription: 'Керувати підпискою',
+    contactBillingSupport: 'Зв’язатися з білінг-підтримкою',
     startTrialCta: '7 днів безкоштовно — потім $39/міс',
     guidesThisMonth: 'Інструкції цього місяця',
+    includesLabel: 'Включено',
+    freePlanIncludes: '5 інструкцій/місяць',
+    priceLabel: 'Ціна',
+    priceAfterTrial: 'Ціна після пробного періоду',
+    trialDaysLeft: 'Днів пробного періоду',
+    renewsOn: 'Поновлення',
+    nextBillingDate: 'Наступна дата списання',
+    paymentMethod: 'Спосіб оплати',
+    noPaymentMethod: 'Картку ще не додано',
+    cardLabel: 'Картка',
+    perMonthShort: 'міс',
+    billingSummaryUnavailable: 'Деталі білінгу тимчасово недоступні.',
+    billingStartFailed: 'Не вдалося відкрити білінг.',
     havePromoCode: 'Маєте промокод?',
     enterCode: 'Введіть код…',
     apply: 'Застосувати',
@@ -2005,15 +2095,22 @@ const uk: Translations = {
     freePlan: '⚡ Безкоштовний план',
     proPlan: '⚡ Pro план — $39/міс',
     enterprisePlan: '🏢 Enterprise план',
+    freePlanTitle: 'Безкоштовний',
+    proPlanTitle: 'Pro',
+    trialPlanTitle: 'Pro Trial',
+    trialActive: 'Пробний період активний',
+    languageLabel: 'Мова',
     guidesThisMonth: 'Інструкції цього місяця',
     imageGeneration: 'Генерація зображень',
     upgradeToProPrice: 'Оновити до Pro — $39/міс →',
+    startTrialCta: 'Почати 7-денний пробний період',
     unlimited: 'Безлімітно',
     priorityImage: 'Пріоритетно',
     mobileEnabled: 'Мобільний додаток: Увімкнено',
     apiEnabled: 'Доступ до API: Увімкнено',
     nextBilling: 'Наступне списання',
     manageSubscription: 'Керувати підпискою',
+    contactBillingSupport: 'Зв’язатися з білінг-підтримкою',
     teamMembers: 'Учасники команди: 4 / 10',
     manualsUploaded: 'Завантажено мануалів: 2',
     customSla: 'Спеціальний SLA: Увімкнено',
@@ -2038,8 +2135,19 @@ const uk: Translations = {
     saved: '✓ Збережено',
     saveProfile: 'Зберегти профіль',
     perMonth: '/міс',
+    perMonthShort: 'міс',
     active: 'Активний',
     organization: 'Організація',
+    includesLabel: 'Включено',
+    freePlanIncludes: '5 інструкцій/місяць',
+    priceLabel: 'Ціна',
+    priceAfterTrial: 'Ціна після пробного періоду',
+    trialDaysLeft: 'Днів пробного періоду',
+    renewsOn: 'Поновлення',
+    unlimitedGuides: 'Безлімітні інструкції',
+    priorityImageGeneration: 'Пріоритетна генерація зображень',
+    fullGuideHistory: 'Повна історія інструкцій',
+    cardLabel: 'Картка',
   },
 
   navAuth: {
@@ -2370,7 +2478,7 @@ const bg: Translations = {
     planProItem1: 'Неограничени ръководства',
     planProItem2: 'Приоритетно генериране на изображения',
     planProItem3: 'Уеб + мобилен',
-    planProItem4: 'Достъп до API',
+    planProItem4: 'Пълна история на ръководствата',
     planProItem5: 'Имейл поддръжка',
     planProStartTrial: 'Започнете безплатно',
     planProMostPopular: 'Най-популярен',
@@ -2577,18 +2685,36 @@ const bg: Translations = {
     account: 'Акаунт',
     emailLabel: 'Имейл',
     planLabel: 'План',
+    languageLabel: 'Език',
     trialEndsIn: 'Пробният период приключва след',
     day: 'ден',
     days: 'дни',
     planAndUsage: 'План и употреба',
     planPro: 'План — Pro',
+    proPlanTitle: 'Pro',
+    trialPlanTitle: 'Pro Trial',
+    freePlanTitle: 'Безплатен',
     proActive: 'Pro план активен',
-    proActiveDesc: 'Неограничени ръководства · Приоритетно генериране на изображения · Достъп до API',
+    proActiveDesc: 'Неограничени ръководства · Приоритетно генериране на изображения · Пълна история на ръководствата',
     trialActive: 'Pro пробен период активен',
-    trialRenewsAs: 'Подновява се като Pro ($39/мес) след пробния период, освен ако не бъде отменен.',
+    trialRenewsAs: 'Картата е запазена · След пробния период планът се подновява като Pro, освен ако не бъде отменен.',
     manageSubscription: 'Управление на абонамента',
+    contactBillingSupport: 'Свържете се с billing поддръжката',
     startTrialCta: '7 дни безплатно — след това $39/мес',
     guidesThisMonth: 'Ръководства този месец',
+    includesLabel: 'Включва',
+    freePlanIncludes: '5 ръководства/месец',
+    priceLabel: 'Цена',
+    priceAfterTrial: 'Цена след пробния период',
+    trialDaysLeft: 'Оставащи дни',
+    renewsOn: 'Подновява се на',
+    nextBillingDate: 'Следваща дата на плащане',
+    paymentMethod: 'Метод на плащане',
+    noPaymentMethod: 'Все още няма добавена карта',
+    cardLabel: 'Карта',
+    perMonthShort: 'мес',
+    billingSummaryUnavailable: 'Данните за плащането временно не са налични.',
+    billingStartFailed: 'В момента не успяхме да отворим плащането.',
     havePromoCode: 'Имате промо код?',
     enterCode: 'Въведете код…',
     apply: 'Приложи',
@@ -2741,15 +2867,22 @@ const bg: Translations = {
     freePlan: '⚡ Безплатен план',
     proPlan: '⚡ Pro план — $39/мес',
     enterprisePlan: '🏢 Enterprise план',
+    freePlanTitle: 'Безплатен',
+    proPlanTitle: 'Pro',
+    trialPlanTitle: 'Pro Trial',
+    trialActive: 'Пробният период е активен',
+    languageLabel: 'Език',
     guidesThisMonth: 'Ръководства този месец',
     imageGeneration: 'Генериране на изображения',
     upgradeToProPrice: 'Надградете до Pro — $39/мес →',
+    startTrialCta: 'Стартирайте 7-дневен пробен период',
     unlimited: 'Неограничен',
     priorityImage: 'Приоритетно',
     mobileEnabled: 'Мобилно приложение: Активирано',
     apiEnabled: 'Достъп до API: Активирано',
     nextBilling: 'Следващо плащане',
     manageSubscription: 'Управлявай абонамента',
+    contactBillingSupport: 'Свържете се с billing поддръжката',
     teamMembers: 'Членове на екипа: 4 / 10',
     manualsUploaded: 'Качени ръководства: 2',
     customSla: 'Потребителско SLA: Активирано',
@@ -2774,8 +2907,19 @@ const bg: Translations = {
     saved: '✓ Запазено',
     saveProfile: 'Запази профила',
     perMonth: '/мес',
+    perMonthShort: 'мес',
     active: 'Активен',
     organization: 'Организация',
+    includesLabel: 'Включва',
+    freePlanIncludes: '5 ръководства/месец',
+    priceLabel: 'Цена',
+    priceAfterTrial: 'Цена след пробния период',
+    trialDaysLeft: 'Оставащи дни',
+    renewsOn: 'Подновява се на',
+    unlimitedGuides: 'Неограничени ръководства',
+    priorityImageGeneration: 'Приоритетно генериране на изображения',
+    fullGuideHistory: 'Пълна история на ръководствата',
+    cardLabel: 'Карта',
   },
 
   navAuth: {

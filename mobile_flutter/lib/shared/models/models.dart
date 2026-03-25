@@ -48,6 +48,48 @@ class AuthTokens {
       );
 }
 
+class BillingSummary {
+  final String planType;
+  final String subscriptionStatus;
+  final String? trialEndsAt;
+  final String? currentPeriodEnd;
+  final bool hasBillingAccount;
+  final bool canManageSubscription;
+  final int? priceAmount;
+  final String priceCurrency;
+  final String priceInterval;
+  final String? paymentMethodBrand;
+  final String? paymentMethodLast4;
+
+  const BillingSummary({
+    required this.planType,
+    required this.subscriptionStatus,
+    this.trialEndsAt,
+    this.currentPeriodEnd,
+    required this.hasBillingAccount,
+    required this.canManageSubscription,
+    this.priceAmount,
+    required this.priceCurrency,
+    required this.priceInterval,
+    this.paymentMethodBrand,
+    this.paymentMethodLast4,
+  });
+
+  factory BillingSummary.fromJson(Map<String, dynamic> j) => BillingSummary(
+        planType: j['planType'] as String? ?? 'free',
+        subscriptionStatus: j['subscriptionStatus'] as String? ?? 'none',
+        trialEndsAt: j['trialEndsAt'] as String?,
+        currentPeriodEnd: j['currentPeriodEnd'] as String?,
+        hasBillingAccount: j['hasBillingAccount'] as bool? ?? false,
+        canManageSubscription: j['canManageSubscription'] as bool? ?? false,
+        priceAmount: j['priceAmount'] as int?,
+        priceCurrency: j['priceCurrency'] as String? ?? 'USD',
+        priceInterval: j['priceInterval'] as String? ?? 'month',
+        paymentMethodBrand: j['paymentMethodBrand'] as String?,
+        paymentMethodLast4: j['paymentMethodLast4'] as String?,
+      );
+}
+
 // ── Guide ─────────────────────────────────────────────────────────────────────
 
 // Multi-phase illustration pipeline statuses.

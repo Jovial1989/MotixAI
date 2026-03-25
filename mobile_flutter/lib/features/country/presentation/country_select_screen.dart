@@ -20,8 +20,10 @@ class _CountryOption {
 
 const _countries = [
   _CountryOption(key: 'global', flag: '🌍', label: 'Global', sub: 'English'),
-  _CountryOption(key: 'ukraine', flag: '🇺🇦', label: 'Україна', sub: 'Українська'),
-  _CountryOption(key: 'bulgaria', flag: '🇧🇬', label: 'България', sub: 'Български'),
+  _CountryOption(
+      key: 'ukraine', flag: '🇺🇦', label: 'Україна', sub: 'Українська'),
+  _CountryOption(
+      key: 'bulgaria', flag: '🇧🇬', label: 'България', sub: 'Български'),
 ];
 
 class CountrySelectScreen extends ConsumerStatefulWidget {
@@ -31,7 +33,8 @@ class CountrySelectScreen extends ConsumerStatefulWidget {
   const CountrySelectScreen({super.key, required this.nextRoute});
 
   @override
-  ConsumerState<CountrySelectScreen> createState() => _CountrySelectScreenState();
+  ConsumerState<CountrySelectScreen> createState() =>
+      _CountrySelectScreenState();
 }
 
 class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
@@ -64,15 +67,22 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                   borderRadius: kRadiusXl,
                 ),
                 child: const Center(
-                  child: Text('M', style: TextStyle(
-                    fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white,
-                  )),
+                  child: Text('M',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      )),
                 ),
               ),
               const SizedBox(height: s24),
-              const Text('Choose your region', style: TextStyle(
-                fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: kText,
-              )),
+              const Text('Choose your region',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                    color: kText,
+                  )),
               const SizedBox(height: s8),
               const Text(
                 'Select your country to set the language.\nYou can change this later in settings.',
@@ -90,7 +100,8 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                     onTap: () => setState(() => _selected = c.key),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(horizontal: s16, vertical: s16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: s16, vertical: s16),
                       decoration: BoxDecoration(
                         color: kBgCard,
                         borderRadius: kRadiusMd,
@@ -99,7 +110,11 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                           width: isSelected ? 2 : 1.5,
                         ),
                         boxShadow: isSelected
-                            ? [BoxShadow(color: kPrimary.withOpacity(0.08), blurRadius: 12)]
+                            ? [
+                                BoxShadow(
+                                    color: kPrimary.withValues(alpha: 0.08),
+                                    blurRadius: 12)
+                              ]
                             : null,
                       ),
                       child: Row(
@@ -110,13 +125,18 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(c.label, style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600, color: kText,
-                                )),
+                                Text(c.label,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: kText,
+                                    )),
                                 const SizedBox(height: 2),
-                                Text(c.sub, style: const TextStyle(
-                                  fontSize: 13, color: kTextSub,
-                                )),
+                                Text(c.sub,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: kTextSub,
+                                    )),
                               ],
                             ),
                           ),
@@ -130,7 +150,8 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                                 color: kPrimary,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.check, size: 16, color: Colors.white),
+                              child: const Icon(Icons.check,
+                                  size: 16, color: Colors.white),
                             ),
                           ),
                         ],

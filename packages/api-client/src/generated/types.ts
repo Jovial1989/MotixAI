@@ -228,6 +228,20 @@ export interface PortalSessionResponse {
   url: string;
 }
 
+export interface BillingSummaryResponse {
+  planType: PlanType;
+  subscriptionStatus: SubscriptionStatus;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  hasBillingAccount: boolean;
+  canManageSubscription: boolean;
+  priceAmount: number | null;
+  priceCurrency: string;
+  priceInterval: string;
+  paymentMethodBrand: string | null;
+  paymentMethodLast4: string | null;
+}
+
 export interface ResetPasswordInput {
   resetToken: string;
   newPassword: string;

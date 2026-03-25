@@ -274,6 +274,15 @@ class ApiClient {
     }
   }
 
+  Future<BillingSummary> getBillingSummary() async {
+    try {
+      final resp = await _dio.get<Map<String, dynamic>>('/billing/summary');
+      return BillingSummary.fromJson(resp.data!);
+    } on DioException catch (e) {
+      return _handleError(e);
+    }
+  }
+
   // ── Steps ─────────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> generateStepImage(String stepId,

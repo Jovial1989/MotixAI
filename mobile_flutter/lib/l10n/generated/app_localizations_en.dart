@@ -158,6 +158,16 @@ class SEn extends S {
   String get billingUpgradeSucceeded => 'Your Pro plan is active.';
 
   @override
+  String get billingCheckoutTitle => 'Billing';
+
+  @override
+  String get billingProfileUnavailable => 'No billing profile is set up yet.';
+
+  @override
+  String get billingSupportUnavailable =>
+      'We couldn\'t open billing support right now.';
+
+  @override
   String get continueFree => 'Continue free';
 
   @override
@@ -382,7 +392,8 @@ class SEn extends S {
   String get proActive => '⚡ Pro plan active';
 
   @override
-  String get proActiveDesc => 'Unlimited guides · Priority images · API access';
+  String get proActiveDesc =>
+      'Unlimited guides · Priority image generation · Full guide history';
 
   @override
   String get trialActive => 'Trial active';
@@ -394,13 +405,76 @@ class SEn extends S {
 
   @override
   String get trialRenewsAfter =>
-      'Renews as Pro after the 7-day trial unless canceled.';
+      'Card on file. Renews as Pro after the 7-day trial unless canceled.';
 
   @override
   String get freePlan => 'Free plan';
 
   @override
-  String get freePlanDesc => '5 guides/month. Use a promo code to unlock Pro.';
+  String get freePlanDesc => 'Read-only access with 5 guides per month.';
+
+  @override
+  String get languageSection => 'Language';
+
+  @override
+  String get currentLanguageLabel => 'Current language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageUkrainian => 'Українська';
+
+  @override
+  String get languageBulgarian => 'Български';
+
+  @override
+  String get planLabel => 'Plan';
+
+  @override
+  String get priceLabel => 'Price';
+
+  @override
+  String get priceAfterTrialLabel => 'Price after trial';
+
+  @override
+  String get trialDaysLeftLabel => 'Trial days left';
+
+  @override
+  String get renewsOnLabel => 'Renews on';
+
+  @override
+  String get nextBillingDateLabel => 'Next billing date';
+
+  @override
+  String get paymentMethodLabel => 'Payment method';
+
+  @override
+  String get noPaymentMethodAdded => 'No card on file yet';
+
+  @override
+  String get cardLabel => 'Card';
+
+  @override
+  String get includesLabel => 'Includes';
+
+  @override
+  String get freePlanIncludes => '5 guides/month';
+
+  @override
+  String get proTrialPlan => 'Pro Trial';
+
+  @override
+  String get proPlanTitle => 'Pro';
+
+  @override
+  String get contactBillingSupport => 'Contact billing support';
+
+  @override
+  String get manageSubscription => 'Manage subscription';
+
+  @override
+  String get perMonthShort => 'month';
 
   @override
   String get guideHistory => 'Guide History';

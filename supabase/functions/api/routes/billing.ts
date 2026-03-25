@@ -17,6 +17,32 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
+function normalizeCurrency(code: string | null | undefined): string {
+  return (code ?? "usd").toUpperCase();
+}
+
+function stripePeriodEnd(subscription: Stripe.Subscription): string | null {
+  const value = (subscription as unknown as { current_period_end?: number }).current_period_end;
+  if (!value) return null;
+  return new Date(value * 1000).toISOString();
+}
+
+function stripeTrialEnd(subscription: Stripe.Subscription): string | null {
+  const value = (subscription as unknown as { trial_end?: number | null }).trial_end;
+  if (!value) return null;
+  return new Date(value * 1000).toISOString();
+}
+
+function priceSummaryFromPrice(price: Stripe.Price | Stripe.DeletedPrice | null | undefined) {
+  if (!price || (price as Stripe.DeletedPrice).deleted) return null;
+  const recurring = price.recurring;
+  return {
+    amount: price.unit_amount ?? null,
+    currency: normalizeCurrency(price.currency),
+    interval: recurring?.interval ?? "month",
+  };
+}
+
 export async function handleBilling(
   req: Request,
   method: string,
@@ -90,12 +116,122 @@ export async function handleBilling(
     const customerId = rows[0].stripeCustomerId as string | null;
     if (!customerId) return errorResponse("No billing account found", 400);
 
+    try {
+      // Ensure a portal configuration exists (idempotent — Stripe allows multiple)
+      const configs = await stripe.billingPortal.configurations.list({ limit: 1 });
+      if (configs.data.length === 0) {
+        await stripe.billingPortal.configurations.create({
+          business_profile: {
+            headline: "Motixi — Manage your subscription",
+          },
+          features: {
+            subscription_cancel: { enabled: true },
+            payment_method_update: { enabled: true },
+            invoice_history: { list: { enabled: true } },
+          },
+        });
+        console.log("[billing] created Stripe billing portal configuration");
+      }
+    } catch (configErr) {
+      console.warn("[billing] portal config check failed (non-fatal):", configErr);
+    }
+
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: (returnUrl as string) || "https://www.motixi.com/dashboard",
     });
 
     return json({ url: session.url });
+  }
+
+  // GET /billing/summary
+  if (subpath === "/summary" && method === "GET") {
+    const rows = await sql`
+      SELECT "planType", "subscriptionStatus", "trialEndsAt", "currentPeriodEnd",
+             "stripeCustomerId", "stripeSubscriptionId"
+      FROM "User"
+      WHERE id = ${user.sub}
+      LIMIT 1
+    `;
+    if (!rows.length) return errorResponse("User not found", 404);
+
+    const dbUser = rows[0];
+    const customerId = dbUser.stripeCustomerId as string | null;
+    const subscriptionId = dbUser.stripeSubscriptionId as string | null;
+    const priceId = Deno.env.get("STRIPE_PRO_PRICE_ID");
+
+    let trialEndsAt = dbUser.trialEndsAt ? new Date(dbUser.trialEndsAt as string).toISOString() : null;
+    let currentPeriodEnd = dbUser.currentPeriodEnd ? new Date(dbUser.currentPeriodEnd as string).toISOString() : null;
+    let paymentMethodBrand: string | null = null;
+    let paymentMethodLast4: string | null = null;
+    let priceAmount: number | null = 3900;
+    let priceCurrency = "USD";
+    let priceInterval = "month";
+
+    try {
+      const stripe = getStripe();
+
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+          expand: ["default_payment_method", "items.data.price"],
+        });
+
+        currentPeriodEnd = stripePeriodEnd(subscription) ?? currentPeriodEnd;
+        trialEndsAt = stripeTrialEnd(subscription) ?? trialEndsAt;
+
+        const subscriptionPrice = priceSummaryFromPrice(subscription.items.data[0]?.price);
+        if (subscriptionPrice) {
+          priceAmount = subscriptionPrice.amount;
+          priceCurrency = subscriptionPrice.currency;
+          priceInterval = subscriptionPrice.interval;
+        }
+
+        const defaultMethod = subscription.default_payment_method;
+        if (defaultMethod && typeof defaultMethod !== "string" && defaultMethod.type === "card") {
+          paymentMethodBrand = defaultMethod.card?.brand ?? null;
+          paymentMethodLast4 = defaultMethod.card?.last4 ?? null;
+        }
+      }
+
+      if (customerId && !paymentMethodLast4) {
+        const customer = await stripe.customers.retrieve(customerId, {
+          expand: ["invoice_settings.default_payment_method"],
+        });
+        if (!("deleted" in customer)) {
+          const defaultMethod = customer.invoice_settings?.default_payment_method;
+          if (defaultMethod && typeof defaultMethod !== "string" && defaultMethod.type === "card") {
+            paymentMethodBrand = defaultMethod.card?.brand ?? null;
+            paymentMethodLast4 = defaultMethod.card?.last4 ?? null;
+          }
+        }
+      }
+
+      if ((!priceAmount || !priceCurrency) && priceId) {
+        const price = await stripe.prices.retrieve(priceId);
+        const priceSummary = priceSummaryFromPrice(price);
+        if (priceSummary) {
+          priceAmount = priceSummary.amount;
+          priceCurrency = priceSummary.currency;
+          priceInterval = priceSummary.interval;
+        }
+      }
+    } catch (err) {
+      console.warn("[billing] summary fallback:", err);
+    }
+
+    return json({
+      planType: dbUser.planType ?? "free",
+      subscriptionStatus: dbUser.subscriptionStatus ?? "none",
+      trialEndsAt,
+      currentPeriodEnd,
+      hasBillingAccount: Boolean(customerId),
+      canManageSubscription: Boolean(customerId),
+      priceAmount,
+      priceCurrency,
+      priceInterval,
+      paymentMethodBrand,
+      paymentMethodLast4,
+    });
   }
 
   // POST /billing/webhook — called without auth (Stripe signature verification)

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../guides_provider.dart';
 import '../../../shared/widgets/mx_widgets.dart';
-import '../../../app/theme.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 /// History screen — same guide list as dashboard but read-only, no create bar.
@@ -83,11 +82,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(guide.title, style: tsSubhead,
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(guide.title,
+                            style: tsSubhead,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
                         const SizedBox(height: s4),
                         Text('${guide.vehicle.model} · ${guide.part.name}',
-                          style: tsCaption.copyWith(color: kTextMuted)),
+                            style: tsCaption.copyWith(color: kTextMuted)),
                         const SizedBox(height: s4),
                         Row(children: [
                           MxDifficultyDot(guide.difficulty),

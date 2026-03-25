@@ -608,6 +608,9 @@ input, textarea, select { font-family: inherit; outline: none; }
   font-weight: 600;
   color: var(--blue);
 }
+.profile-inline-link button {
+  font: inherit;
+}
 
 /* Logos bar */
 .logos-bar {
@@ -2143,6 +2146,9 @@ input, textarea, select { font-family: inherit; outline: none; }
   display: flex; align-items: center; justify-content: center;
   color: var(--text-muted); flex-shrink: 0;
 }
+.vehicle-card-head .gcard-vehicle-icon {
+  margin-left: 0; opacity: 0.6;
+}
 .vehicle-card-model {
   font-size: 0.95rem; font-weight: 700; color: var(--text);
 }
@@ -2967,10 +2973,16 @@ input, textarea, select { font-family: inherit; outline: none; }
 
 /* ── Guide card v2 ──────────────────────────────────────────────────── */
 .guide-card--v2 {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 0; position: relative;
+}
+.gcard-vehicle-icon {
+  width: 56px; height: 36px; flex-shrink: 0; margin-left: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); opacity: 0.5;
 }
 .gcard-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%); z-index: 2;
 }
 .gcard-dot--green { background: var(--green); }
 .gcard-dot--yellow { background: var(--yellow); animation: pulse-dot 1.5s ease-in-out infinite; }
@@ -3005,8 +3017,48 @@ input, textarea, select { font-family: inherit; outline: none; }
   font-size: 0.88rem;
 }
 .settings-row:last-of-type { border-bottom: none; }
+.settings-row--stack {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 12px;
+}
 .settings-label { color: var(--text-sub); font-weight: 500; }
 .settings-value { color: var(--text); font-weight: 600; }
+.settings-language-list {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.settings-language-btn {
+  min-width: 132px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+.settings-language-btn:hover {
+  border-color: var(--p-border);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+.settings-language-btn--active {
+  border-color: var(--p-border);
+  background: var(--p-light);
+  color: var(--p);
+}
+.settings-language-check {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 
 /* ── Plan / usage in settings ───────────────────────────────────────── */
 .plan-usage-row { display: flex; flex-direction: column; gap: 6px; }
@@ -3071,6 +3123,31 @@ input, textarea, select { font-family: inherit; outline: none; }
 .sett-pro-banner-sub { font-size: 0.8rem; color: var(--text-sub); margin-top: 2px; line-height: 1.5; }
 .sett-pro-banner--trial { background: #EFF6FF; border-color: #BFDBFE; }
 .sett-pro-banner--trial .sett-pro-banner-title { color: #1D4ED8; }
+.sett-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 0 4px;
+}
+.sett-detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-sub);
+}
+.sett-detail-row strong {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: right;
+}
+.sett-free-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 .sett-billing-btn {
   border: 1.5px solid var(--border); background: transparent; border-radius: var(--r-full);
   padding: 8px 18px; font-size: 0.84rem; font-weight: 600; color: var(--text-sub);
@@ -3140,6 +3217,8 @@ input, textarea, select { font-family: inherit; outline: none; }
 
 @media (max-width: 768px) {
   .settings-grid { grid-template-columns: 1fr; }
+  .sett-detail-row { flex-direction: column; align-items: flex-start; }
+  .settings-language-btn { width: 100%; }
   .dv-header { flex-direction: column; }
   .glist-toolbar { flex-direction: column; align-items: stretch; }
   .glist-search-wrap { min-width: unset; }
