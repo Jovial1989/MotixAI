@@ -3002,7 +3002,13 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 
 /* ── Dashboard view containers ──────────────────────────────────────── */
-.dv-guides { display: flex; flex-direction: column; gap: 24px; max-width: 860px; }
+.dv-guides {
+  width: min(100%, 1160px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 .dv-header {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
 }
@@ -3060,14 +3066,13 @@ input, textarea, select { font-family: inherit; outline: none; }
   color: #fff;
 }
 
-/* ── Guide card redesign ────────────────────────────────────────────── */
+/* ── Guide / Vehicle layout system ──────────────────────────────────── */
 .guide-card--v2 {
   display: flex; align-items: stretch; gap: 0; position: relative;
 }
-.guide-card--v3 {
+.guide-card--v3,
+.guide-card--v4 {
   position: relative;
-  display: flex;
-  flex-direction: column;
 }
 .guide-card-shell {
   width: 100%;
@@ -3077,54 +3082,63 @@ input, textarea, select { font-family: inherit; outline: none; }
   color: inherit;
   text-decoration: none;
 }
-.guide-card-copy {
+.guide-card-shell--grid {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr) minmax(190px, 220px);
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  min-height: 152px;
+}
+.guide-card-copy,
+.guide-card-copy--grid {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 24px 56px 0 24px;
+  gap: 10px;
+}
+.guide-card-copy--grid {
+  padding: 0;
 }
 .guide-card-title-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 .guide-card-repair-title {
-  font-size: 0.96rem;
-  line-height: 1.55;
+  font-size: 0.94rem;
+  line-height: 1.45;
   color: var(--text-sub);
-  max-width: 44ch;
+  max-width: 38ch;
 }
-.guide-card--v3 .guide-card-vehicle-name {
-  font-size: clamp(1.28rem, 2vw, 1.58rem);
-  line-height: 1.08;
+.guide-card--v3 .guide-card-vehicle-name,
+.guide-card--v4 .guide-card-vehicle-name {
+  font-size: 1.18rem;
+  line-height: 1.14;
 }
-.guide-card-support {
-  display: grid;
-  grid-template-columns: minmax(0, 170px) minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
-  padding: 16px 24px 0;
+.guide-card-thumb-col {
+  display: flex;
+  align-items: center;
 }
-.guide-card-preview {
+.guide-card-thumb-media {
   position: relative;
-  height: 108px;
+  width: 108px;
+  height: 92px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background:
     radial-gradient(circle at 18% 18%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 42%),
     linear-gradient(135deg, #eef4fa 0%, #f8fbfd 82%);
 }
-.guide-card-repair-cue {
-  min-height: 108px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+.guide-card-aside {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 10px;
+  min-width: 0;
+  align-self: stretch;
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
 }
 .guide-card-repair-label {
   font-size: 0.64rem;
@@ -3133,10 +3147,15 @@ input, textarea, select { font-family: inherit; outline: none; }
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.guide-card-repair-line {
+.guide-card-repair-chip {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
 }
 .guide-card-repair-icon,
 .guide-card-tag-icon {
@@ -3149,17 +3168,12 @@ input, textarea, select { font-family: inherit; outline: none; }
   flex-shrink: 0;
 }
 .guide-card-repair-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-}
-.guide-card-tag-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
 }
 .guide-card-repair-name {
-  font-size: 0.96rem;
+  font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.35;
   color: var(--text);
@@ -3167,6 +3181,17 @@ input, textarea, select { font-family: inherit; outline: none; }
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.guide-card-inline-pill {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: var(--r-full);
+  background: var(--p-light);
+  border: 1px solid var(--p-border);
+  color: var(--p);
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 .guide-card-status {
   width: 10px;
@@ -3189,17 +3214,32 @@ input, textarea, select { font-family: inherit; outline: none; }
   background: var(--red);
   box-shadow: 0 0 0 4px var(--red-light);
 }
+.vehicle-card--v2 {
+  display: grid;
+  grid-template-columns: minmax(260px, 36%) minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+}
+.vehicle-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
 .vehicle-card-media {
   position: relative;
   width: 100%;
   overflow: hidden;
   isolation: isolate;
+  border-radius: 18px;
+  border: 1px solid var(--border);
   background:
     radial-gradient(circle at 18% 18%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 42%),
     linear-gradient(135deg, #edf3f9 0%, #f8fbfd 78%);
 }
 .vehicle-card-media {
-  height: clamp(184px, 23vw, 208px);
+  height: clamp(148px, 19vw, 176px);
 }
 .vehicle-card-media::after {
   content: '';
@@ -3210,17 +3250,13 @@ input, textarea, select { font-family: inherit; outline: none; }
   background: radial-gradient(circle, rgba(196,210,224,0.32) 0%, rgba(196,210,224,0) 72%);
   pointer-events: none;
 }
-.guide-card-tags,
 .vehicle-card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.guide-card-tags {
-  padding: 14px 24px 20px;
-}
 .vehicle-card-tags {
-  padding: 14px 24px 0;
+  padding: 0;
 }
 .guide-card-tag {
   display: inline-flex;
@@ -3232,14 +3268,6 @@ input, textarea, select { font-family: inherit; outline: none; }
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text-sub);
-}
-.guide-card-tag--repair {
-  align-items: center;
-}
-.guide-card-tag-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
 }
 .guide-card-tag-label {
   font-size: 0.66rem;
@@ -3260,10 +3288,10 @@ input, textarea, select { font-family: inherit; outline: none; }
   font-size: 0.76rem;
   font-weight: 700;
 }
-.guide-card-delete--floating {
+.guide-card-delete--inline {
   position: absolute;
-  top: 18px;
-  right: 18px;
+  top: 14px;
+  right: 14px;
   z-index: 3;
   background: rgba(255,255,255,0.94);
   box-shadow: var(--sh-xs);
@@ -3282,7 +3310,7 @@ input, textarea, select { font-family: inherit; outline: none; }
   width: 100%;
   height: 100%;
 }
-.guide-card-preview .gcard-vehicle-icon,
+.guide-card-thumb-media .gcard-vehicle-icon,
 .vehicle-card-media .gcard-vehicle-icon {
   width: 100%;
   height: 100%;
@@ -3290,25 +3318,25 @@ input, textarea, select { font-family: inherit; outline: none; }
   position: relative;
   z-index: 1;
 }
-.guide-card-preview .gcard-vehicle-img,
+.guide-card-thumb-media .gcard-vehicle-img,
 .vehicle-card-media .gcard-vehicle-img {
   width: 100%;
   height: 100%;
   border-radius: 0;
   object-fit: cover;
   object-position: center 58%;
-  transform: scale(1.18);
+  transform: scale(1.12);
   transition: transform var(--t-mid);
 }
-.guide-card-preview .gcard-vehicle-svg,
+.guide-card-thumb-media .gcard-vehicle-svg,
 .vehicle-card-media .gcard-vehicle-svg {
-  width: 118%;
-  height: 118%;
-  transform: translateY(5%) scale(1.06);
+  width: 112%;
+  height: 112%;
+  transform: translateY(3%) scale(1.02);
 }
-.guide-card:hover .guide-card-preview .gcard-vehicle-img,
+.guide-card:hover .guide-card-thumb-media .gcard-vehicle-img,
 .vehicle-card:hover .vehicle-card-media .gcard-vehicle-img {
-  transform: scale(1.22);
+  transform: scale(1.16);
 }
 .gcard-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
@@ -3356,48 +3384,52 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .guide-card-arrow:hover { background: var(--p-light); color: var(--p); border-color: var(--p-border); }
 
+@media (max-width: 960px) {
+  .guide-card-shell--grid {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .guide-card-aside {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-left: 0;
+    padding-top: 12px;
+  }
+  .vehicle-card--v2 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .vehicle-card-body {
+    gap: 10px;
+  }
+}
+
 @media (max-width: 720px) {
-  .guide-card-copy {
-    padding: 20px 20px 0;
+  .dv-guides {
+    gap: 20px;
   }
   .guide-card-repair-title {
     max-width: none;
   }
-  .guide-card-support {
-    grid-template-columns: minmax(112px, 128px) minmax(0, 1fr);
+  .guide-card-shell--grid {
+    grid-template-columns: 88px minmax(0, 1fr);
     gap: 12px;
-    padding: 14px 20px 0;
+    padding: 16px;
+    min-height: 0;
   }
-  .guide-card-preview,
-  .guide-card-repair-cue {
-    min-height: 94px;
-    height: 94px;
-  }
-  .guide-card-tags,
-  .vehicle-card-tags {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-  .guide-card-tags {
-    padding-top: 12px;
-    padding-bottom: 18px;
-  }
-  .vehicle-card-tags {
-    padding-top: 12px;
-    padding-bottom: 0;
-  }
-  .guide-card-delete--floating {
-    top: 14px;
-    right: 14px;
+  .guide-card-thumb-media {
+    width: 88px;
+    height: 78px;
   }
   .vehicle-card {
     padding: 18px;
   }
   .vehicle-card--v2 {
-    padding: 20px 0 18px;
+    padding: 16px;
   }
   .vehicle-card-copy--v2 {
-    padding: 0 20px;
+    padding: 0;
   }
   .vehicle-card-head {
     flex-direction: column;
@@ -3407,10 +3439,10 @@ input, textarea, select { font-family: inherit; outline: none; }
     margin-left: 0;
   }
   .vehicle-card--v2 .vehicle-card-media {
-    height: 172px;
+    height: 152px;
   }
   .vehicle-card--v2 .vehicle-history {
-    padding: 14px 20px 0;
+    padding-top: 12px;
   }
 }
 

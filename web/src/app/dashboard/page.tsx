@@ -465,10 +465,10 @@ function GuidesView({
                 ? t.dash.imagesFailed
                 : t.dash.ready;
             return (
-              <div key={guide.id} className="guide-card guide-card--v3">
+              <div key={guide.id} className="guide-card guide-card--v4">
                 {!isGuest && (
                   <button
-                    className="guide-card-delete guide-card-delete--floating"
+                    className="guide-card-delete guide-card-delete--inline"
                     onClick={() => onDeleteGuide(guide.id)}
                     disabled={deleting === guide.id}
                     title={t.dash.deleteGuide}
@@ -480,8 +480,13 @@ function GuidesView({
                     )}
                   </button>
                 )}
-                <Link href={href} className="guide-card-shell">
-                  <div className="guide-card-copy">
+                <Link href={href} className="guide-card-shell guide-card-shell--grid">
+                  <div className="guide-card-thumb-col">
+                    <div className="guide-card-thumb-media">
+                      <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
+                    </div>
+                  </div>
+                  <div className="guide-card-copy guide-card-copy--grid">
                     <div className="guide-card-meta">
                       <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
                       <span className="guide-card-time">
@@ -505,32 +510,16 @@ function GuidesView({
                       <p className="guide-card-repair-title">{guide.title}</p>
                     </div>
                   </div>
-                  <div className="guide-card-support">
-                    <div className="guide-card-preview">
-                      <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
-                    </div>
-                    <div className="guide-card-repair-cue">
-                      <span className="guide-card-repair-label">{t.guideForm.repairLabel}</span>
-                      <div className="guide-card-repair-line">
-                        <span className={`guide-card-repair-icon guide-card-repair-icon--${repairCue}`}>
-                          <RepairPartIcon label={partName} title={guide.title} />
-                        </span>
-                        <p className="guide-card-repair-name">{partName}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="guide-card-tags">
-                    <span className="guide-card-tag guide-card-tag--repair">
-                      <span className={`guide-card-tag-icon guide-card-tag-icon--${repairCue}`}>
-                        <RepairPartIcon label={partName} title={guide.title} size={14} />
+                  <div className="guide-card-aside">
+                    <span className="guide-card-repair-label">{t.guideForm.repairLabel}</span>
+                    <div className="guide-card-repair-chip">
+                      <span className={`guide-card-repair-icon guide-card-repair-icon--${repairCue}`}>
+                        <RepairPartIcon label={partName} title={guide.title} />
                       </span>
-                      <span className="guide-card-tag-stack">
-                        <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
-                        <span className="guide-card-tag-value">{partName}</span>
-                      </span>
-                    </span>
+                      <p className="guide-card-repair-name">{partName}</p>
+                    </div>
                     {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
-                      <span className="guide-card-tag guide-card-tag--accent">{t.dash.sampleGuides}</span>
+                      <span className="guide-card-inline-pill">{t.dash.sampleGuides}</span>
                     )}
                   </div>
                 </Link>
@@ -593,39 +582,41 @@ function GarageView({ vehicles, loading }: { vehicles: VehicleWithHistory[]; loa
         <div className="vehicle-list">
           {merged.map((v) => (
             <div key={v.id} className="vehicle-card vehicle-card--v2">
-              <div className="vehicle-card-copy vehicle-card-copy--v2">
+              <div className="vehicle-card-media">
+                <VehicleImage vehicleId={v.id} imageUrl={v.imageUrl} model={v.model} />
+              </div>
+              <div className="vehicle-card-body">
                 <div className="vehicle-card-head">
-                  <p className="vehicle-card-model">{v.model}</p>
+                  <div className="vehicle-card-copy vehicle-card-copy--v2">
+                    <p className="vehicle-card-model">{v.model}</p>
+                    {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}
+                  </div>
                   <div className="vehicle-card-counts">
                     <span className="vehicle-count-pill">{v.guides.length} {v.guides.length !== 1 ? t.garage.guidesCount : t.garage.guideCount}</span>
                   </div>
                 </div>
-                {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}
+                {v.guides[0] && (
+                  <div className="vehicle-card-tags">
+                    <span className="guide-card-tag">
+                      <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
+                      <span className="guide-card-tag-value">{v.guides[0].part.name}</span>
+                    </span>
+                  </div>
+                )}
+                {v.guides.length > 0 && (
+                  <div className="vehicle-history">
+                    {v.guides.slice(0, 3).map((g) => (
+                      <Link key={g.id} href={`/guides/${g.id}`} className="vehicle-history-item">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <rect x="2" y="1" width="8" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                          <path d="M4 4h4M4 6.5h4M4 9h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                        </svg>
+                        {g.title}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="vehicle-card-media">
-                <VehicleImage vehicleId={v.id} imageUrl={v.imageUrl} model={v.model} />
-              </div>
-              {v.guides[0] && (
-                <div className="vehicle-card-tags">
-                  <span className="guide-card-tag">
-                    <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
-                    <span className="guide-card-tag-value">{v.guides[0].part.name}</span>
-                  </span>
-                </div>
-              )}
-              {v.guides.length > 0 && (
-                <div className="vehicle-history">
-                  {v.guides.slice(0, 3).map((g) => (
-                    <Link key={g.id} href={`/guides/${g.id}`} className="vehicle-history-item">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <rect x="2" y="1" width="8" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
-                        <path d="M4 4h4M4 6.5h4M4 9h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                      </svg>
-                      {g.title}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
