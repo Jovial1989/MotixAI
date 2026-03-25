@@ -72,6 +72,108 @@ function detectVehicleType(model: string | undefined | null): 'suv' | 'truck' | 
   return 'sedan';
 }
 
+type RepairCueType =
+  | 'oil'
+  | 'brakes'
+  | 'turbo'
+  | 'battery'
+  | 'filter'
+  | 'cooling'
+  | 'suspension'
+  | 'engine'
+  | 'generic';
+
+function classifyRepairCue(...parts: Array<string | null | undefined>): RepairCueType {
+  const text = parts.filter(Boolean).join(' ').toLowerCase();
+  if (/brake|гальм|спирач|колодк/.test(text)) return 'brakes';
+  if (/turbo|турбо/.test(text)) return 'turbo';
+  if (/battery|акум|батер/.test(text)) return 'battery';
+  if (/filter|фільтр|филт/.test(text)) return 'filter';
+  if (/cool|охолод|охлаж/.test(text)) return 'cooling';
+  if (/suspension|shock|strut|підвіс|окач/.test(text)) return 'suspension';
+  if (/oil|олив|маст|масл/.test(text)) return 'oil';
+  if (/engine|двиг/.test(text)) return 'engine';
+  return 'generic';
+}
+
+function RepairPartIcon({
+  label,
+  title,
+  size = 18,
+  className,
+}: {
+  label?: string | null;
+  title?: string | null;
+  size?: number;
+  className?: string;
+}) {
+  const type = classifyRepairCue(label, title);
+
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      width={size}
+      height={size}
+      className={className}
+      aria-hidden="true"
+    >
+      {type === 'oil' && (
+        <>
+          <path d="M10 2.8S6.3 7 6.3 10.2a3.7 3.7 0 1 0 7.4 0C13.7 7 10 2.8 10 2.8Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8.4 11.5c.4.8 1.1 1.2 1.9 1.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {type === 'brakes' && (
+        <>
+          <circle cx="10" cy="10" r="5.5" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="10" cy="10" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M14.7 6.8h1.3a1 1 0 0 1 1 1v4.4a1 1 0 0 1-1 1h-1.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
+      {type === 'turbo' && (
+        <>
+          <path d="M10 4.3a5.7 5.7 0 1 0 5.7 5.7h-3.5A2.2 2.2 0 1 1 10 7.8V4.3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M10.2 10.1 14 6.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {type === 'battery' && (
+        <>
+          <rect x="3" y="6" width="12" height="8" rx="1.8" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M15 8.5h1.7v3H15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6.2 10h2.7M7.55 8.65v2.7M10.9 10h2.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {type === 'filter' && (
+        <path d="M4 5h12l-4.4 5v4.1l-3.2-1.8V10L4 5Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+      {type === 'cooling' && (
+        <>
+          <circle cx="10" cy="10" r="1.4" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M10 4.3c1.7 0 2.4 2 1.4 3.2-.5.6-1.2.9-1.4 1.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M15 8.2c.8 1.5-.8 3-2.4 2.7-.8-.2-1.4-.7-1.8-1.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M8.2 15.2c-1.7 0-2.4-2-1.4-3.2.5-.6 1.2-1 1.4-1.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {type === 'suspension' && (
+        <>
+          <path d="M7 4.2h6M7 15.8h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M8.4 4.2v3.2l3.2 2.6-3.2 2.6v3.2M11.6 4.2v3.2L8.4 10l3.2 2.6v3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
+      {type === 'engine' && (
+        <>
+          <path d="M5 7.2h7l1.6-2H16v8h-2.4L12 14.8H5V7.2Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5 9H3.3M5 12H3.3M12 7.2V5.3M10.1 14.8v1.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {type === 'generic' && (
+        <path d="M13.4 4.1a2.6 2.6 0 0 0-3.4 3.3l-4.6 4.6a1.2 1.2 0 1 0 1.6 1.7l4.6-4.6a2.6 2.6 0 0 0 3.3-3.4l-1.8 1.8-1.6-1.6 1.9-1.8Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
+  );
+}
+
 // Track in-flight image generation requests to avoid duplicates
 const vehicleImageRequests = new Map<string, Promise<string | null>>();
 
@@ -356,6 +458,7 @@ function GuidesView({
             const href = guideHref(guide);
             const vehicleModel = guide.vehicle?.model ?? '—';
             const partName = guide.part?.name ?? '—';
+            const repairCue = classifyRepairCue(partName, guide.title);
             const statusTitle = dot === 'yellow'
               ? t.dash.imagesGenerating
               : dot === 'red'
@@ -402,13 +505,29 @@ function GuidesView({
                       <p className="guide-card-repair-title">{guide.title}</p>
                     </div>
                   </div>
-                  <div className="guide-card-media">
-                    <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
+                  <div className="guide-card-support">
+                    <div className="guide-card-preview">
+                      <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
+                    </div>
+                    <div className="guide-card-repair-cue">
+                      <span className="guide-card-repair-label">{t.guideForm.repairLabel}</span>
+                      <div className="guide-card-repair-line">
+                        <span className={`guide-card-repair-icon guide-card-repair-icon--${repairCue}`}>
+                          <RepairPartIcon label={partName} title={guide.title} />
+                        </span>
+                        <p className="guide-card-repair-name">{partName}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="guide-card-tags">
-                    <span className="guide-card-tag">
-                      <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
-                      <span className="guide-card-tag-value">{partName}</span>
+                    <span className="guide-card-tag guide-card-tag--repair">
+                      <span className={`guide-card-tag-icon guide-card-tag-icon--${repairCue}`}>
+                        <RepairPartIcon label={partName} title={guide.title} size={14} />
+                      </span>
+                      <span className="guide-card-tag-stack">
+                        <span className="guide-card-tag-label">{t.guideForm.repairLabel}</span>
+                        <span className="guide-card-tag-value">{partName}</span>
+                      </span>
                     </span>
                     {isGuest && isPremiumGuideThumb(guide.steps?.[0]?.imageUrl) && (
                       <span className="guide-card-tag guide-card-tag--accent">{t.dash.sampleGuides}</span>

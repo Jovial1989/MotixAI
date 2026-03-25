@@ -441,7 +441,8 @@ class _GuideCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.access_time, size: 13, color: kTextMuted),
+                            Icon(Icons.access_time,
+                                size: 13, color: kTextMuted),
                             const SizedBox(width: s4),
                             Flexible(
                               child: Text(
@@ -461,7 +462,8 @@ class _GuideCard extends StatelessWidget {
                 if (!isGuest && onDelete != null)
                   GestureDetector(
                     onTap: onDelete,
-                    child: Icon(Icons.delete_outline, size: 18, color: kTextMuted),
+                    child:
+                        Icon(Icons.delete_outline, size: 18, color: kTextMuted),
                   ),
               ],
             ),
@@ -472,22 +474,7 @@ class _GuideCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: s14),
-            GuideVehicleIllustration(
-              vehicleModel: guide.vehicle.model,
-              repairLabel: guide.part.name,
-              width: double.infinity,
-              height: 156,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            ),
-            const SizedBox(height: s14),
-            Text(l.repair, style: tsLabel),
             const SizedBox(height: 6),
-            RepairMetaPill(
-              label: guide.part.name,
-              iconSize: 13,
-            ),
-            const SizedBox(height: s10),
             Text(
               guide.title,
               style: tsBody.copyWith(
@@ -497,6 +484,91 @@ class _GuideCard extends StatelessWidget {
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: s14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 124,
+                  child: GuideVehicleIllustration(
+                    vehicleModel: guide.vehicle.model,
+                    repairLabel: guide.part.name,
+                    width: double.infinity,
+                    height: 92,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: s12),
+                Expanded(
+                  child: Container(
+                    height: 92,
+                    padding: const EdgeInsets.all(s12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: kBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: kPrimaryLight,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: kPrimaryBorder),
+                              ),
+                              child: Center(
+                                child: RepairTypeIcon(
+                                  label: '${guide.part.name} ${guide.title}',
+                                  size: 15,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: s8),
+                            Expanded(
+                              child: Text(l.repair, style: tsLabel),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: s10),
+                        Text(
+                          guide.part.name,
+                          style: tsSmallBold.copyWith(
+                            fontSize: 14,
+                            height: 1.35,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: s12),
+            Wrap(
+              spacing: s8,
+              runSpacing: s8,
+              children: [
+                RepairMetaPill(
+                  label: guide.part.name,
+                  iconSize: 12,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: s10,
+                    vertical: 6,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -537,26 +609,14 @@ class _GuideSkeleton extends StatelessWidget {
             const SizedBox(height: s14),
             const MxSkeleton(
               width: double.infinity,
-              height: 156,
+              height: 92,
               borderRadius: kRadiusMd,
             ),
-            const SizedBox(height: s14),
+            const SizedBox(height: s12),
             const MxSkeleton(
-              width: 58,
-              height: 12,
-              borderRadius: kRadiusSm,
-            ),
-            const SizedBox(height: s8),
-            const MxSkeleton(
-              width: 148,
+              width: 136,
               height: 28,
               borderRadius: kRadiusFull,
-            ),
-            const SizedBox(height: s10),
-            const MxSkeleton(
-              width: double.infinity,
-              height: 18,
-              borderRadius: kRadiusSm,
             ),
           ],
         ),

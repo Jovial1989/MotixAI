@@ -65,6 +65,25 @@ class RepairMetaPill extends StatelessWidget {
   }
 }
 
+class RepairTypeIcon extends StatelessWidget {
+  final String label;
+  final double size;
+
+  const RepairTypeIcon({
+    super.key,
+    required this.label,
+    this.size = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _RepairIcon(
+      type: _classifyRepair(label),
+      size: size,
+    );
+  }
+}
+
 class GuideVehicleIllustration extends StatelessWidget {
   final String vehicleModel;
   final String repairLabel;
@@ -324,8 +343,7 @@ class _VehicleIllustrationPainter extends CustomPainter {
     // Anchor circle
     canvas.drawCircle(anchor, w * 0.030, accent);
     // Tag dot
-    canvas.drawCircle(
-        tag, w * 0.016, accent..style = PaintingStyle.fill);
+    canvas.drawCircle(tag, w * 0.016, accent..style = PaintingStyle.fill);
     accent.style = PaintingStyle.stroke;
 
     // Small crosshair at top-left
@@ -341,8 +359,7 @@ class _VehicleIllustrationPainter extends CustomPainter {
     );
   }
 
-  Offset _repairAnchor(
-      Size size, double leftWX, double rightWX, double baseY) {
+  Offset _repairAnchor(Size size, double leftWX, double rightWX, double baseY) {
     final w = size.width;
     final h = size.height;
     switch (repairType) {
@@ -418,13 +435,19 @@ _RepairVisualType _classifyRepair(String label) {
 
 _VehicleSilhouetteType _classifyVehicle(String model) {
   final text = model.toLowerCase();
-  if (RegExp(r'van|transit|sprinter|metris|promaster|express|savana|caravan|sienna|odyssey|pacifica|carnival|staria|transporter|crafter|vito|ducato|bus').hasMatch(text)) {
+  if (RegExp(
+          r'van|transit|sprinter|metris|promaster|express|savana|caravan|sienna|odyssey|pacifica|carnival|staria|transporter|crafter|vito|ducato|bus')
+      .hasMatch(text)) {
     return _VehicleSilhouetteType.van;
   }
-  if (RegExp(r'pickup|hilux|ranger|f-150|f150|silverado|ram|tundra|tacoma|colorado|frontier|titan|ridgeline|maverick|gladiator|navara|amarok|l200|triton').hasMatch(text)) {
+  if (RegExp(
+          r'pickup|hilux|ranger|f-150|f150|silverado|ram|tundra|tacoma|colorado|frontier|titan|ridgeline|maverick|gladiator|navara|amarok|l200|triton')
+      .hasMatch(text)) {
     return _VehicleSilhouetteType.pickup;
   }
-  if (RegExp(r'suv|land cruiser|cruiser|4runner|rav4|qashqai|x[357]|tucson|sportage|cx-|tiguan|escape|explorer|cherokee|wrangler|outlander|forester|pilot|highlander|tahoe|suburban|blazer|bronco|defender|range rover|discovery|cayenne|q[357]|gl[cse]|xc[469]0|yaris cross').hasMatch(text)) {
+  if (RegExp(
+          r'suv|land cruiser|cruiser|4runner|rav4|qashqai|x[357]|tucson|sportage|cx-|tiguan|escape|explorer|cherokee|wrangler|outlander|forester|pilot|highlander|tahoe|suburban|blazer|bronco|defender|range rover|discovery|cayenne|q[357]|gl[cse]|xc[469]0|yaris cross')
+      .hasMatch(text)) {
     return _VehicleSilhouetteType.suv;
   }
   return _VehicleSilhouetteType.sedan;
