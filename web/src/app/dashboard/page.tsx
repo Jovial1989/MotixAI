@@ -72,7 +72,47 @@ function detectVehicleType(model: string | undefined | null): 'suv' | 'truck' | 
   return 'sedan';
 }
 
-function VehicleTypeIcon({ model }: { model?: string | null }) {
+// Track in-flight image generation requests to avoid duplicates
+const vehicleImageRequests = new Map<string, Promise<string | null>>();
+
+function VehicleImage({ vehicleId, imageUrl, model }: { vehicleId?: string; imageUrl?: string | null; model?: string | null }) {
+  const [src, setSrc] = useState<string | null>(imageUrl ?? null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (src || !vehicleId || loading) return;
+    // Lazily trigger image generation if no image exists
+    const existing = vehicleImageRequests.get(vehicleId);
+    if (existing) {
+      existing.then((url) => { if (url) setSrc(url); });
+      return;
+    }
+    setLoading(true);
+    const promise = webApi.generateVehicleImage(vehicleId)
+      .then((res) => { setSrc(res.imageUrl); return res.imageUrl; })
+      .catch(() => null)
+      .finally(() => { setLoading(false); vehicleImageRequests.delete(vehicleId); });
+    vehicleImageRequests.set(vehicleId, promise);
+  }, [vehicleId, src, loading]);
+
+  if (src) {
+    return (
+      <div className="gcard-vehicle-icon">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={model ?? 'Vehicle'} className="gcard-vehicle-img" />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="gcard-vehicle-icon">
+        <span className="gen-spinner" />
+      </div>
+    );
+  }
+
+  // Fallback: simple type-based SVG
   const type = detectVehicleType(model);
   return (
     <div className="gcard-vehicle-icon">
@@ -80,33 +120,24 @@ function VehicleTypeIcon({ model }: { model?: string | null }) {
         {type === 'suv' ? (
           <>
             <path d="M6 20h36M8 20l3-8h10l2 3h10l3-3h4l2 8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <rect x="12" y="10" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1"/>
-            <rect x="25" y="10" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1"/>
             <circle cx="14" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
             <circle cx="36" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
           </>
         ) : type === 'truck' ? (
           <>
             <path d="M4 20h40M6 20l2-6h14v6M22 14h8l4 6h6" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <rect x="8" y="11" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
-            <rect x="24" y="10" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1"/>
             <circle cx="12" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
             <circle cx="38" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
           </>
         ) : type === 'van' ? (
           <>
             <path d="M5 20h38M7 20V10a2 2 0 012-2h18v12M27 8h6l4 5v7h4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <rect x="10" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
-            <rect x="17" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
-            <rect x="29" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
             <circle cx="13" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
             <circle cx="37" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
           </>
         ) : (
           <>
             <path d="M5 20h38M8 20l2-5h6l3-5h10l3 5h6l2 5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <rect x="14" y="9" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
-            <rect x="24" y="9" width="7" height="4" rx="1" stroke="currentColor" strokeWidth="1"/>
             <circle cx="13" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
             <circle cx="37" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
           </>
@@ -328,7 +359,7 @@ function GuidesView({
                 {!isGuest && dot && (
                   <div className={`gcard-dot gcard-dot--${dot}`} title={dot === 'yellow' ? t.dash.imagesGenerating : dot === 'red' ? t.dash.imagesFailed : t.dash.ready} />
                 )}
-                <VehicleTypeIcon model={guide.vehicle?.model} />
+                <VehicleImage vehicleId={guide.vehicle?.id} imageUrl={guide.vehicle?.imageUrl} model={guide.vehicle?.model} />
                 <Link href={href} className="guide-card-main">
                   <div className="guide-card-meta">
                     <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
@@ -435,7 +466,7 @@ function GarageView({ vehicles, loading }: { vehicles: VehicleWithHistory[]; loa
           {merged.map((v) => (
             <div key={v.id} className="vehicle-card">
               <div className="vehicle-card-head">
-                <VehicleTypeIcon model={v.model} />
+                <VehicleImage vehicleId={v.id} imageUrl={v.imageUrl} model={v.model} />
                 <div>
                   <p className="vehicle-card-model">{v.model}</p>
                   {v.vin && <p className="vehicle-card-vin">VIN: {v.vin}</p>}

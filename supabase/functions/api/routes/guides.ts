@@ -137,6 +137,7 @@ function formatGuideResponse(
       id: guide.vid,
       model: guide.vehicle_model,
       vin: guide.vehicle_vin,
+      imageUrl: guide.vehicle_image_url ?? null,
     },
     part: {
       id: guide.pid,
@@ -151,7 +152,7 @@ function formatGuideResponse(
 
 async function fetchGuideRows(sql: ReturnType<typeof getDb>, guideId: string) {
   const guides = await sql`
-    SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
+    SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin, v."imageUrl" as vehicle_image_url,
            p.id as pid, p.name as part_name, p."oemNumber" as part_oem
     FROM "RepairGuide" g
     JOIN "Vehicle" v ON v.id = g."vehicleId"
@@ -553,7 +554,7 @@ export async function handleGuides(
       : sql`"userId" = ${user.sub}`;
 
     const guides = await sql`
-      SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
+      SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin, v."imageUrl" as vehicle_image_url,
              p.name as part_name, p."oemNumber" as part_oem
       FROM "RepairGuide" g
       JOIN "Vehicle" v ON v.id = g."vehicleId"
@@ -566,7 +567,7 @@ export async function handleGuides(
     if (guides.length === 0 && user.role !== "GUEST") {
       await seedExampleGuides(user.sub, user.tenantId).catch(() => {});
       const seeded = await sql`
-        SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
+        SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin, v."imageUrl" as vehicle_image_url,
                p.name as part_name, p."oemNumber" as part_oem
         FROM "RepairGuide" g
         JOIN "Vehicle" v ON v.id = g."vehicleId"
@@ -582,7 +583,7 @@ export async function handleGuides(
         `;
         return {
           ...g,
-          vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin },
+          vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin, imageUrl: g.vehicle_image_url ?? null },
           part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
           steps: stepStatus,
         };
@@ -615,7 +616,7 @@ export async function handleGuides(
       `;
       return {
         ...g,
-        vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin },
+        vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin, imageUrl: g.vehicle_image_url ?? null },
         part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
         steps: stepStatus,
       };

@@ -40,6 +40,7 @@ export interface Vehicle {
   model: string;
   manufacturer?: string | null;
   year?: number | null;
+  imageUrl?: string | null;
 }
 
 export interface VehicleWithHistory extends Vehicle {

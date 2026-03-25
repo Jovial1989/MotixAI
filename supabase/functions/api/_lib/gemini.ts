@@ -543,6 +543,55 @@ ${JSON.stringify(guide)}`;
   }
 }
 
+// ── Vehicle illustration generation ──────────────────────────────────────────
+
+const VEHICLE_IMAGE_TIMEOUT_MS = 25_000;
+
+export async function generateVehicleImage(vehicleModel: string): Promise<string> {
+  const client = getClient();
+  if (!client) throw new Error("Gemini image generation is not configured");
+
+  const prompt = `Clean, precise technical illustration of a ${vehicleModel}.
+
+Requirements:
+- Side profile view, slight 3/4 perspective
+- Proportions and shape must accurately match the ${vehicleModel} body style
+- Include distinctive design features: grille shape, headlight style, body lines, wheel arches
+- Minimalist clean style — crisp black outlines on pure white background
+- Light grey fill for glass/windows only
+- No background, no ground shadow, no environment
+- No text, no labels, no badges, no watermark
+- No person, no driver
+- Professional automotive technical illustration quality
+- Single vehicle only, cleanly framed with margin
+- Output size: compact, suitable for a thumbnail card`;
+
+  console.log(`[vehicle-img] generating illustration for: ${vehicleModel}`);
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Vehicle image timed out after ${VEHICLE_IMAGE_TIMEOUT_MS}ms`)), VEHICLE_IMAGE_TIMEOUT_MS),
+  );
+
+  const result = await Promise.race([
+    client.models.generateContent({
+      model: "gemini-2.5-flash-image",
+      contents: prompt,
+      config: { responseModalities: ["IMAGE", "TEXT"] },
+    }),
+    timeoutPromise,
+  ]);
+
+  for (const part of result.candidates?.[0]?.content?.parts ?? []) {
+    if (part.inlineData?.data) {
+      const mime = part.inlineData.mimeType ?? "image/png";
+      console.log(`[vehicle-img] got image for ${vehicleModel}, mime=${mime}`);
+      return `data:${mime};base64,${part.inlineData.data}`;
+    }
+  }
+
+  throw new Error("No image data returned from Gemini for vehicle");
+}
+
 // ── Legacy single-call generator (backward compat) ───────────────────────────
 
 export async function generateStepImage(prompt: string): Promise<string> {

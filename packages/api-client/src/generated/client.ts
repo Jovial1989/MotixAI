@@ -243,6 +243,12 @@ export class MotixApiClient {
     return this.request<VehicleWithHistory[]>(`/vehicles${qs}`);
   }
 
+  generateVehicleImage(vehicleId: string) {
+    return this.request<{ imageUrl: string }>(`/vehicles/${vehicleId}/generate-image`, {
+      method: 'POST',
+    });
+  }
+
   // ── Enterprise ────────────────────────────────────────────────────────────
 
   uploadManual(body: UploadManualInput) {
