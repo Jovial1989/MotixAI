@@ -106,7 +106,17 @@ const UK_AUTOMOTIVE_REPLACEMENTS: Array<{ pattern: RegExp; replacement: string }
   { pattern: /олії/gi, replacement: "масла" },
   { pattern: /олією/gi, replacement: "маслом" },
   { pattern: /масляного фильтра/gi, replacement: "масляного фільтра" },
-  { pattern: /маслян(ий|ого|ому|им|і)/gi, replacement: "масля$1" },
+];
+
+const UK_AUTOMOTIVE_CLEANUPS: Array<{ pattern: RegExp; replacement: string }> = [
+  { pattern: /масляого/gi, replacement: "масляного" },
+  { pattern: /відпрацьовану масло/gi, replacement: "відпрацьоване масло" },
+  { pattern: /свіжу масло/gi, replacement: "свіже масло" },
+  { pattern: /нову масло/gi, replacement: "нове масло" },
+  { pattern: /чисту масло/gi, replacement: "чисте масло" },
+  { pattern: /щоб масло розріділа та злилася повніше/gi, replacement: "щоб масло розрідилося та злилося повніше" },
+  { pattern: /масло розріділа/gi, replacement: "масло розрідилося" },
+  { pattern: /масло злилася/gi, replacement: "масло злилося" },
 ];
 
 export function normalizeWorkshopTerminologyText(value: string, language?: string): string {
@@ -122,6 +132,9 @@ export function normalizeWorkshopTerminologyText(value: string, language?: strin
       }
       return preserveCase(match, replacement);
     });
+  }
+  for (const { pattern, replacement } of UK_AUTOMOTIVE_CLEANUPS) {
+    next = next.replace(pattern, (match) => preserveCase(match, replacement));
   }
   return next;
 }
