@@ -7,6 +7,7 @@ import { webApi } from '@/lib/api';
 import { useT, getLocale } from '@/lib/i18n';
 import AuthGuard from '@/app/_auth-guard';
 import SettingsLanguageSelector from '@/app/_settings-language-selector';
+import VehicleImage from '@/app/_vehicle-image';
 import SmartGuideForm from './_guide-form';
 import Sidebar, { type DashView } from './_sidebar';
 
@@ -61,15 +62,6 @@ function difficultyBadgeClass(value: string): string {
 function isPremiumGuideThumb(url: string | null | undefined): boolean {
   if (!url) return false;
   return !url.includes('/demo-guides/') && !url.includes('placehold.co') && !url.includes('fallback-illustration');
-}
-
-function detectVehicleType(model: string | undefined | null): 'suv' | 'truck' | 'van' | 'sedan' {
-  if (!model) return 'sedan';
-  const m = model.toLowerCase();
-  if (/suv|land cruiser|4runner|rav4|qashqai|x3|x5|x7|tucson|sportage|cx-|tiguan|escape|explorer|cherokee|wrangler|outlander|forester|pilot|highlander|tahoe|suburban|blazer|bronco|defender|range rover|discovery|cayenne|q[357]|glc|gle|gls|xc[469]0/i.test(m)) return 'suv';
-  if (/truck|pickup|f-150|f150|f-250|silverado|ram|tundra|tacoma|ranger|colorado|frontier|titan|ridgeline|maverick|gladiator|hilux|navara|amarok|l200|triton/i.test(m)) return 'truck';
-  if (/van|transit|sprinter|metris|promaster|express|savana|caravan|sienna|odyssey|pacifica|carnival|staria|transporter|crafter|vito|ducato/i.test(m)) return 'van';
-  return 'sedan';
 }
 
 type RepairCueType =
@@ -174,98 +166,18 @@ function RepairPartIcon({
   );
 }
 
-// Track in-flight image generation requests to avoid duplicates
-const vehicleImageRequests = new Map<string, Promise<string | null>>();
-
-function VehicleImage({ vehicleId, imageUrl, model }: { vehicleId?: string; imageUrl?: string | null; model?: string | null }) {
-  const [src, setSrc] = useState<string | null>(imageUrl ?? null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (src || !vehicleId || loading) return;
-    // Lazily trigger image generation if no image exists
-    const existing = vehicleImageRequests.get(vehicleId);
-    if (existing) {
-      existing.then((url) => { if (url) setSrc(url); });
-      return;
-    }
-    setLoading(true);
-    const promise = webApi.generateVehicleImage(vehicleId)
-      .then((res) => { setSrc(res.imageUrl); return res.imageUrl; })
-      .catch(() => null)
-      .finally(() => { setLoading(false); vehicleImageRequests.delete(vehicleId); });
-    vehicleImageRequests.set(vehicleId, promise);
-  }, [vehicleId, src, loading]);
-
-  if (src) {
-    return (
-      <div className="gcard-vehicle-icon">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={model ?? 'Vehicle'} className="gcard-vehicle-img" />
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="gcard-vehicle-icon">
-        <span className="gen-spinner" />
-      </div>
-    );
-  }
-
-  // Fallback: simple type-based SVG
-  const type = detectVehicleType(model);
-  return (
-    <div className="gcard-vehicle-icon">
-      <svg viewBox="0 0 48 28" fill="none" className="gcard-vehicle-svg">
-        {type === 'suv' ? (
-          <>
-            <path d="M6 20h36M8 20l3-8h10l2 3h10l3-3h4l2 8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <circle cx="14" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-            <circle cx="36" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-          </>
-        ) : type === 'truck' ? (
-          <>
-            <path d="M4 20h40M6 20l2-6h14v6M22 14h8l4 6h6" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <circle cx="12" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-            <circle cx="38" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-          </>
-        ) : type === 'van' ? (
-          <>
-            <path d="M5 20h38M7 20V10a2 2 0 012-2h18v12M27 8h6l4 5v7h4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <circle cx="13" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-            <circle cx="37" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-          </>
-        ) : (
-          <>
-            <path d="M5 20h38M8 20l2-5h6l3-5h10l3 5h6l2 5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-            <circle cx="13" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-            <circle cx="37" cy="22" r="3" stroke="currentColor" strokeWidth="1.3"/>
-          </>
-        )}
-      </svg>
-    </div>
-  );
-}
-
 // ── Guide list with search + filter ──────────────────────────────────────────
 
 function GuidesView({
-  guides, loading, error, onDeleteGuide, onNewGuide, deleting, isEnterprise, isGuest, analytics,
+  guides, loading, error, onDeleteGuide, onNewGuide, deleting, isGuest, analytics,
 }: {
   guides: RepairGuide[];
   loading: boolean;
   error: string | null;
-  submitting: boolean;
-  guideError: string | null;
-  vehicles: VehicleWithHistory[];
   analytics: AnalyticsData | null;
-  onCreateGuide: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) => Promise<void>;
   onDeleteGuide: (id: string) => void;
   onNewGuide: () => void;
   deleting: string | null;
-  isEnterprise: boolean;
   isGuest?: boolean;
 }) {
   const t = useT();
@@ -338,7 +250,6 @@ function GuidesView({
             { label: t.dash.thisMonth, value: String(analytics.guidesThisMonth) },
             { label: t.dash.timeSaved, value: `${Math.round(analytics.timeSavedMinutes / 60)}h` },
             { label: t.common.vehicles, value: String(analytics.activeVehicles) },
-            { label: t.dash.topRepair, value: analytics.mostCommonRepairs[0]?.partName ?? '—' },
           ].map((w) => (
             <div key={w.label} className="analytics-widget">
               <p className="analytics-value">{w.value}</p>
@@ -466,20 +377,6 @@ function GuidesView({
                 : t.dash.ready;
             return (
               <div key={guide.id} className="guide-card guide-card--v4">
-                {!isGuest && (
-                  <button
-                    className="guide-card-delete guide-card-delete--inline"
-                    onClick={() => onDeleteGuide(guide.id)}
-                    disabled={deleting === guide.id}
-                    title={t.dash.deleteGuide}
-                  >
-                    {deleting === guide.id ? <span className="gen-spinner" /> : (
-                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                        <path d="M2 4h11M6 4V2.5h3V4M5 4v8a1 1 0 001 1h3a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </button>
-                )}
                 <Link href={href} className="guide-card-shell guide-card-shell--grid">
                   <div className="guide-card-thumb-col">
                     <div className="guide-card-thumb-media">
@@ -523,6 +420,15 @@ function GuidesView({
                     )}
                   </div>
                 </Link>
+                {!isGuest && (
+                  <button
+                    className="guide-card-text-action guide-card-text-action--floating"
+                    onClick={() => onDeleteGuide(guide.id)}
+                    disabled={deleting === guide.id}
+                  >
+                    {deleting === guide.id ? t.common.loading : t.dash.deleteGuide}
+                  </button>
+                )}
               </div>
             );
           })
@@ -1347,7 +1253,17 @@ function NewGuideView({
 }: {
   submitting: boolean;
   guideError: string | null;
-  onSubmit: (data: { vehicleModel: string; vin?: string; partName: string; oemNumber?: string }) => Promise<void>;
+  onSubmit: (data: {
+    vehicleModel: string;
+    vin?: string;
+    partName: string;
+    oemNumber?: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    manufacturer?: string;
+    generation?: string;
+  }) => Promise<void>;
   onBack: () => void;
   initialQuery?: string;
 }) {
@@ -1489,17 +1405,27 @@ function DashboardInner() {
     vin?: string;
     partName: string;
     oemNumber?: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    manufacturer?: string;
+    generation?: string;
   }) {
     setSubmitting(true);
     setGuideError(null);
     try {
       const created = await webApi.createGuide({
-            vin: data.vin ?? '',
-            vehicleModel: data.vehicleModel,
-            partName: data.partName,
-            oemNumber: data.oemNumber ?? '',
-            language: getLocale(),
-          });
+        vin: data.vin ?? '',
+        vehicleModel: data.vehicleModel,
+        partName: data.partName,
+        oemNumber: data.oemNumber ?? '',
+        make: data.make,
+        model: data.model,
+        year: data.year,
+        manufacturer: data.manufacturer,
+        generation: data.generation,
+        language: getLocale(),
+      });
       setGuides((prev) => [created, ...prev]);
       webApi.listVehicles({ language: getLocale() }).then(setVehicles).catch(() => {});
       webApi.getAnalytics(getLocale()).then(setAnalytics).catch(() => {});
@@ -1515,6 +1441,8 @@ function DashboardInner() {
     try {
       await webApi.deleteGuide(id);
       setGuides((prev) => prev.filter((g) => g.id !== id));
+      webApi.listVehicles({ language: getLocale() }).then(setVehicles).catch(() => {});
+      webApi.getAnalytics(getLocale()).then(setAnalytics).catch(() => {});
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete guide');
     } finally { setDeleting(null); }
@@ -1575,15 +1503,10 @@ function DashboardInner() {
             guides={guides}
             loading={loading}
             error={error}
-            submitting={submitting}
-            guideError={guideError}
-            vehicles={vehicles}
             analytics={analytics}
-            onCreateGuide={createGuide}
             onDeleteGuide={deleteGuide}
             onNewGuide={() => setView('new-guide')}
             deleting={deleting}
-            isEnterprise={isEnterprise}
             isGuest={isGuest}
           />
         )}

@@ -11,6 +11,11 @@ export interface GuideFormData {
   vin?: string;
   partName: string;
   oemNumber?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  manufacturer?: string;
+  generation?: string;
 }
 
 interface Props {
@@ -114,7 +119,16 @@ export default function SmartGuideForm({ onSubmit, submitting, error, initialQue
   }
 
   async function handleSubmit() {
-    await onSubmit({ vehicleModel, vin: vinForSubmit || undefined, partName: partName.trim(), oemNumber: oemNumber.trim() || undefined });
+    await onSubmit({
+      vehicleModel,
+      vin: vinForSubmit || undefined,
+      partName: partName.trim(),
+      oemNumber: oemNumber.trim() || undefined,
+      make: idMode === 'manual' ? selMake || undefined : decodedVin?.Make || undefined,
+      model: idMode === 'manual' ? selModel || undefined : decodedVin?.Model || undefined,
+      year: idMode === 'manual' ? (selYear ? Number(selYear) : undefined) : (decodedVin?.ModelYear ? Number(decodedVin.ModelYear) : undefined),
+      manufacturer: idMode === 'vin' ? decodedVin?.Manufacturer || undefined : selMake || undefined,
+    });
   }
 
   // ── Step 1 ───────────────────────────────────────────────────────────────

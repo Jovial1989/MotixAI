@@ -37,6 +37,7 @@ export interface Vehicle {
   model: string;
   manufacturer?: string | null;
   year?: number | null;
+  generation?: string | null;
   imageUrl?: string | null;
 }
 
@@ -165,6 +166,11 @@ export interface ManualDocument {
 export interface CreateGuideInput {
   vin?: string;
   vehicleModel?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  manufacturer?: string;
+  generation?: string;
   partName: string;
   oemNumber?: string;
   language?: string;

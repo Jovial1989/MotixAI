@@ -97,6 +97,9 @@ model Vehicle {
   model        String
   manufacturer String?
   year         Int?
+  generation   String?
+  imageCacheKey String?
+  imageUrl     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -106,6 +109,36 @@ model Vehicle {
   repairJobs RepairJob[]
 
   @@index([tenantId, model])
+}
+
+model VehicleImageCache {
+  id           String   @id
+  cacheKey     String   @unique @map("cache_key")
+  manufacturer String?
+  modelName    String   @map("model_name")
+  year         Int?
+  generation   String?
+  displayName  String   @map("display_name")
+  imageUrl     String   @map("image_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("vehicle_image_cache")
+}
+
+model InstructionImage {
+  id            String   @id
+  instructionId String   @map("instruction_id")
+  stepNumber    Int      @map("step_number")
+  imageUrl      String?  @map("image_url")
+  status        String   @default("none")
+  prompt        String?
+  error         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([instructionId, stepNumber])
+  @@map("instruction_images")
 }
 
 model Part {

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, createRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
+import VehicleImage from '@/app/_vehicle-image';
 import { getLocale, useT } from '@/lib/i18n';
 
 // Guard against AI-generated string "null"/"none" values for optional fields
@@ -46,57 +47,87 @@ function instructionChecklist(instruction: string): string[] {
   return sourceLines;
 }
 
+const ACTIVE_IMAGE_STATUSES = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
+const stepImageStateCache = new Map<string, { status: string; url: string | null }>();
+const stepImageRequests = new Map<string, Promise<{ imageStatus: string; imageUrl: string | null }>>();
+
 /* ── Image viewer ────────────────────────────────────────────────────── */
 function StepImage({ step, canRegenerate = true }: { step: RepairStep; canRegenerate?: boolean }) {
   const t = useT();
-  const [status, setStatus] = useState(step.imageStatus ?? (step.imageUrl ? 'ready' : 'none'));
-  const [url, setUrl]       = useState(step.imageUrl ?? null);
+  const initialState = stepImageStateCache.get(step.id) ?? {
+    status: step.imageStatus ?? (step.imageUrl ? 'ready' : 'none'),
+    url: step.imageUrl ?? null,
+  };
+  const [status, setStatus] = useState(initialState.status);
+  const [url, setUrl]       = useState<string | null>(initialState.url);
   const [fullscreen, setFullscreen] = useState(false);
-  const [triggered, setTriggered]   = useState(Boolean(step.imageUrl));
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function commit(next: { status: string; url: string | null }) {
+    stepImageStateCache.set(step.id, next);
+    setStatus(next.status);
+    setUrl(next.url);
+  }
+
+  async function requestImage(force: boolean) {
+    if (!force) {
+      const pending = stepImageRequests.get(step.id);
+      if (pending) return pending;
+    }
+
+    const promise = webApi.generateStepImage(step.id, force)
+      .then((result) => ({ imageStatus: result.imageStatus, imageUrl: result.imageUrl }))
+      .finally(() => {
+        stepImageRequests.delete(step.id);
+      });
+    stepImageRequests.set(step.id, promise);
+    return promise;
+  }
 
   useEffect(() => {
-    setStatus(step.imageStatus ?? (step.imageUrl ? 'ready' : 'none'));
-    setUrl(step.imageUrl ?? null);
-    setTriggered(Boolean(step.imageUrl));
+    const cached = stepImageStateCache.get(step.id);
+    if (step.imageUrl) {
+      commit({ status: 'ready', url: step.imageUrl });
+      return;
+    }
+    if (!cached || (cached.status === 'none' && step.imageStatus && step.imageStatus !== 'none')) {
+      commit({
+        status: step.imageStatus ?? 'none',
+        url: step.imageUrl ?? null,
+      });
+    }
   }, [step.id, step.imageStatus, step.imageUrl]);
 
   useEffect(() => {
-    if (triggered || (status === 'ready' && url)) return;
-    setTriggered(true);
-    webApi.generateStepImage(step.id, false).then((r) => {
-      setStatus(r.imageStatus as typeof status);
-      if (r.imageUrl) setUrl(r.imageUrl);
+    if (url || status === 'failed' || ACTIVE_IMAGE_STATUSES.includes(status)) return;
+    requestImage(false).then((result) => {
+      commit({
+        status: result.imageStatus,
+        url: result.imageUrl,
+      });
     }).catch(() => {
-      setStatus('failed');
+      commit({ status: 'failed', url: null });
     });
-  }, [status, step.id, triggered, url]);
+  }, [status, step.id, url]);
 
   useEffect(() => {
-    const activeStatuses = ['queued', 'searching_refs', 'analyzing_refs', 'generating'];
-    if (!activeStatuses.includes(status)) {
-      if (timerRef.current) clearInterval(timerRef.current); return;
+    if (!ACTIVE_IMAGE_STATUSES.includes(status)) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
     }
-    timerRef.current = setInterval(async () => {
+    timerRef.current = setTimeout(async () => {
       try {
-        const r = await webApi.generateStepImage(step.id, false);
-        setStatus(r.imageStatus as typeof status);
-        if (r.imageUrl) setUrl(r.imageUrl);
+        const result = await requestImage(false);
+        commit({
+          status: result.imageStatus,
+          url: result.imageUrl,
+        });
       } catch { /* ignore */ }
-    }, 4000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, 2800);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [status, step.id]);
 
-  useEffect(() => {
-    if (status !== 'failed' || url) return;
-    const timer = setTimeout(() => {
-      setStatus('none');
-      setTriggered(false);
-    }, 1800);
-    return () => clearTimeout(timer);
-  }, [status, url]);
-
-  const showLoader = !url && ['none', 'queued', 'searching_refs', 'analyzing_refs', 'generating', 'failed'].includes(status);
+  const showLoader = !url && ['none', 'queued', 'searching_refs', 'analyzing_refs', 'generating'].includes(status);
 
   if (status === 'ready' && url) return (
     <>
@@ -111,12 +142,15 @@ function StepImage({ step, canRegenerate = true }: { step: RepairStep; canRegene
       {canRegenerate && (
         <button className="simg-regen" title={t.guideDetail.regenerate} onClick={(e) => {
           e.stopPropagation();
-          webApi.generateStepImage(step.id, true).then((r) => {
-            setStatus(r.imageStatus as typeof status); if (r.imageUrl) setUrl(r.imageUrl);
+          commit({ status: 'queued', url });
+          requestImage(true).then((result) => {
+            commit({
+              status: result.imageStatus,
+              url: result.imageUrl,
+            });
           }).catch(() => {
-            setStatus('failed');
+            commit({ status: 'failed', url: null });
           });
-          setStatus('queued');
         }}>{`↺ ${t.guideDetail.regenerate}`}</button>
       )}
       {fullscreen && (
@@ -135,6 +169,29 @@ function StepImage({ step, canRegenerate = true }: { step: RepairStep; canRegene
     analyzing_refs: t.guideDetail.analyzingRefs,
     generating:     t.guideDetail.generatingStatus,
   };
+  if (status === 'failed') return (
+    <div className="simg-failed">
+      <p className="simg-failed-copy">{t.guideDetail.imageFailed}</p>
+      {canRegenerate && (
+        <button
+          className="simg-regen"
+          onClick={() => {
+            commit({ status: 'queued', url: null });
+            requestImage(true).then((result) => {
+              commit({
+                status: result.imageStatus,
+                url: result.imageUrl,
+              });
+            }).catch(() => {
+              commit({ status: 'failed', url: null });
+            });
+          }}
+        >
+          {t.guideDetail.retryIllustration}
+        </button>
+      )}
+    </div>
+  );
   if (showLoader || status in statusLabel) return (
     <div className="simg-skeleton">
       <div className="simg-skeleton-shimmer" />
@@ -431,20 +488,38 @@ export default function GuideDetailPage() {
 
       <div className="gd-layout">
         <main className="gd-main">
-          <div className="gd-mob-head">
-            <div className="gd-chip-row">
-              <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
-              {guide.timeEstimate && (
-                <span className="gd-chip">
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                  {guide.timeEstimate}
-                </span>
-              )}
+          <section className="gd-hero">
+            <div className="gd-hero-copy">
+              <p className="gd-hero-eyebrow">{t.guideDetail.procedure}</p>
+              <div className="gd-chip-row">
+                <span className={`badge ${difficultyBadgeClass(guide.difficulty)}`}>{guide.difficulty}</span>
+                {guide.timeEstimate && (
+                  <span className="gd-chip">
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.2" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 3.5v2l1.3.9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                    {guide.timeEstimate}
+                  </span>
+                )}
+                <span className="gd-chip">{steps.length} {t.common.steps}</span>
+              </div>
+              <h1 className="gd-hero-title">{guide.vehicle.model}</h1>
+              <p className="gd-hero-subtitle">{guide.title}</p>
+              <div className="gd-hero-tags">
+                <span className="gd-hero-tag">{guide.part.name}</span>
+                <span className="gd-hero-tag gd-hero-tag--muted">{t.guideDetail.step} {activeStep + 1} {t.guideDetail.stepOf} {steps.length}</span>
+              </div>
             </div>
-            <h1 className="gd-mob-title">{guide.vehicle.model}</h1>
-            <p className="gd-mob-sub">{guide.title}</p>
-            <p className="gd-mob-meta">{guide.part.name} · {steps.length} {t.common.steps}</p>
-          </div>
+            <div className="gd-hero-visual">
+              <VehicleImage
+                vehicleId={guide.vehicle.id}
+                imageUrl={guide.vehicle.imageUrl}
+                model={guide.vehicle.model}
+                wrapperClassName="gd-hero-vehicle"
+                imageClassName="gd-hero-vehicle-img"
+                svgClassName="gd-hero-vehicle-svg"
+                alt={guide.vehicle.model}
+              />
+            </div>
+          </section>
 
           <div className="gd-steps-hd">
             <span className="gd-steps-label">{t.guideDetail.procedure}</span>

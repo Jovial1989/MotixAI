@@ -18,19 +18,24 @@ function decodeDataUrl(dataUrl: string): { bytes: Uint8Array; contentType: strin
   return { bytes, contentType, extension };
 }
 
-export function publicGuideImageUrl(path: string): string {
-  const supabaseUrl = requiredEnv("SUPABASE_URL");
-  return `${supabaseUrl}/storage/v1/object/public/${GUIDE_IMAGES_BUCKET}/${path}`;
+function safeObjectName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9/_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-export async function uploadGuideImage(dataUrl: string, guideId: string, stepId: string): Promise<string> {
+async function uploadImage(dataUrl: string, objectPath: string): Promise<string> {
   if (!dataUrl.startsWith("data:")) return dataUrl;
 
   const supabaseUrl = requiredEnv("SUPABASE_URL");
   const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
   const { bytes, contentType, extension } = decodeDataUrl(dataUrl);
-  const objectPath = `${guideId}/${stepId}.${extension}`;
-  const uploadUrl = `${supabaseUrl}/storage/v1/object/${GUIDE_IMAGES_BUCKET}/${objectPath}`;
+  const cleanPath = safeObjectName(objectPath).replace(/\.(png|jpg)$/i, "");
+  const finalObjectPath = `${cleanPath}.${extension}`;
+  const uploadUrl = `${supabaseUrl}/storage/v1/object/${GUIDE_IMAGES_BUCKET}/${finalObjectPath}`;
 
   const uploadRes = await fetch(uploadUrl, {
     method: "POST",
@@ -49,5 +54,18 @@ export async function uploadGuideImage(dataUrl: string, guideId: string, stepId:
     throw new Error(`Storage upload failed: ${uploadRes.status} ${message}`);
   }
 
-  return publicGuideImageUrl(objectPath);
+  return publicGuideImageUrl(finalObjectPath);
+}
+
+export function publicGuideImageUrl(path: string): string {
+  const supabaseUrl = requiredEnv("SUPABASE_URL");
+  return `${supabaseUrl}/storage/v1/object/public/${GUIDE_IMAGES_BUCKET}/${path}`;
+}
+
+export async function uploadGuideImage(dataUrl: string, guideId: string, stepId: string): Promise<string> {
+  return uploadImage(dataUrl, `${guideId}/${stepId}`);
+}
+
+export async function uploadVehicleImage(dataUrl: string, cacheKey: string): Promise<string> {
+  return uploadImage(dataUrl, `vehicles/${cacheKey}`);
 }

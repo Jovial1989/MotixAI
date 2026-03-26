@@ -120,6 +120,7 @@ function mockDrawingSpec(vehicle: string, part: string, stepTitle: string): Draw
 // Never invents steps or specs — only reformats what the source provides.
 
 import type { SourcePackage } from "./sources/types.ts";
+import type { VehicleIdentity } from "./vehicle-identity.ts";
 
 export async function synthesizeFromSource(pkg: SourcePackage, language?: string): Promise<GeneratedGuide> {
   const client = getClient();
@@ -596,26 +597,41 @@ ${JSON.stringify(values)}`;
 
 const VEHICLE_IMAGE_TIMEOUT_MS = 25_000;
 
-export async function generateVehicleImage(vehicleModel: string): Promise<string> {
+export async function generateVehicleImage(vehicle: VehicleIdentity): Promise<string> {
   const client = getClient();
   if (!client) throw new Error("Gemini image generation is not configured");
 
-  const prompt = `Clean, precise technical illustration of a ${vehicleModel}.
+  const exactVehicle = [
+    vehicle.year ? String(vehicle.year) : "",
+    vehicle.make ?? "",
+    vehicle.modelName,
+    vehicle.generation ?? "",
+  ].filter(Boolean).join(" ");
+
+  const prompt = `Create a clean, precise technical vehicle illustration of the exact production vehicle: ${exactVehicle}.
+
+Vehicle identity:
+- Display label: ${vehicle.displayName}
+- Brand / make: ${vehicle.make ?? "unknown"}
+- Model: ${vehicle.modelName}
+- Generation / platform: ${vehicle.generation ?? "not specified"}
+- Model year: ${vehicle.year ?? "not specified"}
 
 Requirements:
-- Side profile view, slight 3/4 perspective
-- Proportions and shape must accurately match the ${vehicleModel} body style
-- Include distinctive design features: grille shape, headlight style, body lines, wheel arches
+- Front 3/4 studio view with the full vehicle visible
+- Match the exact silhouette, grille, headlamp shape, roofline, glass line, wheelbase, wheel arches, and rear overhang of this specific make/model/generation
+- If a generation or year is provided, do NOT depict a different generation, facelift, or body style
+- Prefer the most recognizable stock road-going trim for this exact vehicle identity
 - Minimalist clean style — crisp black outlines on pure white background
-- Light grey fill for glass/windows only
-- No background, no ground shadow, no environment
+- Light neutral shading only for body depth and glazing
+- No background, no showroom, no garage, no road, no ground shadow
 - No text, no labels, no badges, no watermark
 - No person, no driver
 - Professional automotive technical illustration quality
-- Single vehicle only, cleanly framed with margin
-- Output size: compact, suitable for a thumbnail card`;
+- Single vehicle only, cleanly framed and centered
+- Output size: compact, suitable for a product card thumbnail without cropping out the vehicle`;
 
-  console.log(`[vehicle-img] generating illustration for: ${vehicleModel}`);
+  console.log(`[vehicle-img] generating illustration for: ${vehicle.displayName}`);
 
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`Vehicle image timed out after ${VEHICLE_IMAGE_TIMEOUT_MS}ms`)), VEHICLE_IMAGE_TIMEOUT_MS),
@@ -633,7 +649,7 @@ Requirements:
   for (const part of result.candidates?.[0]?.content?.parts ?? []) {
     if (part.inlineData?.data) {
       const mime = part.inlineData.mimeType ?? "image/png";
-      console.log(`[vehicle-img] got image for ${vehicleModel}, mime=${mime}`);
+      console.log(`[vehicle-img] got image for ${vehicle.displayName}, mime=${mime}`);
       return `data:${mime};base64,${part.inlineData.data}`;
     }
   }

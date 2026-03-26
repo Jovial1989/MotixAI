@@ -24,6 +24,12 @@ const POPULAR_MAKES = [
   'Volkswagen', 'Volvo',
 ];
 
+const MODEL_OVERRIDES: Record<string, string[]> = {
+  BMW: ['3 Series (E90)', '3 Series (F30)', '5 Series (E60)', '5 Series (F10)', 'X5 (E70)'],
+  Nissan: ['Qashqai', 'Qashqai J10', 'Qashqai J11', 'Qashqai J12', 'X-Trail T31', 'X-Trail T32'],
+  Toyota: ['Land Cruiser 200', 'Land Cruiser Prado 150', 'RAV4 XA40', 'RAV4 XA50'],
+};
+
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: currentYear - 1980 + 1 }, (_, i) => currentYear - i);
 
@@ -31,9 +37,11 @@ async function fetchModels(make: string): Promise<string[]> {
   const res = await fetch(
     `https://vpic.nhtsa.dot.gov/api/vehicles/getmodelsformake/${encodeURIComponent(make)}?format=json`
   );
-  if (!res.ok) return [];
+  const overrideModels = MODEL_OVERRIDES[make] ?? [];
+  if (!res.ok) return overrideModels;
   const json = await res.json() as { Results: { Model_Name: string }[] };
-  return (json.Results ?? []).map((r) => r.Model_Name).sort();
+  const upstreamModels = (json.Results ?? []).map((r) => r.Model_Name.trim()).filter(Boolean);
+  return Array.from(new Set([...overrideModels, ...upstreamModels])).sort((a, b) => a.localeCompare(b));
 }
 
 export default function VehicleSelector({ value, onChange, required = false }: VehicleSelectorProps) {

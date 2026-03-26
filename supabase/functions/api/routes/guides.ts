@@ -1,11 +1,13 @@
 import { CORS_HEADERS, errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
 import { explainStep, generateRepairGuide, localizeGuide, synthesizeFromSource } from "../_lib/gemini.ts";
+import { upsertInstructionImageCache } from "../_lib/image-cache.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 import { seedExampleGuides } from "../_lib/seed-guides.ts";
 import { uploadGuideImage } from "../_lib/storage.ts";
 import { getSourcePackage } from "../_lib/sources/registry.ts";
 import type { TaskType } from "../_lib/sources/types.ts";
+import { resolveVehicleIdentity } from "../_lib/vehicle-identity.ts";
 
 async function body(req: Request): Promise<Record<string, unknown>> {
   try {
@@ -34,6 +36,13 @@ function normalizeLanguage(language?: string | null): string {
 function requestLanguage(req: Request): string {
   const url = new URL(req.url);
   return normalizeLanguage(url.searchParams.get("language"));
+}
+
+function parseOptionalYear(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function hasExpectedScript(text: string, language: string): boolean {
@@ -95,27 +104,52 @@ function sanitizeGuideSteps(steps: Array<Record<string, unknown>>) {
 
 async function persistStepImages(
   sql: ReturnType<typeof getDb>,
+  instructionId: string,
   steps: Array<Record<string, unknown>>,
 ) {
   const now = new Date().toISOString();
   const nextSteps: Array<Record<string, unknown>> = [];
 
   for (const step of steps) {
-    if (typeof step.imageUrl === "string" && step.imageUrl.startsWith("data:")) {
+    let nextImageUrl = typeof step.imageUrl === "string" ? step.imageUrl : null;
+    let nextImageStatus = typeof step.imageStatus === "string" ? step.imageStatus : "none";
+
+    if (nextImageUrl && nextImageUrl.startsWith("data:")) {
       try {
-        const storedUrl = await uploadGuideImage(step.imageUrl, String(step.guideId), String(step.id));
+        const storedUrl = await uploadGuideImage(nextImageUrl, instructionId, `step-${step.stepOrder}`);
         await sql`
           UPDATE "RepairStep"
           SET "imageUrl" = ${storedUrl}, "imageStatus" = 'ready', "updatedAt" = ${now}
           WHERE id = ${step.id}
         `;
-        nextSteps.push({ ...step, imageUrl: storedUrl, imageStatus: "ready" });
-        continue;
+        nextImageUrl = storedUrl;
+        nextImageStatus = "ready";
       } catch (err) {
         console.error(`[guides] failed to persist inline step image stepId=${step.id}:`, err);
       }
     }
-    nextSteps.push(step);
+
+    if (
+      nextImageUrl ||
+      step.imagePrompt ||
+      step.imageError ||
+      nextImageStatus !== "none"
+    ) {
+      await upsertInstructionImageCache(sql, {
+        instructionId,
+        stepNumber: Number(step.stepOrder ?? 0),
+        imageUrl: nextImageUrl,
+        status: nextImageStatus,
+        prompt: typeof step.imagePrompt === "string" ? step.imagePrompt : null,
+        error: typeof step.imageError === "string" ? step.imageError : null,
+      });
+    }
+
+    nextSteps.push({
+      ...step,
+      imageUrl: nextImageUrl,
+      imageStatus: nextImageStatus,
+    });
   }
 
   return nextSteps;
@@ -137,6 +171,9 @@ function formatGuideResponse(
       id: guide.vid,
       model: guide.vehicle_model,
       vin: guide.vehicle_vin,
+      manufacturer: guide.vehicle_manufacturer ?? null,
+      year: guide.vehicle_year ?? null,
+      generation: guide.vehicle_generation ?? null,
       imageUrl: guide.vehicle_image_url ?? null,
     },
     part: {
@@ -152,10 +189,13 @@ function formatGuideResponse(
 
 async function fetchGuideRows(sql: ReturnType<typeof getDb>, guideId: string) {
   const guides = await sql`
-    SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin, v."imageUrl" as vehicle_image_url,
+    SELECT g.*, v.id as vid, v.model as vehicle_model, v.vin as vehicle_vin,
+           v.manufacturer as vehicle_manufacturer, v.year as vehicle_year, v.generation as vehicle_generation,
+           COALESCE(v."imageUrl", vic.image_url) as vehicle_image_url,
            p.id as pid, p.name as part_name, p."oemNumber" as part_oem
     FROM "RepairGuide" g
     JOIN "Vehicle" v ON v.id = g."vehicleId"
+    LEFT JOIN vehicle_image_cache vic ON vic.cache_key = v."imageCacheKey"
     JOIN "Part" p ON p.id = g."partId"
     WHERE g.id = ${guideId}
     LIMIT 1
@@ -163,19 +203,36 @@ async function fetchGuideRows(sql: ReturnType<typeof getDb>, guideId: string) {
   if (guides.length === 0) return null;
 
   const steps = await sql`
-    SELECT id, "guideId", "stepOrder", title, instruction,
-           "torqueValue", "warningNote", "imageStatus", "imageUrl", "imagePrompt", "imageError", "createdAt"
-    FROM "RepairStep"
-    WHERE "guideId" = ${guideId}
-    ORDER BY "stepOrder" ASC
+    SELECT s.id, s."guideId", s."stepOrder", s.title, s.instruction,
+           s."torqueValue", s."warningNote",
+           COALESCE(ii.status, s."imageStatus") as "imageStatus",
+           COALESCE(ii.image_url, s."imageUrl") as "imageUrl",
+           COALESCE(ii.prompt, s."imagePrompt") as "imagePrompt",
+           COALESCE(ii.error, s."imageError") as "imageError",
+           s."createdAt"
+    FROM "RepairStep" s
+    JOIN "RepairGuide" g ON g.id = s."guideId"
+    LEFT JOIN instruction_images ii
+      ON ii.instruction_id = COALESCE(g."canonicalGuideId", g.id)
+     AND ii.step_number = s."stepOrder"
+    WHERE s."guideId" = ${guideId}
+    ORDER BY s."stepOrder" ASC
   `;
   const images = await sql`
-    SELECT id, "guideId", "stepOrder", prompt, status, "createdAt"
-    FROM "GeneratedImage"
-    WHERE "guideId" = ${guideId}
-    ORDER BY "stepOrder" ASC
+    SELECT gi.id, gi."guideId", gi."stepOrder", gi.prompt,
+           COALESCE(ii.status, gi.status) as status,
+           COALESCE(ii.image_url, gi."imageUrl") as "imageUrl",
+           gi."createdAt"
+    FROM "GeneratedImage" gi
+    JOIN "RepairGuide" g ON g.id = gi."guideId"
+    LEFT JOIN instruction_images ii
+      ON ii.instruction_id = COALESCE(g."canonicalGuideId", g.id)
+     AND ii.step_number = gi."stepOrder"
+    WHERE gi."guideId" = ${guideId}
+    ORDER BY gi."stepOrder" ASC
   `;
-  return { guide: guides[0], steps: await persistStepImages(sql, steps), images };
+  const instructionId = guideCanonicalId(guides[0]);
+  return { guide: guides[0], steps: await persistStepImages(sql, instructionId, steps), images };
 }
 
 async function resolveLocalizedGuide(
@@ -352,7 +409,8 @@ export async function handleGuides(
     const sourcePkg = getSourcePackage(make, model, year, taskType);
     console.log(`[guides] source package found=${!!sourcePkg} provider=${sourcePkg?.sourceProvider ?? "none"}`);
 
-    const normalizedVehicle = `${year} ${make} ${model}`;
+    const vehicleIdentity = resolveVehicleIdentity({ make, model, year });
+    const normalizedVehicle = vehicleIdentity.displayName;
     const normalizedPart = component;
     const sourceType = user.role === "ENTERPRISE_ADMIN" ? "ENTERPRISE" : "B2C";
 
@@ -371,8 +429,13 @@ export async function handleGuides(
     // Insert Vehicle
     const vehicleId = newId();
     await sql`
-      INSERT INTO "Vehicle" (id, "tenantId", vin, model, "createdAt", "updatedAt")
-      VALUES (${vehicleId}, ${user.tenantId}, ${null}, ${normalizedVehicle}, ${now}, ${now})
+      INSERT INTO "Vehicle" (
+        id, "tenantId", vin, model, manufacturer, year, generation, "imageCacheKey", "createdAt", "updatedAt"
+      )
+      VALUES (
+        ${vehicleId}, ${user.tenantId}, ${null}, ${normalizedVehicle}, ${vehicleIdentity.manufacturer},
+        ${vehicleIdentity.year}, ${vehicleIdentity.generation}, ${vehicleIdentity.cacheKey}, ${now}, ${now}
+      )
     `;
 
     // Insert Part
@@ -406,9 +469,20 @@ export async function handleGuides(
     for (const step of generated.steps) {
       const stepId = newId();
       await sql`
-        INSERT INTO "RepairStep" (id, "guideId", "stepOrder", title, instruction, "torqueValue", "warningNote", "createdAt")
-        VALUES (${stepId}, ${guideId}, ${step.order}, ${step.title}, ${step.instruction}, ${step.torqueValue ?? null}, ${step.warningNote ?? null}, ${now})
+        INSERT INTO "RepairStep" (
+          id, "guideId", "stepOrder", title, instruction, "torqueValue", "warningNote", "imageStatus", "createdAt", "updatedAt"
+        )
+        VALUES (
+          ${stepId}, ${guideId}, ${step.order}, ${step.title}, ${step.instruction}, ${step.torqueValue ?? null},
+          ${step.warningNote ?? null}, 'none', ${now}, ${now}
+        )
       `;
+      await upsertInstructionImageCache(sql, {
+        instructionId: guideId,
+        stepNumber: step.order,
+        status: "none",
+        prompt: generated.imagePlan[step.order - 1] ?? null,
+      });
       stepRows.push({
         id: stepId, guideId, stepOrder: step.order, title: step.title,
         instruction: step.instruction, torqueValue: step.torqueValue ?? null,
@@ -424,7 +498,15 @@ export async function handleGuides(
       inputPart: normalizedPart, sourceType, source: sourceTag,
       confidence, sourceProvider, sourceReferences,
       taskType, language, canonicalGuideId: guideId, status: "READY", createdAt: now, updatedAt: now,
-      vehicle: { id: vehicleId, model: normalizedVehicle, vin: null },
+      vehicle: {
+        id: vehicleId,
+        model: normalizedVehicle,
+        vin: null,
+        manufacturer: vehicleIdentity.manufacturer,
+        year: vehicleIdentity.year,
+        generation: vehicleIdentity.generation,
+        imageUrl: null,
+      },
       part: { id: partId, name: normalizedPart, oemNumber: null },
       steps: stepRows,
     }, 201);
@@ -438,13 +520,26 @@ export async function handleGuides(
     const b = await body(req);
     const vin = typeof b.vin === "string" ? b.vin : undefined;
     const vehicleModel = typeof b.vehicleModel === "string" ? b.vehicleModel : undefined;
+    const make = typeof b.make === "string" ? b.make.trim() : undefined;
+    const model = typeof b.model === "string" ? b.model.trim() : undefined;
+    const manufacturer = typeof b.manufacturer === "string" ? b.manufacturer.trim() : undefined;
+    const generation = typeof b.generation === "string" ? b.generation.trim() : undefined;
+    const year = parseOptionalYear(b.year);
     const partName = typeof b.partName === "string" ? b.partName : undefined;
     const oemNumber = typeof b.oemNumber === "string" ? b.oemNumber : undefined;
     const language = normalizeLanguage(typeof b.language === "string" ? b.language : "en");
 
     if (!partName) return errorResponse("partName is required", 400);
 
-    const normalizedVehicle = (vehicleModel || vin || "Unknown vehicle").trim();
+    const vehicleIdentity = resolveVehicleIdentity({
+      vehicleModel: vehicleModel ?? vin ?? "Unknown vehicle",
+      make,
+      manufacturer,
+      model,
+      year,
+      generation,
+    });
+    const normalizedVehicle = vehicleIdentity.displayName;
     const normalizedPart = `${partName}${oemNumber ? ` (${oemNumber})` : ""}`.trim();
     const sourceType = user.role === "ENTERPRISE_ADMIN" ? "ENTERPRISE" : "B2C";
 
@@ -455,8 +550,13 @@ export async function handleGuides(
     // Insert Vehicle
     const vehicleId = newId();
     await sql`
-      INSERT INTO "Vehicle" (id, "tenantId", vin, model, "createdAt", "updatedAt")
-      VALUES (${vehicleId}, ${user.tenantId}, ${vin ?? null}, ${normalizedVehicle}, ${now}, ${now})
+      INSERT INTO "Vehicle" (
+        id, "tenantId", vin, model, manufacturer, year, generation, "imageCacheKey", "createdAt", "updatedAt"
+      )
+      VALUES (
+        ${vehicleId}, ${user.tenantId}, ${vin ?? null}, ${normalizedVehicle}, ${vehicleIdentity.manufacturer},
+        ${vehicleIdentity.year}, ${vehicleIdentity.generation}, ${vehicleIdentity.cacheKey}, ${now}, ${now}
+      )
     `;
 
     // Insert Part
@@ -487,8 +587,13 @@ export async function handleGuides(
     for (const step of generated.steps) {
       const stepId = newId();
       await sql`
-        INSERT INTO "RepairStep" (id, "guideId", "stepOrder", title, instruction, "torqueValue", "warningNote", "createdAt")
-        VALUES (${stepId}, ${guideId}, ${step.order}, ${step.title}, ${step.instruction}, ${step.torqueValue ?? null}, ${step.warningNote ?? null}, ${now})
+        INSERT INTO "RepairStep" (
+          id, "guideId", "stepOrder", title, instruction, "torqueValue", "warningNote", "imageStatus", "createdAt", "updatedAt"
+        )
+        VALUES (
+          ${stepId}, ${guideId}, ${step.order}, ${step.title}, ${step.instruction}, ${step.torqueValue ?? null},
+          ${step.warningNote ?? null}, 'none', ${now}, ${now}
+        )
       `;
       stepRows.push({
         id: stepId,
@@ -513,6 +618,12 @@ export async function handleGuides(
         INSERT INTO "GeneratedImage" (id, "guideId", "stepOrder", prompt, "createdAt", "updatedAt")
         VALUES (${imageId}, ${guideId}, ${i + 1}, ${prompt}, ${now}, ${now})
       `;
+      await upsertInstructionImageCache(sql, {
+        instructionId: guideId,
+        stepNumber: i + 1,
+        status: "none",
+        prompt,
+      });
       imageRows.push({ id: imageId, guideId, stepOrder: i + 1, prompt, imageUrl: null, status: "PENDING", createdAt: now });
     }
 
@@ -537,7 +648,15 @@ export async function handleGuides(
         status: "READY",
         createdAt: now,
         updatedAt: now,
-        vehicle: { id: vehicleId, model: normalizedVehicle, vin: vin ?? null },
+        vehicle: {
+          id: vehicleId,
+          model: normalizedVehicle,
+          vin: vin ?? null,
+          manufacturer: vehicleIdentity.manufacturer,
+          year: vehicleIdentity.year,
+          generation: vehicleIdentity.generation,
+          imageUrl: null,
+        },
         part: { id: partId, name: partName, oemNumber: oemNumber ?? null },
         steps: stepRows,
         images: imageRows,
@@ -554,10 +673,13 @@ export async function handleGuides(
       : sql`"userId" = ${user.sub}`;
 
     const guides = await sql`
-      SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin, v."imageUrl" as vehicle_image_url,
+      SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
+             v.manufacturer as vehicle_manufacturer, v.year as vehicle_year, v.generation as vehicle_generation,
+             COALESCE(v."imageUrl", vic.image_url) as vehicle_image_url,
              p.name as part_name, p."oemNumber" as part_oem
       FROM "RepairGuide" g
       JOIN "Vehicle" v ON v.id = g."vehicleId"
+      LEFT JOIN vehicle_image_cache vic ON vic.cache_key = v."imageCacheKey"
       JOIN "Part" p ON p.id = g."partId"
       WHERE ${where}
       ORDER BY g."createdAt" DESC
@@ -567,10 +689,13 @@ export async function handleGuides(
     if (guides.length === 0 && user.role !== "GUEST") {
       await seedExampleGuides(user.sub, user.tenantId).catch(() => {});
       const seeded = await sql`
-        SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin, v."imageUrl" as vehicle_image_url,
+        SELECT g.*, v.model as vehicle_model, v.vin as vehicle_vin,
+               v.manufacturer as vehicle_manufacturer, v.year as vehicle_year, v.generation as vehicle_generation,
+               COALESCE(v."imageUrl", vic.image_url) as vehicle_image_url,
                p.name as part_name, p."oemNumber" as part_oem
         FROM "RepairGuide" g
         JOIN "Vehicle" v ON v.id = g."vehicleId"
+        LEFT JOIN vehicle_image_cache vic ON vic.cache_key = v."imageCacheKey"
         JOIN "Part" p ON p.id = g."partId"
         WHERE ${where}
         ORDER BY g."createdAt" DESC
@@ -578,12 +703,28 @@ export async function handleGuides(
       // Fetch lightweight step status data for the dashboard status dot
       const seededResult = await Promise.all(seeded.map(async (g) => {
         const stepStatus = await sql`
-          SELECT id, "imageStatus", "imageUrl" FROM "RepairStep"
-          WHERE "guideId" = ${g.id} ORDER BY "stepOrder" ASC
+          SELECT s.id,
+                 COALESCE(ii.status, s."imageStatus") as "imageStatus",
+                 COALESCE(ii.image_url, s."imageUrl") as "imageUrl"
+          FROM "RepairStep" s
+          JOIN "RepairGuide" rg ON rg.id = s."guideId"
+          LEFT JOIN instruction_images ii
+            ON ii.instruction_id = COALESCE(rg."canonicalGuideId", rg.id)
+           AND ii.step_number = s."stepOrder"
+          WHERE s."guideId" = ${g.id}
+          ORDER BY s."stepOrder" ASC
         `;
         return {
           ...g,
-          vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin, imageUrl: g.vehicle_image_url ?? null },
+          vehicle: {
+            id: g.vehicleId,
+            model: g.vehicle_model,
+            vin: g.vehicle_vin,
+            manufacturer: g.vehicle_manufacturer ?? null,
+            year: g.vehicle_year ?? null,
+            generation: g.vehicle_generation ?? null,
+            imageUrl: g.vehicle_image_url ?? null,
+          },
           part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
           steps: stepStatus,
         };
@@ -611,12 +752,28 @@ export async function handleGuides(
     // Fetch lightweight step status data for each guide (used for dashboard status dot + step count)
     const result = await Promise.all(guides.map(async (g) => {
       const stepStatus = await sql`
-        SELECT id, "imageStatus", "imageUrl" FROM "RepairStep"
-        WHERE "guideId" = ${g.id} ORDER BY "stepOrder" ASC
+        SELECT s.id,
+               COALESCE(ii.status, s."imageStatus") as "imageStatus",
+               COALESCE(ii.image_url, s."imageUrl") as "imageUrl"
+        FROM "RepairStep" s
+        JOIN "RepairGuide" rg ON rg.id = s."guideId"
+        LEFT JOIN instruction_images ii
+          ON ii.instruction_id = COALESCE(rg."canonicalGuideId", rg.id)
+         AND ii.step_number = s."stepOrder"
+        WHERE s."guideId" = ${g.id}
+        ORDER BY s."stepOrder" ASC
       `;
       return {
         ...g,
-        vehicle: { id: g.vehicleId, model: g.vehicle_model, vin: g.vehicle_vin, imageUrl: g.vehicle_image_url ?? null },
+        vehicle: {
+          id: g.vehicleId,
+          model: g.vehicle_model,
+          vin: g.vehicle_vin,
+          manufacturer: g.vehicle_manufacturer ?? null,
+          year: g.vehicle_year ?? null,
+          generation: g.vehicle_generation ?? null,
+          imageUrl: g.vehicle_image_url ?? null,
+        },
         part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
         steps: stepStatus,
       };
