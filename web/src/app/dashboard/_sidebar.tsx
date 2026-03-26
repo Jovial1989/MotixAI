@@ -19,11 +19,11 @@ interface Props {
   isGuest?: boolean;
   initials: string;
   email: string;
-  guideCount: number;
+  guideCount?: number;
   jobCount?: number;
   requestCount?: number;
-  guidesUsed: number;
-  guidesLimit: number;
+  guidesUsed?: number;
+  guidesLimit?: number;
   mobileOpen: boolean;
   onMobileClose: () => void;
   planType?: string;
@@ -60,7 +60,7 @@ function SectionLabel({ children }: { children: string }) {
 export default function Sidebar({
   view, onView, isEnterprise, isGuest, initials, email,
   guideCount, jobCount, requestCount,
-  guidesUsed, guidesLimit,
+  guidesUsed = 0, guidesLimit = 5,
   mobileOpen, onMobileClose, planType = 'free',
 }: Props) {
   const t = useT();
@@ -88,10 +88,10 @@ export default function Sidebar({
 
       <aside className={`sb-root${mobileOpen ? ' sb-root--open' : ''}`}>
         {/* Logo */}
-        <div className="sb-logo">
+        <button type="button" className="sb-logo" onClick={() => nav('guides')}>
           <div className="sb-logo-mark">M</div>
           <span className="sb-logo-text">Motixi</span>
-        </div>
+        </button>
 
         {isGuest ? (
           /* ── Guest: minimal demo sidebar ── */

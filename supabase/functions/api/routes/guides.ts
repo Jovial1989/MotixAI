@@ -1,6 +1,13 @@
 import { CORS_HEADERS, errorResponse, json } from "../_lib/cors.ts";
 import { getDb, newId } from "../_lib/db.ts";
-import { explainStep, generateRepairGuide, localizeGuide, synthesizeFromSource } from "../_lib/gemini.ts";
+import {
+  explainStep,
+  generateRepairGuide,
+  localizeGuide,
+  normalizeWorkshopTerminologyText,
+  normalizeWorkshopTextList,
+  synthesizeFromSource,
+} from "../_lib/gemini.ts";
 import { upsertInstructionImageCache } from "../_lib/image-cache.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 import { seedExampleGuides } from "../_lib/seed-guides.ts";
@@ -162,6 +169,7 @@ function formatGuideResponse(
 ) {
   const canonicalId = guideCanonicalId(guide);
   const isDemoGuide = DEMO_GUIDE_IDS.includes(canonicalId);
+  const language = normalizeLanguage(typeof guide.language === "string" ? guide.language : "en");
   const vehicleIdentity = resolveVehicleIdentity({
     vehicleModel: typeof guide.vehicle_model === "string" ? guide.vehicle_model : null,
     manufacturer: typeof guide.vehicle_manufacturer === "string" ? guide.vehicle_manufacturer : null,
@@ -171,7 +179,12 @@ function formatGuideResponse(
   const response = {
     ...guide,
     canonicalGuideId: canonicalId,
-    language: normalizeLanguage(typeof guide.language === "string" ? guide.language : "en"),
+    language,
+    title: normalizeWorkshopTerminologyText(String(guide.title ?? ""), language),
+    difficulty: normalizeWorkshopTerminologyText(String(guide.difficulty ?? ""), language),
+    timeEstimate: normalizeWorkshopTerminologyText(String(guide.timeEstimate ?? ""), language),
+    tools: normalizeWorkshopTextList(Array.isArray(guide.tools) ? guide.tools.map((value) => String(value)) : [], language),
+    safetyNotes: normalizeWorkshopTextList(Array.isArray(guide.safetyNotes) ? guide.safetyNotes.map((value) => String(value)) : [], language),
     ...(isDemoGuide ? { source: "demo" } : {}),
     vehicle: {
       id: guide.vid,
@@ -184,10 +197,20 @@ function formatGuideResponse(
     },
     part: {
       id: guide.pid,
-      name: guide.part_name,
+      name: normalizeWorkshopTerminologyText(String(guide.part_name ?? ""), language),
       oemNumber: guide.part_oem,
     },
-    steps: sanitizeGuideSteps(steps),
+    steps: sanitizeGuideSteps(steps).map((step) => ({
+      ...step,
+      title: normalizeWorkshopTerminologyText(String(step.title ?? ""), language),
+      instruction: normalizeWorkshopTerminologyText(String(step.instruction ?? ""), language),
+      torqueValue: typeof step.torqueValue === "string"
+        ? normalizeWorkshopTerminologyText(step.torqueValue, language)
+        : step.torqueValue,
+      warningNote: typeof step.warningNote === "string"
+        ? normalizeWorkshopTerminologyText(step.warningNote, language)
+        : step.warningNote,
+    })),
     images,
   };
   return isDemoGuide ? applyCuratedDemoGuideContent(response) : response;
@@ -722,6 +745,7 @@ export async function handleGuides(
         `;
         return {
           ...g,
+          title: normalizeWorkshopTerminologyText(String(g.title ?? ""), language),
           vehicle: {
             id: g.vehicleId,
             model: g.vehicle_model,
@@ -731,7 +755,11 @@ export async function handleGuides(
             generation: g.vehicle_generation ?? null,
             imageUrl: g.vehicle_image_url ?? null,
           },
-          part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
+          part: {
+            id: g.partId,
+            name: normalizeWorkshopTerminologyText(String(g.part_name ?? ""), language),
+            oemNumber: g.part_oem,
+          },
           steps: stepStatus,
         };
       }));
@@ -771,6 +799,7 @@ export async function handleGuides(
       `;
       return {
         ...g,
+        title: normalizeWorkshopTerminologyText(String(g.title ?? ""), language),
         vehicle: {
           id: g.vehicleId,
           model: g.vehicle_model,
@@ -780,7 +809,11 @@ export async function handleGuides(
           generation: g.vehicle_generation ?? null,
           imageUrl: g.vehicle_image_url ?? null,
         },
-        part: { id: g.partId, name: g.part_name, oemNumber: g.part_oem },
+        part: {
+          id: g.partId,
+          name: normalizeWorkshopTerminologyText(String(g.part_name ?? ""), language),
+          oemNumber: g.part_oem,
+        },
         steps: stepStatus,
       };
     }));

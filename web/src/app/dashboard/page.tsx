@@ -8,8 +8,9 @@ import { useT, getLocale } from '@/lib/i18n';
 import AuthGuard from '@/app/_auth-guard';
 import SettingsLanguageSelector from '@/app/_settings-language-selector';
 import VehicleImage from '@/app/_vehicle-image';
+import WorkspaceShell from '@/app/_workspace-shell';
 import SmartGuideForm from './_guide-form';
-import Sidebar, { type DashView } from './_sidebar';
+import { type DashView } from './_sidebar';
 
 // ── JWT helpers ───────────────────────────────────────────────────────────────
 
@@ -62,6 +63,17 @@ function difficultyBadgeClass(value: string): string {
 function isPremiumGuideThumb(url: string | null | undefined): boolean {
   if (!url) return false;
   return !url.includes('/demo-guides/') && !url.includes('placehold.co') && !url.includes('fallback-illustration');
+}
+
+function isDashView(value: string | null): value is DashView {
+  return value === 'guides'
+    || value === 'new-guide'
+    || value === 'garage'
+    || value === 'jobs'
+    || value === 'requests'
+    || value === 'manuals'
+    || value === 'analytics'
+    || value === 'settings';
 }
 
 type RepairCueType =
@@ -1082,7 +1094,7 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     setBillingLoading(false);
   }
 
-  const planBadgeLabel = isEnterprise ? 'Enterprise' : isPremium ? 'Pro' : isTrial ? 'Pro Trial' : 'Free';
+  const planBadgeLabel = isEnterprise ? t.sidebar.enterprise : isPremium ? t.sidebar.pro : isTrial ? t.sidebar.trial : t.sidebar.free;
   const planBadgeClass = isEnterprise ? 'sett-plan-badge--enterprise' : isPremium ? 'sett-plan-badge--pro' : isTrial ? 'sett-plan-badge--trial' : 'sett-plan-badge--free';
   const hasPaymentMethod = Boolean(planInfo.paymentMethodLast4);
   const paidBillingActionLabel = hasPaymentMethod ? t.settingsView.manageSubscription : t.settingsView.addPaymentMethod;
@@ -1312,7 +1324,6 @@ function DashboardInner() {
   const [submitting, setSubmitting] = useState(false);
   const [guideError, setGuideError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const [billingNotice, setBillingNotice] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
@@ -1321,9 +1332,15 @@ function DashboardInner() {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
     const billing = params.get('billing');
+    const requestedView = params.get('view');
+    const currentRole = readJwt().role;
+
+    if (isDashView(requestedView) && !(currentRole === 'GUEST' && requestedView !== 'guides')) {
+      setView(requestedView);
+    }
 
     if (q) {
-      if (readJwt().role !== 'GUEST') {
+      if (currentRole !== 'GUEST') {
         setInitialQuery(q);
         setView('new-guide');
       }
@@ -1355,7 +1372,7 @@ function DashboardInner() {
     }
 
     // Clean the URL
-    if (q || billing) {
+    if (q || billing || requestedView) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -1377,7 +1394,6 @@ function DashboardInner() {
   const isEnterprise = userInfo.role === 'ENTERPRISE_ADMIN';
   const isGuest = userInfo.role === 'GUEST';
   const email = userInfo.email;
-  const initials = email ? email[0].toUpperCase() : 'U';
   const guidesUsed = analytics?.guidesThisMonth ?? 0;
   const guidesLimit = isEnterprise ? Infinity : 5;
 
@@ -1391,7 +1407,7 @@ function DashboardInner() {
     ]).then(([g, v, a]) => {
       setGuides(g); setVehicles(v); setAnalytics(a);
     }).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : 'Failed to load');
+      setError(err instanceof Error ? err.message : t.dash.couldNotLoadGuides);
     }).finally(() => setLoading(false));
   }, [locale]);
 
@@ -1431,7 +1447,7 @@ function DashboardInner() {
       webApi.getAnalytics(getLocale()).then(setAnalytics).catch(() => {});
       setView('guides');
     } catch (err: unknown) {
-      setGuideError(err instanceof Error ? err.message : 'Failed to create guide');
+      setGuideError(err instanceof Error ? err.message : t.dash.couldNotCreateGuide);
       throw err;
     } finally { setSubmitting(false); }
   }
@@ -1444,7 +1460,7 @@ function DashboardInner() {
       webApi.listVehicles({ language: getLocale() }).then(setVehicles).catch(() => {});
       webApi.getAnalytics(getLocale()).then(setAnalytics).catch(() => {});
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete guide');
+      setError(err instanceof Error ? err.message : t.dash.couldNotDeleteGuide);
     } finally { setDeleting(null); }
   }
 
@@ -1462,38 +1478,19 @@ function DashboardInner() {
   }
 
   return (
-    <div className="ds-shell">
-      {/* Mobile top bar */}
-      <div className="ds-mobile-bar">
-        <button className="ds-hamburger" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-          </svg>
-        </button>
-        <span className="ds-mobile-logo">Motixi</span>
-        {!isGuest && <button className="ds-mobile-new" onClick={() => setView('new-guide')}>+</button>}
-      </div>
-
-      <Sidebar
-        view={view}
-        onView={setView}
-        isEnterprise={isEnterprise}
-        isGuest={isGuest}
-        initials={initials}
-        email={email}
-        guideCount={guides.length}
-        guidesUsed={guidesUsed}
-        guidesLimit={guidesLimit === Infinity ? 999 : guidesLimit}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-        planType={planType}
-      />
-
-      <main className="ds-main">
+    <WorkspaceShell
+      view={view}
+      onNavigate={setView}
+      guideCount={guides.length}
+      guidesUsed={guidesUsed}
+      guidesLimit={guidesLimit === Infinity ? 999 : guidesLimit}
+      planType={planType}
+      allowNewGuide={!isGuest}
+    >
         {billingNotice && (
           <div className={`ds-billing-notice ds-billing-notice--${billingNotice.type}`}>
             <span>{billingNotice.message}</span>
-            <button type="button" onClick={() => setBillingNotice(null)} aria-label="Dismiss">
+            <button type="button" onClick={() => setBillingNotice(null)} aria-label={t.common.cancel}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
             </button>
           </div>
@@ -1517,7 +1514,6 @@ function DashboardInner() {
         {view === 'settings' && (
           <SettingsView email={email} isEnterprise={isEnterprise} guidesUsed={guidesUsed} guidesLimit={guidesLimit === Infinity ? 9999 : guidesLimit} />
         )}
-      </main>
-    </div>
+    </WorkspaceShell>
   );
 }

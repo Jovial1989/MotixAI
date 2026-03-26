@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import type { RepairGuide, RepairStep } from '@motixai/shared';
 import { webApi } from '@/lib/api';
 import VehicleImage from '@/app/_vehicle-image';
+import WorkspaceShell from '@/app/_workspace-shell';
 import { getLocale, useT } from '@/lib/i18n';
 
 // Guard against AI-generated string "null"/"none" values for optional fields
@@ -416,7 +417,7 @@ export default function GuideDetailPage() {
           router.replace(`/guides/${nextGuide.id}`);
         }
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load'));
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : t.guideDetail.errorLoadMsg));
   }, [locale, params.id, router]);
 
   useEffect(() => {
@@ -429,18 +430,7 @@ export default function GuideDetailPage() {
   }, [activeStep]);
 
   if (error) return (
-    <div className="dash-root">
-      <header className="dash-nav">
-        <div className="dash-nav-inner">
-          <Link href="/dashboard" className="dash-logo">Motixi</Link>
-          <div className="dash-nav-right">
-            <Link href="/dashboard" className="dash-nav-back">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              {t.guideDetail.backToGuides}
-            </Link>
-          </div>
-        </div>
-      </header>
+    <WorkspaceShell view="guides" allowNewGuide>
       <div className="gd-center" style={{ flexDirection: 'column', gap: 16, textAlign: 'center' }}>
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{ opacity: 0.4 }}>
           <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2"/>
@@ -450,14 +440,13 @@ export default function GuideDetailPage() {
         <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>{t.guideDetail.errorLoadMsg}</p>
         <Link href="/dashboard" className="auth-btn-primary" style={{ display: 'inline-flex', width: 'auto', padding: '0 24px', marginTop: 8 }}>{t.guideDetail.backToGuides}</Link>
       </div>
-    </div>
+    </WorkspaceShell>
   );
 
   if (!guide) return (
-    <div className="dash-root">
-      <header className="dash-nav"><Link href="/dashboard" className="dash-logo">Motixi</Link><Link href="/dashboard" className="dash-nav-back">← {t.guideDetail.backToGuides}</Link></header>
+    <WorkspaceShell view="guides" allowNewGuide>
       <div className="gd-center"><span className="gen-spinner gen-spinner--lg" /><p style={{color:'var(--text-muted)',marginTop:12}}>{t.common.loading}</p></div>
-    </div>
+    </WorkspaceShell>
   );
 
   const steps = guide.steps ?? [];
@@ -473,20 +462,20 @@ export default function GuideDetailPage() {
   const pct = Math.round(((activeStep + 1) / Math.max(steps.length, 1)) * 100);
 
   return (
-    <div className="dash-root">
-      <header className="dash-nav">
-        <div className="dash-nav-inner">
-          <Link href="/dashboard" className="dash-logo">Motixi</Link>
-          <div className="dash-nav-right">
-            <Link href="/dashboard" className="dash-nav-back">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              {t.guideDetail.backToGuides}
-            </Link>
+    <WorkspaceShell view="guides" allowNewGuide={!isGuest}>
+      <div className="gd-page">
+        <div className="gd-page-head">
+          <div>
+            <h1 className="dv-title">{t.common.guides}</h1>
+            <p className="dv-sub">{guide.vehicle.model} · {guide.title}</p>
           </div>
+          <Link href="/dashboard" className="gd-page-back">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {t.guideDetail.backToGuides}
+          </Link>
         </div>
-      </header>
 
-      <div className="gd-layout">
+        <div className="gd-layout">
         <main className="gd-main">
           <section className="gd-hero">
             <div className="gd-hero-copy">
@@ -637,6 +626,7 @@ export default function GuideDetailPage() {
           </div>
         </aside>
       </div>
-    </div>
+      </div>
+    </WorkspaceShell>
   );
 }

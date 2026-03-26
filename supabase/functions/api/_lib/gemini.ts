@@ -54,10 +54,152 @@ const LANGUAGE_NAMES: Record<string, string> = {
   es: "Spanish (Español)",
 };
 
+function normalizeLanguageTag(lang?: string): string {
+  if (!lang) return "en";
+  return lang.toLowerCase() === "ua" ? "uk" : lang.toLowerCase();
+}
+
 function languageInstruction(lang?: string): string {
-  if (!lang || lang === "en") return "";
-  const name = LANGUAGE_NAMES[lang] || lang;
-  return `\nCRITICAL LANGUAGE REQUIREMENT: Generate ALL text output (title, every step title, every instruction, all tool names, all safety notes, all warnings) in ${name}. Do NOT use English for any generated text. Every single word must be in ${name}.\n`;
+  const normalized = normalizeLanguageTag(lang);
+  if (!normalized || normalized === "en") return "";
+  const name = LANGUAGE_NAMES[normalized] || normalized;
+  const automotiveTerminology = normalized === "uk"
+    ? "Use professional automotive Ukrainian terminology only: say \"масло\" instead of \"олія\", \"масляний фільтр\" instead of \"фільтр оливи\", and \"заміна масла\" instead of \"заміна оливи\". Never use household or consumer wording.\n"
+    : "";
+  return `\nCRITICAL LANGUAGE REQUIREMENT: Generate ALL text output (title, every step title, every instruction, all tool names, all safety notes, all warnings) in ${name}. Do NOT use English for any generated text. Every single word must be in ${name}.\n${automotiveTerminology}`;
+}
+
+function preserveCase(source: string, replacement: string): string {
+  if (!source) return replacement;
+  if (source === source.toUpperCase()) return replacement.toUpperCase();
+  if (source[0] && source[0] === source[0].toUpperCase()) {
+    return replacement[0].toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
+}
+
+const UK_AUTOMOTIVE_REPLACEMENTS: Array<{ pattern: RegExp; replacement: string }> = [
+  { pattern: /\bключ для фільтра оливи\b/gi, replacement: "ключ для масляного фільтра" },
+  { pattern: /\bфільтр моторної оливи\b/gi, replacement: "масляний фільтр" },
+  { pattern: /\bфільтра моторної оливи\b/gi, replacement: "масляного фільтра" },
+  { pattern: /\bфільтром моторної оливи\b/gi, replacement: "масляним фільтром" },
+  { pattern: /\bфільтр оливи\b/gi, replacement: "масляний фільтр" },
+  { pattern: /\bфільтра оливи\b/gi, replacement: "масляного фільтра" },
+  { pattern: /\bфільтром оливи\b/gi, replacement: "масляним фільтром" },
+  { pattern: /\bпіддон для зливу оливи\b/gi, replacement: "піддон для зливу масла" },
+  { pattern: /\bзаміна моторної оливи\b/gi, replacement: "заміна моторного масла" },
+  { pattern: /\bзаміна оливи\b/gi, replacement: "заміна масла" },
+  { pattern: /\bмоторної оливи\b/gi, replacement: "моторного масла" },
+  { pattern: /\bмоторну оливу\b/gi, replacement: "моторне масло" },
+  { pattern: /\bмоторна олива\b/gi, replacement: "моторне масло" },
+  { pattern: /\bоливний\b/gi, replacement: "масляний" },
+  { pattern: /\bоливного\b/gi, replacement: "масляного" },
+  { pattern: /\bоливному\b/gi, replacement: "масляному" },
+  { pattern: /\bоливним\b/gi, replacement: "масляним" },
+  { pattern: /\bоливі\b/gi, replacement: "маслі" },
+  { pattern: /\bоливою\b/gi, replacement: "маслом" },
+  { pattern: /\bоливи\b/gi, replacement: "масла" },
+  { pattern: /\bолія\b/gi, replacement: "масло" },
+  { pattern: /\bолію\b/gi, replacement: "масло" },
+  { pattern: /\bолії\b/gi, replacement: "масла" },
+  { pattern: /\bолією\b/gi, replacement: "маслом" },
+  { pattern: /\bмасляного фильтра\b/gi, replacement: "масляного фільтра" },
+  { pattern: /\bмаслян(ий|ого|ому|им|і)\b/gi, replacement: "масля$1" },
+];
+
+export function normalizeWorkshopTerminologyText(value: string, language?: string): string {
+  const normalized = normalizeLanguageTag(language);
+  if (normalized !== "uk" || !value) return value;
+
+  let next = value;
+  for (const { pattern, replacement } of UK_AUTOMOTIVE_REPLACEMENTS) {
+    next = next.replace(pattern, (match, ...args) => {
+      if (replacement.includes("$1")) {
+        const capture = typeof args[0] === "string" ? args[0] : "";
+        return preserveCase(match, replacement.replace("$1", capture));
+      }
+      return preserveCase(match, replacement);
+    });
+  }
+  return next;
+}
+
+export function normalizeWorkshopTextList(values: string[], language?: string): string[] {
+  return values.map((value) => normalizeWorkshopTerminologyText(value, language));
+}
+
+function normalizeGuidePayload<T extends GeneratedGuide | LocalizedGuide>(guide: T, language?: string): T {
+  const normalized = normalizeLanguageTag(language);
+  if (normalized === "en") return guide;
+
+  return {
+    ...guide,
+    title: normalizeWorkshopTerminologyText(guide.title, normalized),
+    difficulty: normalizeWorkshopTerminologyText(guide.difficulty, normalized),
+    timeEstimate: normalizeWorkshopTerminologyText(guide.timeEstimate, normalized),
+    tools: normalizeWorkshopTextList(guide.tools, normalized),
+    safetyNotes: normalizeWorkshopTextList(guide.safetyNotes, normalized),
+    steps: guide.steps.map((step) => ({
+      ...step,
+      title: normalizeWorkshopTerminologyText(step.title, normalized),
+      instruction: normalizeWorkshopTerminologyText(step.instruction, normalized),
+      torqueValue: step.torqueValue ? normalizeWorkshopTerminologyText(step.torqueValue, normalized) : step.torqueValue,
+      warningNote: step.warningNote ? normalizeWorkshopTerminologyText(step.warningNote, normalized) : step.warningNote,
+    })),
+    ...("partName" in guide ? { partName: normalizeWorkshopTerminologyText(guide.partName, normalized) } : {}),
+    ...("imagePlan" in guide ? { imagePlan: normalizeWorkshopTextList(guide.imagePlan, normalized) } : {}),
+  } as T;
+}
+
+async function localizeGuideFieldByField(
+  guide: LocalizedGuide,
+  language: string,
+): Promise<LocalizedGuide> {
+  const flat: string[] = [
+    guide.title,
+    guide.difficulty,
+    guide.timeEstimate,
+    guide.partName,
+    ...guide.tools,
+    ...guide.safetyNotes,
+  ];
+
+  for (const step of guide.steps) {
+    flat.push(step.title, step.instruction, step.torqueValue ?? "", step.warningNote ?? "");
+  }
+
+  const localized = await localizeTextList(flat, language);
+  let cursor = 0;
+  const title = localized[cursor++] ?? guide.title;
+  const difficulty = localized[cursor++] ?? guide.difficulty;
+  const timeEstimate = localized[cursor++] ?? guide.timeEstimate;
+  const partName = localized[cursor++] ?? guide.partName;
+  const tools = guide.tools.map(() => localized[cursor++] ?? "");
+  const safetyNotes = guide.safetyNotes.map(() => localized[cursor++] ?? "");
+  const steps = guide.steps.map((step) => {
+    const titleValue = localized[cursor++] ?? step.title;
+    const instructionValue = localized[cursor++] ?? step.instruction;
+    const torqueValueRaw = localized[cursor++] ?? "";
+    const warningValueRaw = localized[cursor++] ?? "";
+    return {
+      ...step,
+      title: titleValue,
+      instruction: instructionValue,
+      torqueValue: torqueValueRaw.trim() ? torqueValueRaw : null,
+      warningNote: warningValueRaw.trim() ? warningValueRaw : null,
+    };
+  });
+
+  return normalizeGuidePayload({
+    ...guide,
+    title,
+    difficulty,
+    timeEstimate,
+    partName,
+    tools,
+    safetyNotes,
+    steps,
+  }, language);
 }
 
 // ── Gemini client ────────────────────────────────────────────────────────────
@@ -124,6 +266,7 @@ import type { VehicleIdentity } from "./vehicle-identity.ts";
 
 export async function synthesizeFromSource(pkg: SourcePackage, language?: string): Promise<GeneratedGuide> {
   const client = getClient();
+  const normalizedLanguage = normalizeLanguageTag(language);
 
   // Build structured source text to ground the prompt
   const stepsText = pkg.steps
@@ -138,7 +281,7 @@ export async function synthesizeFromSource(pkg: SourcePackage, language?: string
 
   // Mock fallback: directly convert source data without Gemini
   if (!client) {
-    return {
+    return normalizeGuidePayload({
       title: `${pkg.component} — ${pkg.make} ${pkg.model} ${pkg.year}`,
       difficulty: pkg.difficulty,
       timeEstimate: pkg.timeEstimate,
@@ -154,7 +297,7 @@ export async function synthesizeFromSource(pkg: SourcePackage, language?: string
       imagePlan: pkg.steps.map((s) =>
         `Technical diagram: ${pkg.make} ${pkg.model} — ${s.title}`
       ),
-    };
+    }, normalizedLanguage);
   }
 
   const prompt = `You are a technical editor reviewing a verified repair procedure sourced from ${sourceLabel}.
@@ -204,11 +347,11 @@ Respond ONLY with valid JSON matching this exact schema:
     const result = await getClient()!.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
     const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
     const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-    return JSON.parse(json) as GeneratedGuide;
+    return normalizeGuidePayload(JSON.parse(json) as GeneratedGuide, normalizedLanguage);
   } catch (err) {
     console.error("[gemini] synthesizeFromSource failed, using direct conversion:", err instanceof Error ? err.message : err);
     // Direct conversion fallback
-    return {
+    return normalizeGuidePayload({
       title: `${pkg.component} — ${pkg.make} ${pkg.model} ${pkg.year}`,
       difficulty: pkg.difficulty,
       timeEstimate: pkg.timeEstimate,
@@ -224,7 +367,7 @@ Respond ONLY with valid JSON matching this exact schema:
       imagePlan: pkg.steps.map((s) =>
         `Technical diagram: ${pkg.make} ${pkg.model} — ${s.title}`
       ),
-    };
+    }, normalizedLanguage);
   }
 }
 
@@ -237,7 +380,8 @@ export async function generateRepairGuide(
   language?: string,
 ): Promise<GeneratedGuide> {
   const client = getClient();
-  if (!client) return mockGuide(vehicle, part);
+  const normalizedLanguage = normalizeLanguageTag(language);
+  if (!client) return normalizeGuidePayload(mockGuide(vehicle, part), normalizedLanguage);
 
   const prompt = `You are an automotive workshop technician writing a repair procedure.
 ${languageInstruction(language)}
@@ -282,9 +426,9 @@ Generate 8–10 steps. Include real torque specs and clearances where standard s
     const result = await client.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
     const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
     const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-    return JSON.parse(json) as GeneratedGuide;
+    return normalizeGuidePayload(JSON.parse(json) as GeneratedGuide, normalizedLanguage);
   } catch {
-    return mockGuide(vehicle, part);
+    return normalizeGuidePayload(mockGuide(vehicle, part), normalizedLanguage);
   }
 }
 
@@ -457,11 +601,15 @@ export async function explainStep(
   language?: string,
 ): Promise<string> {
   const client = getClient();
+  const normalizedLanguage = normalizeLanguageTag(language);
 
   if (!client) {
     // Fallback when no Gemini key: summarise the step text locally
     const firstLine = instruction.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
-    return `This step (${stepTitle}) involves: ${firstLine}. Ensure all safety precautions are followed and use the specified tools for accurate results.`;
+    return normalizeWorkshopTerminologyText(
+      `This step (${stepTitle}) involves: ${firstLine}. Ensure all safety precautions are followed and use the specified tools for accurate results.`,
+      normalizedLanguage,
+    );
   }
 
   try {
@@ -476,12 +624,18 @@ ${question ? `Question: ${question}` : "Explain this step in more detail with pr
 Provide a clear, concise answer (2-4 sentences) focused on practical workshop guidance.`;
 
     const result = await client.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    return (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+    return normalizeWorkshopTerminologyText(
+      (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim(),
+      normalizedLanguage,
+    );
   } catch (err) {
     console.error("[gemini] explainStep failed:", err instanceof Error ? err.message : err);
     // Return a local fallback instead of crashing
     const firstLine = instruction.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
-    return `This step involves: ${firstLine}. Double-check torque specs and use the correct tools listed in the guide.`;
+    return normalizeWorkshopTerminologyText(
+      `This step involves: ${firstLine}. Double-check torque specs and use the correct tools listed in the guide.`,
+      normalizedLanguage,
+    );
   }
 }
 
@@ -489,11 +643,11 @@ export async function localizeGuide(
   guide: LocalizedGuide,
   language?: string,
 ): Promise<LocalizedGuide> {
-  const lang = language ?? "en";
+  const lang = normalizeLanguageTag(language);
   if (lang === "en") return guide;
 
   const client = getClient();
-  if (!client) return guide;
+  if (!client) return normalizeGuidePayload(guide, lang);
 
   try {
     const prompt = `You are a localization editor for automotive workshop procedures.
@@ -536,11 +690,13 @@ ${JSON.stringify(guide)}`;
     const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
     const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     const localized = JSON.parse(json) as LocalizedGuide;
-    if (!localized.steps || localized.steps.length !== guide.steps.length) return guide;
-    return localized;
+    if (!localized.steps || localized.steps.length !== guide.steps.length) {
+      return await localizeGuideFieldByField(guide, lang);
+    }
+    return normalizeGuidePayload(localized, lang);
   } catch (err) {
     console.error("[gemini] localizeGuide failed:", err instanceof Error ? err.message : err);
-    return guide;
+    return await localizeGuideFieldByField(guide, lang);
   }
 }
 
@@ -548,11 +704,11 @@ export async function localizeTextList(
   values: string[],
   language?: string,
 ): Promise<string[]> {
-  const lang = language ?? "en";
+  const lang = normalizeLanguageTag(language);
   if (lang === "en" || values.length === 0) return values;
 
   const client = getClient();
-  if (!client) return values;
+  if (!client) return normalizeWorkshopTextList(values, lang);
 
   try {
     const prompt = `You are a localization editor for automotive workshop UI copy.
@@ -566,6 +722,7 @@ Rules:
 - Do NOT leave English text unless it is a vehicle model, OEM code, or product code.
 - For Ukrainian and Bulgarian, use Cyrillic script for every translated item.
 - Keep the wording concise and natural for a workshop app UI.
+- For Ukrainian automotive terminology, use "масло", "масляний фільтр", and "заміна масла". Do not use "олія" or "фільтр оливи".
 
 Respond ONLY with a valid JSON array of strings.
 
@@ -581,15 +738,15 @@ ${JSON.stringify(values)}`;
     const localized = JSON.parse(json) as unknown;
 
     if (!Array.isArray(localized) || localized.length !== values.length) {
-      return values;
+      return normalizeWorkshopTextList(values, lang);
     }
 
-    return localized.map((value, index) =>
+    return normalizeWorkshopTextList(localized.map((value, index) =>
       typeof value === "string" && value.trim().length > 0 ? value : values[index],
-    );
+    ), lang);
   } catch (err) {
     console.error("[gemini] localizeTextList failed:", err instanceof Error ? err.message : err);
-    return values;
+    return normalizeWorkshopTextList(values, lang);
   }
 }
 
