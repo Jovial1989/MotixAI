@@ -32,17 +32,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Auth routes — no auth required
     if (path.startsWith("/auth")) {
-      return handleAuth(req, method, path.replace("/auth", ""));
+      return await handleAuth(req, method, path.replace("/auth", ""));
     }
 
     // Public support assistant routes
     if (path.startsWith("/chat")) {
-      return handleChat(req, method, path.replace("/chat", ""));
+      return await handleChat(req, method, path.replace("/chat", ""));
     }
 
     // Billing webhook — no auth required (uses Stripe signature verification)
     if (path === "/billing/webhook" && method === "POST") {
-      return handleBillingWebhook(req);
+      return await handleBillingWebhook(req);
     }
 
     // Protected routes — require valid JWT
@@ -50,43 +50,43 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!user) return errorResponse("Unauthorized", 401);
 
     if (path.startsWith("/guides")) {
-      return handleGuides(req, method, path.replace("/guides", ""), user);
+      return await handleGuides(req, method, path.replace("/guides", ""), user);
     }
 
     if (path.startsWith("/steps")) {
-      return handleSteps(req, method, path.replace("/steps", ""), user);
+      return await handleSteps(req, method, path.replace("/steps", ""), user);
     }
 
     if (path.startsWith("/enterprise")) {
-      return handleEnterprise(req, method, path.replace("/enterprise", ""), user);
+      return await handleEnterprise(req, method, path.replace("/enterprise", ""), user);
     }
 
     if (path.startsWith("/jobs")) {
-      return handleJobs(req, method, path.replace("/jobs", ""), user);
+      return await handleJobs(req, method, path.replace("/jobs", ""), user);
     }
 
     if (path.startsWith("/requests")) {
-      return handleRequests(req, method, path.replace("/requests", ""), user);
+      return await handleRequests(req, method, path.replace("/requests", ""), user);
     }
 
     if (path.startsWith("/analytics")) {
-      return handleAnalytics(req, method, path.replace("/analytics", ""), user);
+      return await handleAnalytics(req, method, path.replace("/analytics", ""), user);
     }
 
     if (path.startsWith("/vehicles")) {
-      return handleVehicles(req, method, path.replace("/vehicles", ""), user);
+      return await handleVehicles(req, method, path.replace("/vehicles", ""), user);
     }
 
     if (path.startsWith("/admin")) {
-      return handleAdmin(req, method, path.replace("/admin", ""), user);
+      return await handleAdmin(req, method, path.replace("/admin", ""), user);
     }
 
     if (path.startsWith("/user")) {
-      return handleUser(req, method, path.replace("/user", ""), user);
+      return await handleUser(req, method, path.replace("/user", ""), user);
     }
 
     if (path.startsWith("/billing")) {
-      return handleBilling(req, method, path.replace("/billing", ""), user);
+      return await handleBilling(req, method, path.replace("/billing", ""), user);
     }
 
     return errorResponse("Not Found", 404);
