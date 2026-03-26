@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../shared/api/providers.dart';
 import '../../auth/auth_provider.dart';
+import '../../auth/presentation/auth_widgets.dart';
 import '../../billing/presentation/stripe_checkout_screen.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -54,7 +55,6 @@ class _Plan {
 
 List<_Plan> _buildPlans(S l) => [
       _Plan('trial', '🚀', l.planTrial, l.planTrialDesc, recommended: true),
-      _Plan('free', '🔓', l.planFree, l.planFreeDesc),
     ];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -70,7 +70,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _step = 0;
   String _selectedPlan = 'trial';
   bool _loading = false;
+  bool _promoLoading = false;
   String? _error;
+  final _promoCtrl = TextEditingController();
 
   static const _totalSteps = 3; // 2 info + 1 plan
 
@@ -106,8 +108,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final response = await api.createCheckoutSession({
       'trial': trial,
       'successUrl':
-          'https://www.motixi.com/dashboard?billing=${trial ? 'trial-started' : 'success'}',
-      'cancelUrl': 'https://www.motixi.com/dashboard?billing=cancelled',
+          'https://www.motixi.com/onboarding?billing=${trial ? 'trial-started' : 'success'}',
+      'cancelUrl': 'https://www.motixi.com/onboarding?billing=cancelled',
     });
     final url = response['url'] as String?;
     if (url == null || url.isEmpty) {
@@ -130,13 +132,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final l = S.of(context)!;
       final api = ref.read(apiClientProvider);
-      if (_selectedPlan == 'free') {
-        await api.selectPlan('free');
-        await api.completeOnboarding();
-        await ref.read(tokenStoreProvider).saveOnboardingDone(true);
-        ref.read(authProvider.notifier).markOnboardingComplete();
-        if (mounted) context.go('/dashboard');
-        return;
+      if (_selectedPlan != 'trial') {
+        throw StateError('invalid_plan_selection');
       }
 
       final checkoutResult = await _launchStripeCheckout(trial: true);
@@ -173,6 +170,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  Future<void> _redeemPromo() async {
+    final code = _promoCtrl.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _promoLoading = true;
+      _error = null;
+    });
+    try {
+      final api = ref.read(apiClientProvider);
+      final res = await api.redeemPromo(code);
+      final planType = res['planType'] as String? ?? 'premium';
+      final subStatus = res['subscriptionStatus'] as String? ?? 'active';
+      await ref.read(authProvider.notifier).updatePlan(planType, subStatus);
+      await api.completeOnboarding();
+      await ref.read(tokenStoreProvider).saveOnboardingDone(true);
+      ref.read(authProvider.notifier).markOnboardingComplete();
+      if (mounted) context.go('/dashboard');
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _promoLoading = false);
+    }
+  }
+
   void _next() {
     if (_isLastStep) {
       _finish();
@@ -183,10 +209,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   String _ctaLabel(S l) {
     if (_isLastStep) {
-      if (_selectedPlan == 'trial') return l.startFreeTrial;
-      return l.continueFree;
+      return l.startFreeTrial;
     }
     return l.continueBtn;
+  }
+
+  @override
+  void dispose() {
+    _promoCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -259,6 +290,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           selectedPlan: _selectedPlan,
                           onSelect: (p) => setState(() => _selectedPlan = p),
                           error: _error,
+                          promoCtrl: _promoCtrl,
+                          promoLoading: _promoLoading,
+                          onRedeemPromo: _redeemPromo,
                         ),
                 ),
               ),
@@ -268,7 +302,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               SizedBox(
                 height: kBtnHeight,
                 child: FilledButton(
-                  onPressed: _loading ? null : _next,
+                  onPressed: (_loading || _promoLoading) ? null : _next,
                   style: FilledButton.styleFrom(
                     backgroundColor: kPrimary,
                     foregroundColor: Colors.white,
@@ -379,11 +413,17 @@ class _PlanStepWidget extends StatelessWidget {
   final String selectedPlan;
   final ValueChanged<String> onSelect;
   final String? error;
+  final TextEditingController promoCtrl;
+  final bool promoLoading;
+  final VoidCallback onRedeemPromo;
   const _PlanStepWidget(
       {required this.plans,
       required this.selectedPlan,
       required this.onSelect,
-      this.error});
+      this.error,
+      required this.promoCtrl,
+      required this.promoLoading,
+      required this.onRedeemPromo});
 
   @override
   Widget build(BuildContext context) {
@@ -407,22 +447,62 @@ class _PlanStepWidget extends StatelessWidget {
               selected: selectedPlan == p.id,
               onTap: () => onSelect(p.id),
             )),
-        if (selectedPlan == 'trial') ...[
-          const SizedBox(height: s4),
-          Container(
-            padding: const EdgeInsets.all(s12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: kRadiusMd,
-              border: Border.all(color: const Color(0xFFFDBA74)),
-            ),
-            child: Text(
-              l.trialBillingNote,
-              style: const TextStyle(
-                  fontSize: 13, color: kPrimaryDark, height: 1.45),
-            ),
+        const SizedBox(height: s4),
+        Container(
+          padding: const EdgeInsets.all(s12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF7ED),
+            borderRadius: kRadiusMd,
+            border: Border.all(color: const Color(0xFFFDBA74)),
           ),
-        ],
+          child: Text(
+            l.trialBillingNote,
+            style: const TextStyle(
+                fontSize: 13, color: kPrimaryDark, height: 1.45),
+          ),
+        ),
+        const SizedBox(height: s16),
+        Text(l.promoCode,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: kTextSub,
+              letterSpacing: 0.7,
+            )),
+        const SizedBox(height: s8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: promoCtrl,
+                decoration: authInputDecoration(l.enterPromoCode),
+              ),
+            ),
+            const SizedBox(width: s10),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: promoCtrl,
+              builder: (_, value, __) => SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: promoLoading || value.text.trim().isEmpty
+                      ? null
+                      : onRedeemPromo,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: kBorder),
+                    shape: RoundedRectangleBorder(borderRadius: kRadiusMd),
+                  ),
+                  child: promoLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l.apply),
+                ),
+              ),
+            ),
+          ],
+        ),
         if (error != null) ...[
           const SizedBox(height: s12),
           Container(

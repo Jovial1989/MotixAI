@@ -316,7 +316,7 @@ function ProfileInner() {
                 <>
                   <div className="profile-plan-title-row">
                     <p className="profile-plan-title">{t.profilePage.freePlanTitle}</p>
-                    <span className="profile-plan-badge">$0 {t.profilePage.perMonth}</span>
+                    <span className="profile-plan-badge">{t.profilePage.freePlanTitle}</span>
                   </div>
                   <p className="profile-usage-head">
                     <span>{t.profilePage.includesLabel}</span>
@@ -455,7 +455,7 @@ function ProfileInner() {
             <div className="gen-inputs" style={{ marginTop: 12 }}>
               <div className="gen-input-wrap">
                 <label className="gen-label">{t.profilePage.currentPlan}</label>
-                <input value={activePlan === 'FREE' ? `${t.profilePage.freePlanTitle} — $0${t.profilePage.perMonth}` : activePlan === 'PRO' ? `${isTrial ? t.profilePage.trialPlanTitle : t.profilePage.proPlanTitle} — ${cadenceText}` : 'Enterprise — Custom'} readOnly className="gen-input" />
+                <input value={activePlan === 'FREE' ? t.profilePage.freePlanTitle : activePlan === 'PRO' ? `${isTrial ? t.profilePage.trialPlanTitle : t.profilePage.proPlanTitle} — ${cadenceText}` : 'Enterprise — Custom'} readOnly className="gen-input" />
               </div>
               <div className="gen-input-wrap">
                 <label className="gen-label">{t.profilePage.nextBillingDate}</label>

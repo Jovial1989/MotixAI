@@ -17,16 +17,27 @@ class AuthState {
   bool get isAuthenticated => tokens != null;
 
   /// Whether the user has completed onboarding. Guests always skip onboarding.
-  bool get hasCompletedOnboarding =>
-      tokens?.user.hasCompletedOnboarding ?? false;
+  bool get hasCompletedOnboarding => tokens?.user.role == 'GUEST'
+      ? true
+      : (tokens?.user.hasCompletedOnboarding ?? false) &&
+          tokens?.user.subscriptionStatus != 'pending';
 
-  AuthState copyWith({AuthTokens? tokens, bool? isLoading, String? error, bool clearError = false}) =>
+  bool get isPendingActivation =>
+      tokens?.user.role != 'GUEST' &&
+      (tokens?.user.subscriptionStatus == 'pending' ||
+          (tokens != null && !hasCompletedOnboarding));
+
+  AuthState copyWith(
+          {AuthTokens? tokens,
+          bool? isLoading,
+          String? error,
+          bool clearError = false}) =>
       AuthState(
         tokens: tokens ?? this.tokens,
         isLoading: isLoading ?? this.isLoading,
         error: clearError ? null : (error ?? this.error),
       );
-  AuthState withLoading()       => copyWith(isLoading: true, clearError: true);
+  AuthState withLoading() => copyWith(isLoading: true, clearError: true);
   AuthState withError(String e) => copyWith(isLoading: false, error: e);
 }
 
@@ -51,9 +62,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Called on app boot — loads persisted tokens and onboarding status.
   Future<AuthBootResult> bootstrap() async {
-    final access  = await _tokens.accessToken();
+    final access = await _tokens.accessToken();
     final refresh = await _tokens.refreshToken();
     if (access == null) return AuthBootResult.noSession;
+
+    if (refresh != null) {
+      try {
+        final tokens = await _api.refreshSession();
+        await _persistTokens(tokens);
+        state = AuthState(tokens: tokens);
+        final requiresActivation = tokens.user.role != 'GUEST' &&
+            (tokens.user.subscriptionStatus == 'pending' ||
+                !tokens.user.hasCompletedOnboarding);
+        return requiresActivation
+            ? AuthBootResult.needsOnboarding
+            : AuthBootResult.hasSession;
+      } catch (_) {
+        // Fall back to the locally persisted state when the network is unavailable.
+      }
+    }
 
     try {
       final claims = _decodeJwt(access);
@@ -71,12 +98,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         subscriptionStatus: subStatus,
         trialEndsAt: trialEndsAt,
       );
-      state = AuthState(tokens: AuthTokens(
-        accessToken: access, refreshToken: refresh, user: user,
+      state = AuthState(
+          tokens: AuthTokens(
+        accessToken: access,
+        refreshToken: refresh,
+        user: user,
       ));
-      return onboardingDone
-          ? AuthBootResult.hasSession
-          : AuthBootResult.needsOnboarding;
+      final requiresActivation =
+          user.role != 'GUEST' && (subStatus == 'pending' || !onboardingDone);
+      return requiresActivation
+          ? AuthBootResult.needsOnboarding
+          : AuthBootResult.hasSession;
     } catch (_) {
       return AuthBootResult.noSession;
     }
@@ -105,7 +137,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Update plan state in-memory and persist it (called after promo redemption).
-  Future<void> updatePlan(String planType, String subStatus, [String? trialEndsAt]) async {
+  Future<void> updatePlan(String planType, String subStatus,
+      [String? trialEndsAt]) async {
     final current = state.tokens;
     if (current == null) return;
     await _tokens.savePlan(planType, subStatus, trialEndsAt);
@@ -134,7 +167,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final tokens = await _api.guest();
       await _tokens.save(tokens.accessToken, tokens.refreshToken);
       await _tokens.saveOnboardingDone(true); // guests skip onboarding
-      await _tokens.savePlan(tokens.user.planType, tokens.user.subscriptionStatus, null);
+      await _tokens.savePlan(
+          tokens.user.planType, tokens.user.subscriptionStatus, null);
       final guestUser = AuthUser(
         id: tokens.user.id,
         email: tokens.user.email,
@@ -145,7 +179,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         subscriptionStatus: tokens.user.subscriptionStatus,
         trialEndsAt: null,
       );
-      state = AuthState(tokens: AuthTokens(
+      state = AuthState(
+          tokens: AuthTokens(
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         user: guestUser,
@@ -223,12 +258,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   List<int> _base64ChunkDecode(String chunk) {
-    const table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const table =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     int decode(String c) {
       if (c == '=') return 0;
       final i = table.indexOf(c);
       return i < 0 ? 0 : i;
     }
+
     while (chunk.length < 4) {
       chunk += '=';
     }
@@ -246,7 +283,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Map<String, dynamic> _jsonDecode(String s) {
     try {
       final result = <String, dynamic>{};
-      final cleaned = s.trim().replaceFirst('{', '').replaceAll(RegExp(r'\}$'), '');
+      final cleaned =
+          s.trim().replaceFirst('{', '').replaceAll(RegExp(r'\}$'), '');
       final pairs = _splitJsonPairs(cleaned);
       for (final pair in pairs) {
         final colonIdx = pair.indexOf(':');

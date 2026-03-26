@@ -45,7 +45,7 @@ class SBg extends S {
   String get noAccountSignUp => 'Нямате акаунт? Регистрирайте се';
 
   @override
-  String get continueAsGuest => 'Продължи като гост →';
+  String get continueAsGuest => 'Стартирай демо →';
 
   @override
   String get createAccount => 'Създай акаунт';
@@ -107,10 +107,11 @@ class SBg extends S {
   String get choosePlan => 'Изберете план';
 
   @override
-  String get choosePlanSub => 'Можете да го промените по-късно.';
+  String get choosePlanSub =>
+      'Стартирайте платения пробен период или активирайте достъпа с одобрен промокод.';
 
   @override
-  String get planTrial => '7-дневен безплатен пробен период';
+  String get planTrial => '7-дневен пробен период';
 
   @override
   String get planTrialDesc => 'Пълен достъп за 7 дни. Изисква се карта.';
@@ -119,10 +120,11 @@ class SBg extends S {
   String get planTrialBadge => 'Препоръчано';
 
   @override
-  String get planFree => 'Безплатен (ограничен)';
+  String get planFree => 'Демо достъп';
 
   @override
-  String get planFreeDesc => '5 ръководства на месец. Основни функции.';
+  String get planFreeDesc =>
+      'Режим само за преглед с 3 реални демо ръководства.';
 
   @override
   String get continueBtn => 'Продължи';
@@ -150,10 +152,10 @@ class SBg extends S {
 
   @override
   String get billingCancelled =>
-      'Плащането е отменено. Акаунтът ви остава на Free.';
+      'Плащането е отменено. Регистрацията остава в изчакване.';
 
   @override
-  String get billingTrialStarted => 'Вашият Pro Trial е активен.';
+  String get billingTrialStarted => 'Вашият пробен период Pro е активен.';
 
   @override
   String get billingUpgradeSucceeded => 'Вашият Pro план е активен.';
@@ -167,10 +169,10 @@ class SBg extends S {
 
   @override
   String get billingSupportUnavailable =>
-      'В момента не успяхме да отворим billing поддръжката.';
+      'В момента не успяхме да отворим поддръжката за плащания.';
 
   @override
-  String get continueFree => 'Продължи безплатно';
+  String get continueFree => 'Продължи';
 
   @override
   String get settingUp => 'Настройване…';
@@ -190,7 +192,7 @@ class SBg extends S {
 
   @override
   String get sampleGuidesSubtitle =>
-      '3 реални ръководства, създадени от Motixi — демо само за четене';
+      '3 реални демо ръководства, създадени от Motixi — само в демо режим';
 
   @override
   String stepCountLabel(int count) {
@@ -207,17 +209,18 @@ class SBg extends S {
   String get generating => 'Генериране…';
 
   @override
-  String get guestBanner => 'Разглеждане като гост — само за четене.';
+  String get guestBanner =>
+      'Демо режим — 3 реални демо ръководства в режим само за четене.';
 
   @override
   String get guestBannerSignUp => 'Регистрация';
 
   @override
-  String get guestUpgradeTitle => 'Създайте акаунт, за да отключите повече';
+  String get guestUpgradeTitle => 'Регистрирайте се, за да отключите повече';
 
   @override
   String get guestUpgradeDesc =>
-      'Регистрирайте се безплатно, за да генерирате ръководства, да запазвате прогреса си и да питате ИИ за всяка стъпка.';
+      'Регистрирайте се, за да генерирате ръководства, да запазвате прогреса си и да питате ИИ за всяка стъпка.';
 
   @override
   String get availableInPro => 'Налично в Pro';
@@ -420,10 +423,11 @@ class SBg extends S {
       'Картата е запазена. След 7-дневния пробен период планът се подновява като Pro, освен ако не бъде отменен.';
 
   @override
-  String get freePlan => 'Безплатен план';
+  String get freePlan => 'Активирането е в изчакване';
 
   @override
-  String get freePlanDesc => 'Режим само за четене с 5 ръководства на месец.';
+  String get freePlanDesc =>
+      'Завършете плащането или приложете одобрен промокод, за да активирате пълния достъп.';
 
   @override
   String get languageSection => 'Език';
@@ -471,16 +475,16 @@ class SBg extends S {
   String get includesLabel => 'Включва';
 
   @override
-  String get freePlanIncludes => '5 ръководства/месец';
+  String get freePlanIncludes => 'Изисква се плащане или одобрен промокод';
 
   @override
-  String get proTrialPlan => 'Pro Trial';
+  String get proTrialPlan => 'Пробен период Pro';
 
   @override
   String get proPlanTitle => 'Pro';
 
   @override
-  String get contactBillingSupport => 'Свържете се с billing поддръжката';
+  String get contactBillingSupport => 'Свържете се с поддръжката за плащания';
 
   @override
   String get manageSubscription => 'Управлявай абонамента';

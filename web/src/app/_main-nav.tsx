@@ -2,17 +2,20 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import NavAuth from './_nav-auth';
 import LangSwitcher from './_lang-switcher';
 import { useT } from '@/lib/i18n';
+import { ensureAppSession } from '@/lib/guest-access';
 
 type NavItemDef = { label: string; anchor?: string; href?: string };
 
 export default function MainNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === '/';
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const t = useT();
 
   const NAV_ITEMS: NavItemDef[] = [
@@ -23,6 +26,18 @@ export default function MainNav() {
     { label: t.common.about,   href: '/about' },
     { label: t.common.contacts, href: '/contact' },
   ];
+
+  async function handleStartDemo() {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      await ensureAppSession();
+      setMobileOpen(false);
+      router.push('/dashboard');
+    } finally {
+      setDemoLoading(false);
+    }
+  }
 
   return (
     <>
@@ -129,8 +144,16 @@ export default function MainNav() {
                 className="nav-mobile-auth-cta"
                 onClick={() => setMobileOpen(false)}
               >
-                {t.nav.startTrial}
+                {t.common.signUp}
               </Link>
+              <button
+                type="button"
+                className="nav-mobile-auth-ghost"
+                onClick={handleStartDemo}
+                disabled={demoLoading}
+              >
+                {demoLoading ? t.authModal.guestLoadingText : t.productPage.tryDemo}
+              </button>
               <Link
                 href="/auth/login"
                 className="nav-mobile-auth-ghost"

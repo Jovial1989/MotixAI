@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { webApi } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { storeAuthSession } from '@/lib/session';
 
 export default function LoginPage() {
   const [error, setError]   = useState<string | null>(null);
@@ -26,15 +27,7 @@ export default function LoginPage() {
         email:    String(data.get('email')),
         password: String(data.get('password')),
       });
-      localStorage.setItem('motix_access_token',  result.accessToken);
-      if (result.refreshToken) localStorage.setItem('motix_refresh_token', result.refreshToken);
-      localStorage.setItem('motix_user_role', result.user.role);
-      localStorage.setItem('motix_onboarding_done', result.user.hasCompletedOnboarding ? 'true' : 'false');
-      localStorage.setItem('motix_user', JSON.stringify({
-        planType: result.user.planType,
-        subscriptionStatus: result.user.subscriptionStatus,
-        trialEndsAt: result.user.trialEndsAt,
-      }));
+      storeAuthSession(result);
       const base = result.user.hasCompletedOnboarding ? '/dashboard' : '/onboarding';
       router.push(pendingQuery ? `${base}?q=${encodeURIComponent(pendingQuery)}` : base);
     } catch (err) {
@@ -49,9 +42,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await webApi.guest();
-      localStorage.setItem('motix_access_token', result.accessToken);
-      localStorage.setItem('motix_user_role', result.user.role);
-      localStorage.setItem('motix_onboarding_done', 'true');
+      storeAuthSession(result);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : t.auth.guestFailed);

@@ -6,9 +6,9 @@ class AuthUser {
   final String role;
   final String? tenantId;
   final bool hasCompletedOnboarding;
-  final String planType; // 'free' | 'trial' | 'premium'
+  final String planType; // 'demo' | 'free' | 'trial' | 'premium'
   final String? trialEndsAt;
-  final String subscriptionStatus; // 'active' | 'expired' | 'none'
+  final String subscriptionStatus; // 'active' | 'expired' | 'none' | 'pending'
 
   const AuthUser({
     required this.id,

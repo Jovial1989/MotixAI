@@ -254,7 +254,7 @@ export default function ProductPage() {
         <h2 className="cta-band-h2">{t.productPage.ctaTitle}</h2>
         <p className="cta-band-sub">{t.productPage.ctaSub}</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">{t.productPage.startTrial}</Link>
+          <Link href="/auth/signup" className="cta-primary">{t.common.signUp}</Link>
           <Link href="/auth/login" className="cta-band-ghost">{t.productPage.alreadyHaveAccount}</Link>
         </div>
       </section>

@@ -37,8 +37,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passCtrl.text);
     if (!mounted) return;
-    final err = ref.read(authProvider).error;
-    if (err == null) context.go('/dashboard');
+    final auth = ref.read(authProvider);
+    if (auth.error == null) {
+      context.go(auth.hasCompletedOnboarding ? '/dashboard' : '/onboarding');
+    }
   }
 
   @override

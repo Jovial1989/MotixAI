@@ -1,6 +1,7 @@
 'use client';
 
 import { useT } from '@/lib/i18n';
+import { clearAuthSession } from '@/lib/session';
 
 export type DashView =
   | 'guides'
@@ -27,6 +28,7 @@ interface Props {
   mobileOpen: boolean;
   onMobileClose: () => void;
   planType?: string;
+  subscriptionStatus?: string;
 }
 
 function NavItem({
@@ -61,7 +63,7 @@ export default function Sidebar({
   view, onView, isEnterprise, isGuest, initials, email,
   guideCount, jobCount, requestCount,
   guidesUsed = 0, guidesLimit = 5,
-  mobileOpen, onMobileClose, planType = 'free',
+  mobileOpen, onMobileClose, planType = 'free', subscriptionStatus = 'none',
 }: Props) {
   const t = useT();
 
@@ -71,13 +73,16 @@ export default function Sidebar({
   }
 
   const isPremium = planType === 'premium' || isEnterprise;
-  const isTrial = planType === 'trial';
+  const isTrial = planType === 'trial' && subscriptionStatus === 'active';
+  const isPendingSetup = !isGuest && subscriptionStatus === 'pending';
   const planLabel = isEnterprise
     ? t.sidebar.enterprise
     : isPremium
     ? t.sidebar.pro
     : isTrial
     ? t.sidebar.trial
+    : isPendingSetup
+    ? t.sidebar.free
     : (guidesUsed >= guidesLimit ? `${t.sidebar.free} · ${t.sidebar.limitReached}` : `${t.sidebar.free} · ${guidesUsed}/${guidesLimit}`);
   const planPercent = isPremium || isTrial ? 100 : Math.min(100, Math.round(guidesUsed / guidesLimit * 100));
 
@@ -179,7 +184,7 @@ export default function Sidebar({
                 </div>
               </button>
 
-              {!isEnterprise && !isTrial && !isPremium && (
+              {!isEnterprise && !isTrial && !isPremium && !isPendingSetup && (
                 <div className="sb-usage">
                   <div className="sb-usage-bar">
                     <div
@@ -201,8 +206,7 @@ export default function Sidebar({
           <button
             className="sb-logout"
             onClick={() => {
-              localStorage.removeItem('motix_access_token');
-              localStorage.removeItem('motix_refresh_token');
+              clearAuthSession();
               location.href = isGuest ? '/' : '/auth/login';
             }}
           >

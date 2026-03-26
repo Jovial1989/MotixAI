@@ -1,6 +1,6 @@
 export type Role = 'USER' | 'ENTERPRISE_ADMIN' | 'GUEST';
-export type PlanType = 'free' | 'trial' | 'premium';
-export type SubscriptionStatus = 'active' | 'expired' | 'none';
+export type PlanType = 'demo' | 'free' | 'trial' | 'premium';
+export type SubscriptionStatus = 'active' | 'expired' | 'none' | 'pending';
 
 export interface AuthUser {
   id: string;

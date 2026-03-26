@@ -71,8 +71,28 @@ export async function handleAuth(
     const now = new Date().toISOString();
 
     await sql`
-      INSERT INTO "User" (id, email, "passwordHash", "fullName", role, "createdAt", "updatedAt")
-      VALUES (${id}, ${email.toLowerCase()}, ${passwordHash}, ${""}, ${"USER"}, ${now}, ${now})
+      INSERT INTO "User" (
+        id,
+        email,
+        "passwordHash",
+        "fullName",
+        role,
+        "planType",
+        "subscriptionStatus",
+        "createdAt",
+        "updatedAt"
+      )
+      VALUES (
+        ${id},
+        ${email.toLowerCase()},
+        ${passwordHash},
+        ${""},
+        ${"USER"},
+        ${"free"},
+        ${"pending"},
+        ${now},
+        ${now}
+      )
     `;
 
     // Seed example guides so new users see content immediately
@@ -146,7 +166,7 @@ export async function handleAuth(
         role: "GUEST",
         tenantId: null,
         hasCompletedOnboarding: true,
-        planType: "free",
+        planType: "demo",
         trialEndsAt: null,
         subscriptionStatus: "none",
       },
@@ -219,7 +239,7 @@ function guestResponse(payload: TokenPayload) {
       role: payload.role,
       tenantId: payload.tenantId,
       hasCompletedOnboarding: true,
-      planType: "free",
+      planType: "demo",
       trialEndsAt: null,
       subscriptionStatus: "none",
     },

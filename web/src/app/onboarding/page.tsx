@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { webApi } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import type { PlanType } from '@motixai/api-client';
+import { storeAuthSession } from '@/lib/session';
 
 export default function OnboardingPage() {
   const t = useT();
@@ -50,52 +51,97 @@ export default function OnboardingPage() {
       badge: t.onboarding.planTrialBadge,
       note: t.onboarding.planTrialNote,
     },
-    {
-      id: 'free',
-      icon: '🔓',
-      name: t.onboarding.planFreeName,
-      desc: t.onboarding.planFreeDesc,
-    },
   ];
 
   const [step, setStep] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('trial');
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const totalSteps = 3;
 
+  async function finalizeActivatedAccount() {
+    const refreshToken = localStorage.getItem('motix_refresh_token');
+    if (!refreshToken) throw new Error(t.onboarding.somethingWentWrong);
+
+    const refreshed = await webApi.refresh({ refreshToken });
+    storeAuthSession(refreshed);
+    if (refreshed.user.subscriptionStatus !== 'active') {
+      throw new Error(t.onboarding.somethingWentWrong);
+    }
+
+    await webApi.completeOnboarding();
+    storeAuthSession({
+      accessToken: refreshed.accessToken,
+      refreshToken: refreshed.refreshToken,
+      user: {
+        ...refreshed.user,
+        hasCompletedOnboarding: true,
+      },
+    });
+    router.push('/dashboard');
+  }
+
+  useEffect(() => {
+    const billing = new URLSearchParams(window.location.search).get('billing');
+    if (!billing) return;
+
+    if (billing === 'cancelled') {
+      setError(t.dashboard.billingCancelledNotice);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+
+    if (billing === 'trial-started' || billing === 'success') {
+      setLoading(true);
+      finalizeActivatedAccount()
+        .catch((err) => {
+          setError(err instanceof Error ? err.message : t.onboarding.somethingWentWrong);
+          setLoading(false);
+        })
+        .finally(() => {
+          window.history.replaceState({}, '', window.location.pathname);
+        });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleFinish() {
     setLoading(true);
     setError(null);
     try {
-      if (selectedPlan === 'trial') {
-        // Trial path: complete onboarding first, then redirect to Stripe Checkout
-        await webApi.completeOnboarding();
-        localStorage.setItem('motix_onboarding_done', 'true');
-
-        const { url } = await webApi.createCheckoutSession({
-          successUrl: `${window.location.origin}/dashboard?billing=trial-started`,
-          cancelUrl: `${window.location.origin}/dashboard?billing=cancelled`,
-          trial: true,
-        });
-        if (url) {
-          window.location.href = url;
-          return; // Don't setLoading(false) — navigating away
-        }
-        // Fallback: if no URL returned, go to dashboard anyway
-        router.push('/dashboard');
-      } else {
-        // Free path: select plan and go to dashboard
-        await webApi.selectPlan(selectedPlan);
-        await webApi.completeOnboarding();
-        localStorage.setItem('motix_onboarding_done', 'true');
-        router.push('/dashboard');
+      if (selectedPlan !== 'trial') {
+        throw new Error(t.onboarding.somethingWentWrong);
       }
+      const { url } = await webApi.createCheckoutSession({
+        successUrl: `${window.location.origin}/onboarding?billing=trial-started`,
+        cancelUrl: `${window.location.origin}/onboarding?billing=cancelled`,
+        trial: true,
+      });
+      if (!url) throw new Error(t.onboarding.somethingWentWrong);
+      window.location.href = url;
+      return;
     } catch (err) {
       setError(err instanceof Error ? err.message : t.onboarding.somethingWentWrong);
       setLoading(false);
+    }
+  }
+
+  async function handlePromoRedeem() {
+    const trimmed = promoCode.trim();
+    if (!trimmed) return;
+    setPromoLoading(true);
+    setError(null);
+    try {
+      await webApi.redeemPromo(trimmed);
+      await finalizeActivatedAccount();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.onboarding.somethingWentWrong);
+    } finally {
+      setPromoLoading(false);
     }
   }
 
@@ -166,15 +212,33 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            {selectedPlan === 'trial' && (
-              <p className="ob-trial-note">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-                  <path d="M1 7a6 6 0 1112 0A6 6 0 011 7z" stroke="currentColor" strokeWidth="1.3"/>
-                  <path d="M7 4.5v3M7 9.5v.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                </svg>
-                {t.onboarding.planTrialNote}
-              </p>
-            )}
+            <p className="ob-trial-note">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M1 7a6 6 0 1112 0A6 6 0 011 7z" stroke="currentColor" strokeWidth="1.3"/>
+                <path d="M7 4.5v3M7 9.5v.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+              {t.onboarding.planTrialNote}
+            </p>
+
+            <div className="sett-promo-section" style={{ marginTop: 16 }}>
+              <p className="sett-promo-label">{t.settingsView.havePromoCode}</p>
+              <div className="sett-promo-row">
+                <input
+                  className="gen-input sett-promo-input"
+                  placeholder={t.settingsView.enterCode}
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="sett-promo-btn"
+                  onClick={handlePromoRedeem}
+                  disabled={promoLoading || !promoCode.trim()}
+                >
+                  {promoLoading ? <span className="gen-spinner" /> : t.settingsView.apply}
+                </button>
+              </div>
+            </div>
 
             {error && (
               <div className="auth-error">
@@ -194,13 +258,12 @@ export default function OnboardingPage() {
             type="button"
             className="auth-btn-primary"
             onClick={next}
-            disabled={loading}
+            disabled={loading || promoLoading}
           >
             {loading ? (
               <><span className="gen-spinner" /> {t.onboarding.settingUp}</>
             ) : isLastStep ? (
-              selectedPlan === 'trial' ? t.onboarding.startMyFreeTrial :
-              t.onboarding.continueFree
+              t.onboarding.startMyFreeTrial
             ) : (
               t.common.continue_
             )}

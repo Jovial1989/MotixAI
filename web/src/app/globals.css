@@ -131,6 +131,8 @@ input, textarea, select { font-family: inherit; outline: none; }
 .nav-link:hover { background: var(--bg); color: var(--text); }
 .nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .nav-btn-ghost {
+  appearance: none;
+  cursor: pointer;
   font-size: 0.84rem; font-weight: 600; color: var(--text-sub);
   padding: 7px 14px; border-radius: var(--r-full);
   border: 1px solid var(--border); background: transparent;
@@ -1198,9 +1200,12 @@ input, textarea, select { font-family: inherit; outline: none; }
 .plan-check { flex-shrink: 0; color: var(--green); }
 .plan--pro .plan-check { color: #86EFAC; }
 .plan-cta {
+  appearance: none;
+  cursor: pointer;
   display: block; text-align: center;
   font-size: 0.93rem; font-weight: 700;
   padding: 14px; border-radius: var(--r-full);
+  border: 1.5px solid transparent;
   transition: background var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
 }
 .plan-cta--default {
@@ -4675,6 +4680,8 @@ input, textarea, select { font-family: inherit; outline: none; }
 }
 .nav-mobile-auth-cta:hover { background: var(--p-hover); }
 .nav-mobile-auth-ghost {
+  appearance: none;
+  cursor: pointer;
   display: block; text-align: center; padding: 12px 20px;
   border: 1.5px solid var(--border); color: var(--text-sub);
   border-radius: var(--r-full); font-size: 0.93rem; font-weight: 600;

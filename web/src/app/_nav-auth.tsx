@@ -2,21 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useT } from '@/lib/i18n';
+import { ensureAppSession } from '@/lib/guest-access';
+import { clearAuthSession, isActiveAccountSession, readStoredSessionState } from '@/lib/session';
 
 function readAuth(): { valid: boolean; initials: string } {
   try {
-    const token = localStorage.getItem('motix_access_token');
-    if (!token) return { valid: false, initials: '' };
-
-    const body = token.split('.')[1];
-    if (!body) return { valid: false, initials: '' };
-    const b64 = body.replace(/-/g, '+').replace(/_/g, '/').padEnd(
-      Math.ceil(body.length / 4) * 4, '='
-    );
-    const payload = JSON.parse(atob(b64)) as { exp?: number; email?: string; sub?: string };
-    if (!payload.exp || Date.now() / 1000 >= payload.exp) return { valid: false, initials: '' };
-    const email = payload.email ?? payload.sub ?? '';
+    const state = readStoredSessionState();
+    if (!isActiveAccountSession(state)) return { valid: false, initials: '' };
+    const email = state.email;
     const initials = email ? email[0].toUpperCase() : 'U';
     return { valid: true, initials };
   } catch {
@@ -26,8 +21,10 @@ function readAuth(): { valid: boolean; initials: string } {
 
 export default function NavAuth() {
   const t = useT();
+  const router = useRouter();
   const [auth, setAuth] = useState<{ valid: boolean; initials: string }>({ valid: false, initials: '' });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -44,6 +41,17 @@ export default function NavAuth() {
     return () => document.removeEventListener('mousedown', onDocumentClick);
   }, [menuOpen]);
 
+  async function handleStartDemo() {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      await ensureAppSession();
+      router.push('/dashboard');
+    } finally {
+      setDemoLoading(false);
+    }
+  }
+
   if (auth.valid) {
     return (
       <div className="nav-right nav-user-menu" ref={menuRef}>
@@ -53,17 +61,16 @@ export default function NavAuth() {
         {menuOpen && (
           <div className="nav-dropdown">
             <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.dashboard}</Link>
-            <Link href="/profile" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.profile}</Link>
-            <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.settings}</Link>
-            <button
-              type="button"
-              className="nav-dropdown-item nav-dropdown-item--danger"
-              onClick={() => {
-                localStorage.removeItem('motix_access_token');
-                localStorage.removeItem('motix_refresh_token');
-                window.location.href = '/auth/login';
-              }}
-            >
+              <Link href="/profile" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.profile}</Link>
+              <Link href="/dashboard" className="nav-dropdown-item" onClick={() => setMenuOpen(false)}>{t.navAuth.settings}</Link>
+              <button
+                type="button"
+                className="nav-dropdown-item nav-dropdown-item--danger"
+                onClick={() => {
+                  clearAuthSession();
+                  window.location.href = '/auth/login';
+                }}
+              >
               {t.navAuth.logOut}
             </button>
           </div>
@@ -75,7 +82,10 @@ export default function NavAuth() {
   return (
     <div className="nav-right">
       <Link href="/auth/login" className="nav-btn-ghost">{t.navAuth.logIn}</Link>
-      <Link href="/auth/signup" className="nav-btn-cta">{t.navAuth.startTrial}</Link>
+      <button type="button" className="nav-btn-ghost" onClick={handleStartDemo} disabled={demoLoading}>
+        {demoLoading ? t.authModal.guestLoadingText : t.productPage.tryDemo}
+      </button>
+      <Link href="/auth/signup" className="nav-btn-cta">{t.common.signUp}</Link>
     </div>
   );
 }

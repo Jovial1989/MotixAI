@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { isPendingActivation, readStoredSessionState } from '@/lib/session';
 
 /**
  * Included in the landing page — if a valid access token is already present
@@ -18,8 +19,8 @@ export default function AuthRedirect() {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp && Date.now() / 1000 < payload.exp) {
-        const onboardingDone = localStorage.getItem('motix_onboarding_done');
-        router.replace(onboardingDone === 'false' ? '/onboarding' : '/dashboard');
+        const session = readStoredSessionState();
+        router.replace(isPendingActivation(session) ? '/onboarding' : '/dashboard');
       }
     } catch {
       // malformed token — leave on landing page

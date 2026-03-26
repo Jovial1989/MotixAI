@@ -143,12 +143,23 @@ export async function handleBilling(
       subscriptionData.trial_period_days = 7;
     }
 
+    const now = new Date().toISOString();
+    await sql`
+      UPDATE "User"
+      SET "planType" = ${trial ? "trial" : "premium"},
+          "subscriptionStatus" = 'pending',
+          "trialEndsAt" = NULL,
+          "hasCompletedOnboarding" = false,
+          "updatedAt" = ${now}
+      WHERE id = ${user.sub}
+    `;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: (successUrl as string) || "https://www.motixi.com/dashboard?billing=trial-started",
-      cancel_url: (cancelUrl as string) || "https://www.motixi.com/dashboard?billing=cancelled",
+      success_url: (successUrl as string) || "https://www.motixi.com/onboarding?billing=trial-started",
+      cancel_url: (cancelUrl as string) || "https://www.motixi.com/onboarding?billing=cancelled",
       metadata: { userId: user.sub, trial: trial ? "true" : "false" },
       subscription_data: subscriptionData,
     });

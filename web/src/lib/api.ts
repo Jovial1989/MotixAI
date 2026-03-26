@@ -1,5 +1,6 @@
 import { MotixApiClient } from '@motixai/api-client';
 import { env } from './env';
+import { clearAuthSession, storeAuthSession } from './session';
 
 const baseUrl = env.apiUrl;
 
@@ -30,7 +31,7 @@ async function doRefresh(): Promise<string | null> {
       const refreshToken = localStorage.getItem('motix_refresh_token');
       if (!refreshToken) {
         // No refresh token — session cannot be recovered
-        localStorage.removeItem('motix_access_token');
+        clearAuthSession();
         window.location.href = '/auth/login';
         return null;
       }
@@ -43,8 +44,7 @@ async function doRefresh(): Promise<string | null> {
 
       if (res.status === 401 || res.status === 403) {
         // Refresh token explicitly rejected by server — clear session
-        localStorage.removeItem('motix_access_token');
-        localStorage.removeItem('motix_refresh_token');
+        clearAuthSession();
         window.location.href = '/auth/login';
         return null;
       }
@@ -54,15 +54,26 @@ async function doRefresh(): Promise<string | null> {
         return null;
       }
 
-      const data = await res.json() as { accessToken: string; refreshToken?: string; user?: { planType?: string; subscriptionStatus?: string; trialEndsAt?: string | null } };
-      localStorage.setItem('motix_access_token', data.accessToken);
-      if (data.refreshToken) localStorage.setItem('motix_refresh_token', data.refreshToken);
+      const data = await res.json() as {
+        accessToken: string;
+        refreshToken?: string | null;
+        user?: {
+          role?: string;
+          hasCompletedOnboarding?: boolean;
+          planType?: string;
+          subscriptionStatus?: string;
+          trialEndsAt?: string | null;
+        };
+      };
       if (data.user) {
-        localStorage.setItem('motix_user', JSON.stringify({
-          planType: data.user.planType ?? 'free',
-          subscriptionStatus: data.user.subscriptionStatus ?? 'none',
-          trialEndsAt: data.user.trialEndsAt ?? null,
-        }));
+        storeAuthSession({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken ?? null,
+          user: data.user,
+        });
+      } else {
+        localStorage.setItem('motix_access_token', data.accessToken);
+        if (data.refreshToken) localStorage.setItem('motix_refresh_token', data.refreshToken);
       }
       return data.accessToken;
     } catch {

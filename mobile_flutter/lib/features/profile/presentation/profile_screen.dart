@@ -370,7 +370,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ),
                                       const SizedBox(width: s8),
                                     ],
-                                    _PlanChip(planType: planType),
+                                    _PlanChip(
+                                      planType: planType,
+                                      subscriptionStatus: subStatus,
+                                    ),
                                   ],
                                 ),
                               ],
@@ -665,25 +668,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 class _PlanChip extends StatelessWidget {
   final String planType;
-  const _PlanChip({required this.planType});
+  final String subscriptionStatus;
+
+  const _PlanChip({
+    required this.planType,
+    required this.subscriptionStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final (label, bg, border, textColor) = switch (planType) {
-      'premium' => (
-          'Pro',
-          const Color(0xFFFFF7ED),
-          const Color(0xFFFDBA74),
-          kPrimary
-        ),
-      'trial' => (
-          'Trial',
-          const Color(0xFFE0F2FE),
-          const Color(0xFFBAE6FD),
-          const Color(0xFF0369A1)
-        ),
-      _ => ('Free', const Color(0xFFF8FAFC), kBorder, kTextMuted),
-    };
+    final l = S.of(context)!;
+    final (label, bg, border, textColor) = subscriptionStatus == 'pending'
+        ? (
+            l.freePlan,
+            const Color(0xFFF8FAFC),
+            kBorder,
+            kTextMuted,
+          )
+        : planType == 'premium'
+            ? (
+                l.proPlanTitle,
+                const Color(0xFFFFF7ED),
+                const Color(0xFFFDBA74),
+                kPrimary,
+              )
+            : planType == 'trial'
+                ? (
+                    l.proTrialPlan,
+                    const Color(0xFFE0F2FE),
+                    const Color(0xFFBAE6FD),
+                    const Color(0xFF0369A1),
+                  )
+                : (
+                    l.freePlan,
+                    const Color(0xFFF8FAFC),
+                    kBorder,
+                    kTextMuted,
+                  );
     return MxChip(label, bg: bg, border: border, textColor: textColor);
   }
 }

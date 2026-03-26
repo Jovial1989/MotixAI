@@ -1,13 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import MainNav from './_main-nav';
 import Footer from './_footer';
 import SearchHero from './_search-hero';
 import { useT } from '@/lib/i18n';
+import { ensureAppSession } from '@/lib/guest-access';
 
 export default function LandingPage() {
   const t = useT();
+  const router = useRouter();
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const features = [
     {
@@ -85,8 +90,9 @@ export default function LandingPage() {
       desc: t.landing.planFreeDesc,
       items: [t.landing.planFreeItem1, t.landing.planFreeItem2, t.landing.planFreeItem3, t.landing.planFreeItem4],
       cta: t.landing.planFreeGetStarted,
-      href: '/auth/signup',
+      href: '/dashboard',
       highlight: false,
+      isDemo: true,
     },
     {
       name: t.landing.planProName,
@@ -97,6 +103,7 @@ export default function LandingPage() {
       cta: t.landing.planProStartTrial,
       href: '/auth/signup',
       highlight: true,
+      isDemo: false,
     },
     {
       name: t.landing.planEntName,
@@ -107,6 +114,7 @@ export default function LandingPage() {
       cta: t.landing.planEntContactUs,
       href: '/contact',
       highlight: false,
+      isDemo: false,
     },
   ];
 
@@ -116,6 +124,17 @@ export default function LandingPage() {
     { val: '100%', label: t.landing.statAiGenerated },
     { val: '∞', label: t.landing.statVehicleModels },
   ];
+
+  async function handleStartDemo() {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      await ensureAppSession();
+      router.push('/dashboard');
+    } finally {
+      setDemoLoading(false);
+    }
+  }
 
   return (
     <div className="page">
@@ -504,9 +523,20 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href={plan.href} className={plan.highlight ? 'plan-cta plan-cta--pro' : 'plan-cta plan-cta--default'}>
-                {plan.cta}
-              </Link>
+              {plan.isDemo ? (
+                <button
+                  type="button"
+                  className={plan.highlight ? 'plan-cta plan-cta--pro' : 'plan-cta plan-cta--default'}
+                  onClick={handleStartDemo}
+                  disabled={demoLoading}
+                >
+                  {demoLoading ? t.authModal.guestLoadingText : plan.cta}
+                </button>
+              ) : (
+                <Link href={plan.href} className={plan.highlight ? 'plan-cta plan-cta--pro' : 'plan-cta plan-cta--default'}>
+                  {plan.cta}
+                </Link>
+              )}
             </article>
           ))}
         </div>
@@ -519,7 +549,7 @@ export default function LandingPage() {
         <h2 className="cta-band-h2">{t.landing.ctaTitle}</h2>
         <p className="cta-band-sub">{t.landing.ctaSub}</p>
         <div className="cta-band-actions">
-          <Link href="/auth/signup" className="cta-primary">{t.landing.ctaStartTrial}</Link>
+          <Link href="/auth/signup" className="cta-primary">{t.common.signUp}</Link>
           <Link href="/auth/login" className="cta-band-ghost">{t.landing.ctaAlreadyHaveAccount}</Link>
         </div>
       </section>

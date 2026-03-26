@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/lib/i18n';
 import Sidebar, { type DashView } from '@/app/dashboard/_sidebar';
+import { readStoredSessionState } from '@/lib/session';
 
 function readSession() {
   if (typeof window === 'undefined') {
@@ -11,39 +12,16 @@ function readSession() {
       role: 'USER',
       email: '',
       planType: 'free',
+      subscriptionStatus: 'none',
     };
   }
-
-  let role = 'USER';
-  let email = '';
-  let planType = 'free';
-
-  try {
-    const token = localStorage.getItem('motix_access_token');
-    if (token) {
-      const body = token.split('.')[1];
-      if (body) {
-        const b64 = body.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(body.length / 4) * 4, '=');
-        const payload = JSON.parse(atob(b64)) as { role?: string; email?: string; sub?: string };
-        role = payload.role ?? 'USER';
-        email = payload.email ?? payload.sub ?? '';
-      }
-    }
-  } catch {
-    // Ignore malformed session data and keep stable fallbacks.
-  }
-
-  try {
-    const stored = localStorage.getItem('motix_user');
-    if (stored) {
-      const parsed = JSON.parse(stored) as { planType?: string };
-      if (parsed.planType) planType = parsed.planType;
-    }
-  } catch {
-    // Ignore invalid cached billing info.
-  }
-
-  return { role, email, planType };
+  const state = readStoredSessionState();
+  return {
+    role: state.role,
+    email: state.email,
+    planType: state.planType,
+    subscriptionStatus: state.subscriptionStatus,
+  };
 }
 
 export function dashboardViewHref(view: DashView): string {
@@ -125,6 +103,7 @@ export default function WorkspaceShell({
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
         planType={resolvedPlanType}
+        subscriptionStatus={session.subscriptionStatus}
       />
 
       <main className="ds-main">

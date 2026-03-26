@@ -45,7 +45,7 @@ class SUk extends S {
   String get noAccountSignUp => 'Немає акаунту? Зареєструйтесь';
 
   @override
-  String get continueAsGuest => 'Продовжити як гість →';
+  String get continueAsGuest => 'Почати демо →';
 
   @override
   String get createAccount => 'Створити акаунт';
@@ -107,7 +107,8 @@ class SUk extends S {
   String get choosePlan => 'Оберіть план';
 
   @override
-  String get choosePlanSub => 'Ви зможете змінити це пізніше.';
+  String get choosePlanSub =>
+      'Запустіть платний пробний період або активуйте доступ схваленим промокодом.';
 
   @override
   String get planTrial => '7-денний пробний період';
@@ -119,10 +120,10 @@ class SUk extends S {
   String get planTrialBadge => 'Рекомендовано';
 
   @override
-  String get planFree => 'Безкоштовний (обмежений)';
+  String get planFree => 'Демо-доступ';
 
   @override
-  String get planFreeDesc => '5 інструкцій на місяць. Базові функції.';
+  String get planFreeDesc => 'Режим перегляду з 3 реальними демо-інструкціями.';
 
   @override
   String get continueBtn => 'Далі';
@@ -150,10 +151,10 @@ class SUk extends S {
 
   @override
   String get billingCancelled =>
-      'Оплату скасовано. Ваш акаунт залишається безкоштовним.';
+      'Оплату скасовано. Реєстрація залишилась у стані очікування.';
 
   @override
-  String get billingTrialStarted => 'Ваш Pro Trial активовано.';
+  String get billingTrialStarted => 'Ваш пробний період Pro активовано.';
 
   @override
   String get billingUpgradeSucceeded => 'Ваш Pro план активовано.';
@@ -170,7 +171,7 @@ class SUk extends S {
       'Зараз не вдалося відкрити підтримку білінгу.';
 
   @override
-  String get continueFree => 'Продовжити безкоштовно';
+  String get continueFree => 'Продовжити';
 
   @override
   String get settingUp => 'Налаштування…';
@@ -190,7 +191,7 @@ class SUk extends S {
 
   @override
   String get sampleGuidesSubtitle =>
-      '3 реальні інструкції, створені Motixi — демо лише для перегляду';
+      '3 реальні демо-інструкції, створені Motixi — лише демо-режим';
 
   @override
   String stepCountLabel(int count) {
@@ -207,17 +208,18 @@ class SUk extends S {
   String get generating => 'Генерація…';
 
   @override
-  String get guestBanner => 'Перегляд як гість — лише читання.';
+  String get guestBanner =>
+      'Демо-режим — 3 реальні демо-інструкції в режимі перегляду.';
 
   @override
   String get guestBannerSignUp => 'Зареєструватися';
 
   @override
-  String get guestUpgradeTitle => 'Створіть акаунт, щоб відкрити більше';
+  String get guestUpgradeTitle => 'Зареєструйтесь, щоб відкрити більше';
 
   @override
   String get guestUpgradeDesc =>
-      'Зареєструйтесь безкоштовно, щоб генерувати інструкції, зберігати прогрес і ставити ШІ питання по кожному кроку.';
+      'Зареєструйтесь, щоб генерувати інструкції, зберігати прогрес і ставити ШІ питання по кожному кроку.';
 
   @override
   String get availableInPro => 'Доступно в Pro';
@@ -420,11 +422,11 @@ class SUk extends S {
       'Картку збережено. Після 7-денного пробного періоду підписка поновиться як Pro, якщо її не скасувати.';
 
   @override
-  String get freePlan => 'Безкоштовний план';
+  String get freePlan => 'Активація очікується';
 
   @override
   String get freePlanDesc =>
-      'Режим лише для читання з 5 інструкціями на місяць.';
+      'Завершіть оплату або застосуйте схвалений промокод, щоб активувати повний доступ.';
 
   @override
   String get languageSection => 'Мова';
@@ -472,10 +474,10 @@ class SUk extends S {
   String get includesLabel => 'Включено';
 
   @override
-  String get freePlanIncludes => '5 інструкцій/місяць';
+  String get freePlanIncludes => 'Потрібна оплата або схвалений промокод';
 
   @override
-  String get proTrialPlan => 'Pro Trial';
+  String get proTrialPlan => 'Пробний період Pro';
 
   @override
   String get proPlanTitle => 'Pro';

@@ -181,7 +181,7 @@ function RepairPartIcon({
 // ── Guide list with search + filter ──────────────────────────────────────────
 
 function GuidesView({
-  guides, loading, error, onDeleteGuide, onNewGuide, deleting, isGuest, analytics,
+  guides, loading, error, onDeleteGuide, onNewGuide, deleting, isGuest, analytics, initialSearch = '',
 }: {
   guides: RepairGuide[];
   loading: boolean;
@@ -191,11 +191,16 @@ function GuidesView({
   onNewGuide: () => void;
   deleting: string | null;
   isGuest?: boolean;
+  initialSearch?: string;
 }) {
   const t = useT();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [filterDiff, setFilterDiff] = useState('');
   const [sort, setSort] = useState<'recent' | 'alpha'>('recent');
+
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
 
   // For guests: derive difficulty chips from the actual demo guides only
   const demoDiffs = useMemo(
@@ -1094,7 +1099,16 @@ function SettingsView({ email, isEnterprise, guidesUsed, guidesLimit }: {
     setBillingLoading(false);
   }
 
-  const planBadgeLabel = isEnterprise ? t.sidebar.enterprise : isPremium ? t.sidebar.pro : isTrial ? t.sidebar.trial : t.sidebar.free;
+  const isPendingSetup = planInfo.subscriptionStatus === 'pending';
+  const planBadgeLabel = isEnterprise
+    ? t.sidebar.enterprise
+    : isPremium
+      ? t.sidebar.pro
+      : isTrial
+        ? t.sidebar.trial
+        : isPendingSetup
+          ? t.settingsView.freePlanTitle
+          : t.sidebar.free;
   const planBadgeClass = isEnterprise ? 'sett-plan-badge--enterprise' : isPremium ? 'sett-plan-badge--pro' : isTrial ? 'sett-plan-badge--trial' : 'sett-plan-badge--free';
   const hasPaymentMethod = Boolean(planInfo.paymentMethodLast4);
   const paidBillingActionLabel = hasPaymentMethod ? t.settingsView.manageSubscription : t.settingsView.addPaymentMethod;
@@ -1316,6 +1330,7 @@ function DashboardInner() {
   const locale = getLocale();
   const [view, setView] = useState<DashView>('guides');
   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
+  const [guestQuery, setGuestQuery] = useState('');
   const [guides, setGuides] = useState<RepairGuide[]>([]);
   const [vehicles, setVehicles] = useState<VehicleWithHistory[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -1343,6 +1358,8 @@ function DashboardInner() {
       if (currentRole !== 'GUEST') {
         setInitialQuery(q);
         setView('new-guide');
+      } else {
+        setGuestQuery(q);
       }
     }
 
@@ -1505,6 +1522,7 @@ function DashboardInner() {
             onNewGuide={() => setView('new-guide')}
             deleting={deleting}
             isGuest={isGuest}
+            initialSearch={isGuest ? guestQuery : ''}
           />
         )}
         {view === 'garage' && <GarageView vehicles={vehicles} loading={loading} />}

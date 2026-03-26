@@ -32,7 +32,7 @@ export default function ProductHeroActions() {
 
     try {
       if (!hasValidStoredSession()) await ensureAppSession();
-      router.push('/app');
+      router.push('/dashboard');
     } catch {
       showToast(t.productPage.guestAuthFailed);
     } finally {
@@ -43,7 +43,7 @@ export default function ProductHeroActions() {
   return (
     <div className="product-hero-actions-wrap">
       <div className="cta-band-actions product-hero-actions">
-        <Link href="/auth/signup" className="cta-primary">{t.productPage.startTrial}</Link>
+        <Link href="/auth/signup" className="cta-primary">{t.common.signUp}</Link>
         <button
           type="button"
           className="cta-secondary cta-secondary--orange"

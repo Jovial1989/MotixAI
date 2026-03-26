@@ -2,7 +2,6 @@ import { errorResponse, json } from "../_lib/cors.ts";
 import { getDb } from "../_lib/db.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 
-const TRIAL_DAYS = 7;
 const PROMO_CODES: Record<string, 'premium'> = {
   'motixfree26': 'premium',
 };
@@ -28,49 +27,44 @@ export async function handleUser(
   // POST /user/select-plan
   if (subpath === "/select-plan" && method === "POST") {
     const { planType } = await body(req);
-    if (!["free", "trial", "premium"].includes(planType as string)) {
-      return errorResponse("planType must be free, trial, or premium", 400);
+    if (!["trial", "premium"].includes(planType as string)) {
+      return errorResponse("planType must be trial or premium", 400);
     }
 
-    let subscriptionStatus = "none";
-    let trialEndsAt: string | null = null;
-
-    if (planType === "trial") {
-      subscriptionStatus = "active";
-      const d = new Date();
-      d.setDate(d.getDate() + TRIAL_DAYS);
-      trialEndsAt = d.toISOString();
-    } else if (planType === "premium") {
-      subscriptionStatus = "active";
-    }
-
+    const normalizedPlan = planType as string;
+    const subscriptionStatus = "pending";
     const now = new Date().toISOString();
 
-    if (trialEndsAt) {
-      await sql`
-        UPDATE "User"
-        SET "planType" = ${planType as string},
-            "subscriptionStatus" = ${subscriptionStatus},
-            "trialEndsAt" = ${trialEndsAt},
-            "updatedAt" = ${now}
-        WHERE id = ${user.sub}
-      `;
-    } else {
-      await sql`
-        UPDATE "User"
-        SET "planType" = ${planType as string},
-            "subscriptionStatus" = ${subscriptionStatus},
-            "trialEndsAt" = NULL,
-            "updatedAt" = ${now}
-        WHERE id = ${user.sub}
-      `;
-    }
+    await sql`
+      UPDATE "User"
+      SET "planType" = ${normalizedPlan},
+          "subscriptionStatus" = ${subscriptionStatus},
+          "trialEndsAt" = NULL,
+          "hasCompletedOnboarding" = false,
+          "updatedAt" = ${now}
+      WHERE id = ${user.sub}
+    `;
 
-    return json({ planType, subscriptionStatus, trialEndsAt });
+    return json({ planType: normalizedPlan, subscriptionStatus, trialEndsAt: null });
   }
 
   // POST /user/onboarding-complete
   if (subpath === "/onboarding-complete" && method === "POST") {
+    const current = await sql`
+      SELECT "planType", "subscriptionStatus", "promoCodeUsed"
+      FROM "User"
+      WHERE id = ${user.sub}
+      LIMIT 1
+    `;
+    const state = current[0];
+    if (!state) return errorResponse("User not found", 404);
+    const isActivated =
+      state.subscriptionStatus === "active" ||
+      (typeof state.promoCodeUsed === "string" && state.promoCodeUsed.length > 0);
+    if (!isActivated) {
+      return errorResponse("Payment or promo activation is required before account setup can finish", 409);
+    }
+
     const now = new Date().toISOString();
     await sql`
       UPDATE "User"
@@ -100,6 +94,7 @@ export async function handleUser(
       SET "planType" = ${planType},
           "subscriptionStatus" = 'active',
           "trialEndsAt" = NULL,
+          "hasCompletedOnboarding" = true,
           "promoCodeUsed" = ${promoCode},
           "updatedAt" = ${now}
       WHERE id = ${user.sub}

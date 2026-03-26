@@ -33,6 +33,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     await ref.read(authProvider.notifier).signup(_emailCtrl.text.trim(), _passCtrl.text);
     if (!mounted) return;
     final err = ref.read(authProvider).error;
+    if (err == null) context.go('/onboarding');
+  }
+
+  Future<void> _startDemo() async {
+    await ref.read(authProvider.notifier).loginAsGuest();
+    if (!mounted) return;
+    final err = ref.read(authProvider).error;
     if (err == null) context.go('/dashboard');
   }
 
@@ -138,6 +145,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     l.alreadyHaveAccount,
                     textAlign: TextAlign.center,
                     style: tsBody.copyWith(color: kTextMuted),
+                  ),
+                ),
+                const SizedBox(height: s16),
+                GestureDetector(
+                  onTap: state.isLoading ? null : _startDemo,
+                  child: Text(
+                    l.continueAsGuest,
+                    textAlign: TextAlign.center,
+                    style: tsBody.copyWith(
+                      color: kTextMuted,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ],

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { clearAuthSession, isPendingActivation, readStoredSessionState } from '@/lib/session';
 
 /**
  * Client-side auth guard. Wraps protected pages.
@@ -25,18 +26,28 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         // Token expired — try refresh
         const refreshToken = localStorage.getItem('motix_refresh_token');
         if (!refreshToken) {
-          localStorage.removeItem('motix_access_token');
+          clearAuthSession();
           router.replace('/auth/login');
           return;
         }
         // Let the page load — the API proxy will handle refresh on first call.
         // If refresh fails, api.ts redirects to login.
+        const stored = readStoredSessionState();
+        if (isPendingActivation(stored)) {
+          router.replace('/onboarding');
+          return;
+        }
         setAuthed(true);
+        return;
+      }
+      const stored = readStoredSessionState();
+      if (isPendingActivation(stored)) {
+        router.replace('/onboarding');
         return;
       }
       setAuthed(true);
     } catch {
-      localStorage.removeItem('motix_access_token');
+      clearAuthSession();
       router.replace('/auth/login');
     }
   }, [router]);

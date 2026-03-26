@@ -61,8 +61,7 @@ export default function SearchHero() {
     setGuestLoading(true);
     try {
       await ensureAppSession();
-      // Guest enters predefined demo mode — no query forwarding
-      router.push('/app');
+      router.push(`/dashboard?q=${encodeURIComponent(authModal)}`);
     } catch { /* ignore */ } finally {
       setGuestLoading(false);
       setAuthModal(null);
@@ -74,7 +73,7 @@ export default function SearchHero() {
     setGuestLoading(true);
     try {
       if (!hasValidStoredSession()) await ensureAppSession();
-      router.push('/app');
+      router.push('/dashboard');
     } catch {
       // Keep landing hero silent; modal path still exists as fallback.
     } finally {
@@ -107,7 +106,7 @@ export default function SearchHero() {
                 className="auth-modal-btn auth-modal-btn--primary"
                 onClick={() => setAuthModal(null)}
               >
-                {t.authModal.createAccount}
+                {t.common.signUp}
               </Link>
               <Link
                 href={`/auth/login?q=${encodeURIComponent(authModal)}`}
@@ -173,7 +172,7 @@ export default function SearchHero() {
 
             <div className="hero-actions sh-actions">
               <Link href="/auth/signup" className="cta-primary">
-                {t.nav.startTrial}
+                {t.common.signUp}
               </Link>
               <button
                 type="button"

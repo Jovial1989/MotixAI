@@ -92,7 +92,7 @@ export function issueTokens(payload: TokenPayload) {
         role: payload.role,
         tenantId: payload.tenantId,
         hasCompletedOnboarding: false,
-        planType: "free",
+        planType: "demo",
         trialEndsAt: null,
         subscriptionStatus: "none",
       },
