@@ -162,6 +162,12 @@ function formatGuideResponse(
 ) {
   const canonicalId = guideCanonicalId(guide);
   const isDemoGuide = DEMO_GUIDE_IDS.includes(canonicalId);
+  const vehicleIdentity = resolveVehicleIdentity({
+    vehicleModel: typeof guide.vehicle_model === "string" ? guide.vehicle_model : null,
+    manufacturer: typeof guide.vehicle_manufacturer === "string" ? guide.vehicle_manufacturer : null,
+    year: typeof guide.vehicle_year === "number" ? guide.vehicle_year : (typeof guide.vehicle_year === "string" ? guide.vehicle_year : null),
+    generation: typeof guide.vehicle_generation === "string" ? guide.vehicle_generation : null,
+  });
   const response = {
     ...guide,
     canonicalGuideId: canonicalId,
@@ -169,11 +175,11 @@ function formatGuideResponse(
     ...(isDemoGuide ? { source: "demo" } : {}),
     vehicle: {
       id: guide.vid,
-      model: guide.vehicle_model,
+      model: vehicleIdentity.displayName,
       vin: guide.vehicle_vin,
-      manufacturer: guide.vehicle_manufacturer ?? null,
-      year: guide.vehicle_year ?? null,
-      generation: guide.vehicle_generation ?? null,
+      manufacturer: vehicleIdentity.manufacturer ?? guide.vehicle_manufacturer ?? null,
+      year: vehicleIdentity.year ?? guide.vehicle_year ?? null,
+      generation: vehicleIdentity.generation ?? guide.vehicle_generation ?? null,
       imageUrl: guide.vehicle_image_url ?? null,
     },
     part: {

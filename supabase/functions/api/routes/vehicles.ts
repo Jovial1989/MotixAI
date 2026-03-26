@@ -284,6 +284,12 @@ export async function handleVehicles(
 
     const result = await Promise.all(
       vehicles.map(async (v) => {
+        const identity = resolveVehicleIdentity({
+          vehicleModel: typeof v.model === "string" ? v.model : null,
+          manufacturer: typeof v.manufacturer === "string" ? v.manufacturer : null,
+          year: typeof v.year === "number" ? v.year : (typeof v.year === "string" ? v.year : null),
+          generation: typeof v.generation === "string" ? v.generation : null,
+        });
         const [guides, jobs] = await Promise.all([
           sql`
             SELECT g.id, g.title, g."createdAt", g."language",
@@ -336,6 +342,10 @@ export async function handleVehicles(
 
         return {
           ...v,
+          model: identity.displayName,
+          manufacturer: identity.manufacturer ?? v.manufacturer ?? null,
+          year: identity.year ?? v.year ?? null,
+          generation: identity.generation ?? v.generation ?? null,
           guides: localizedGuides.map((g) => ({
             id: g.id,
             title: g.title,

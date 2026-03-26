@@ -4,6 +4,7 @@ import { buildDrawingSpec, generateIllustrationFromSpec, specToImagePrompt } fro
 import { getInstructionImageCache, syncRepairStepImage, upsertInstructionImageCache } from "../_lib/image-cache.ts";
 import type { TokenPayload } from "../_lib/jwt.ts";
 import { uploadGuideImage } from "../_lib/storage.ts";
+import { resolveVehicleIdentity } from "../_lib/vehicle-identity.ts";
 
 const LEGACY_PLACEHOLDER_IMAGE_MARKERS = ["/demo-guides/", "placehold.co", "Fallback%20illustration", "fallback-illustration"];
 const ACTIVE_IMAGE_STATUSES = ["queued", "searching_refs", "analyzing_refs", "generating"];
@@ -150,6 +151,10 @@ export async function handleSteps(
       error: null,
     });
 
+    const vehicleIdentity = resolveVehicleIdentity({
+      vehicleModel: String(step.vehicle_model),
+    });
+
     const stepContext = {
       stepOrder: Number(step.stepOrder),
       title: String(step.title),
@@ -157,7 +162,7 @@ export async function handleSteps(
       torqueValue: typeof step.torqueValue === "string" ? step.torqueValue : null,
       warningNote: typeof step.warningNote === "string" ? step.warningNote : null,
       tools: Array.isArray(step.tools) ? step.tools as string[] : [],
-      vehicleModel: String(step.vehicle_model),
+      vehicleModel: vehicleIdentity.displayName,
       partName: String(step.part_name),
     };
 

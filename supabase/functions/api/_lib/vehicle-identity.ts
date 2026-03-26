@@ -126,10 +126,34 @@ function splitModelAndGeneration(
     };
   }
 
+  const trimGenerationToken = (value: string, generationToken: string): string => {
+    const normalizedGeneration = cleanText(generationToken);
+    if (!normalizedGeneration) return cleanText(value);
+
+    let tokens = cleanText(value).split(" ").filter(Boolean);
+    const generationLower = normalizedGeneration.toLowerCase();
+    const makeKey = cleanText(make).toLowerCase();
+
+    while (tokens.length > 1 && (tokens[tokens.length - 1] ?? "").toLowerCase() === generationLower) {
+      tokens = tokens.slice(0, -1);
+    }
+
+    while (
+      tokens.length > 1 &&
+      PREFIX_GENERATION_MAKES.has(makeKey) &&
+      (tokens[0] ?? "").toLowerCase() === generationLower
+    ) {
+      tokens = tokens.slice(1);
+    }
+
+    return cleanText(tokens.join(" "));
+  };
+
   if (explicitGeneration && cleanText(explicitGeneration)) {
+    const normalizedGeneration = cleanText(explicitGeneration);
     return {
-      modelName: cleanedModel,
-      generation: cleanText(explicitGeneration),
+      modelName: trimGenerationToken(cleanedModel, normalizedGeneration) || cleanedModel,
+      generation: normalizedGeneration,
     };
   }
 
@@ -141,14 +165,14 @@ function splitModelAndGeneration(
 
     if (PREFIX_GENERATION_MAKES.has(makeKey) && isLikelyGenerationToken(prefixCandidate)) {
       return {
-        modelName: cleanText(tokens.slice(1).join(" ")) || cleanedModel,
+        modelName: trimGenerationToken(cleanedModel, prefixCandidate) || cleanText(tokens.slice(1).join(" ")) || cleanedModel,
         generation: prefixCandidate,
       };
     }
 
     if (isLikelyGenerationToken(suffixCandidate)) {
       return {
-        modelName: cleanText(tokens.slice(0, -1).join(" ")) || cleanedModel,
+        modelName: trimGenerationToken(cleanedModel, suffixCandidate) || cleanText(tokens.slice(0, -1).join(" ")) || cleanedModel,
         generation: suffixCandidate,
       };
     }
