@@ -28,6 +28,11 @@ export interface LocalizedGuide {
   steps: GuideStep[];
 }
 
+export interface AssistantChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
 // ── Drawing specification ────────────────────────────────────────────────────
 
 export interface DrawingSpec {
@@ -268,6 +273,17 @@ function mockDrawingSpec(vehicle: string, part: string, stepTitle: string): Draw
     warningCallout: null,
     referenceContext: `Standard OEM workshop diagram for ${part} on ${vehicle}`,
   };
+}
+
+function mockAssistantReply(language?: string): string {
+  const normalized = normalizeLanguageTag(language);
+  if (normalized === "uk") {
+    return "Я можу допомогти з інструкціями Motixi, тарифом Pro, оплатою, транспортом, мовою інтерфейсу та навігацією в застосунку. Опишіть, що саме вам потрібно, і я підкажу наступний крок.";
+  }
+  if (normalized === "bg") {
+    return "Мога да помогна с ръководствата в Motixi, плана Pro, плащанията, превозните средства, езика на интерфейса и навигацията в продукта. Опишете какво ви трябва и ще ви насоча към следващата стъпка.";
+  }
+  return "I can help with Motixi guides, Pro billing, vehicles, language settings, and navigation in the product. Tell me what you need and I’ll point you to the next step.";
 }
 
 // ── Source-backed synthesis ───────────────────────────────────────────────────
@@ -651,6 +667,74 @@ Provide a clear, concise answer (2-4 sentences) focused on practical workshop gu
       `This step involves: ${firstLine}. Double-check torque specs and use the correct tools listed in the guide.`,
       normalizedLanguage,
     );
+  }
+}
+
+export async function generateAssistantReply(
+  messages: AssistantChatTurn[],
+  language?: string,
+  context?: {
+    pagePath?: string;
+    pageTitle?: string;
+  },
+): Promise<string> {
+  const client = getClient();
+  const normalizedLanguage = normalizeLanguageTag(language);
+  const cleaned = messages
+    .filter((message) =>
+      (message.role === "user" || message.role === "assistant") &&
+      typeof message.content === "string" &&
+      message.content.trim().length > 0
+    )
+    .slice(-12)
+    .map((message) => ({
+      role: message.role,
+      content: message.content.trim().slice(0, 1500),
+    }));
+
+  if (cleaned.length === 0) {
+    return mockAssistantReply(normalizedLanguage);
+  }
+
+  const transcript = cleaned
+    .map((message) => `${message.role === "user" ? "User" : "Assistant"}: ${message.content}`)
+    .join("\n\n");
+
+  if (!client) {
+    return normalizeWorkshopTerminologyText(mockAssistantReply(normalizedLanguage), normalizedLanguage);
+  }
+
+  try {
+    const prompt = `You are Motixi AI Assistant, a concise customer support assistant inside the Motixi web app.
+${languageInstruction(normalizedLanguage)}
+
+Your job:
+- Help users with Motixi product usage, guide generation, vehicle selection, billing, subscriptions, language settings, dashboard navigation, and support requests.
+- Answer in a calm, product-support tone like a premium SaaS support chat.
+- Be concise: 1-3 short paragraphs or up to 4 short bullets when list formatting improves clarity.
+- If you do not know an account-specific answer, say so plainly and suggest contacting a human.
+- Do not invent refunds, account changes, or subscription actions you cannot perform.
+- Do not answer as a generic AI chatbot. Stay grounded in Motixi product support.
+
+Current page context:
+- Path: ${context?.pagePath ?? "unknown"}
+- Title: ${context?.pageTitle ?? "unknown"}
+
+Conversation:
+${transcript}
+
+Respond only with the assistant reply text for the next turn.`;
+
+    const result = await client.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    const text = (result.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+    if (!text) return normalizeWorkshopTerminologyText(mockAssistantReply(normalizedLanguage), normalizedLanguage);
+    return normalizeWorkshopTerminologyText(text, normalizedLanguage);
+  } catch (err) {
+    console.error("[gemini] generateAssistantReply failed:", err instanceof Error ? err.message : err);
+    return normalizeWorkshopTerminologyText(mockAssistantReply(normalizedLanguage), normalizedLanguage);
   }
 }
 

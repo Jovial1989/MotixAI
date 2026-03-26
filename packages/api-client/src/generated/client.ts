@@ -1,5 +1,7 @@
 import type {
   AnalyticsData,
+  AssistantChatResponse,
+  AssistantChatTurn,
   AuthTokens,
   BillingSummaryResponse,
   CreateGuideInput,
@@ -18,6 +20,8 @@ import type {
   RepairJob,
   SelectPlanResponse,
   SourceGuideInput,
+  SupportEscalationInput,
+  SupportEscalationResponse,
   UpdateJobInput,
   UploadManualInput,
   VehicleWithHistory,
@@ -132,6 +136,27 @@ export class MotixApiClient {
 
   getBillingSummary() {
     return this.request<BillingSummaryResponse>('/billing/summary');
+  }
+
+  // ── Assistant chat ───────────────────────────────────────────────────────
+
+  sendAssistantMessage(body: {
+    messages: AssistantChatTurn[];
+    language?: string;
+    pagePath?: string;
+    pageTitle?: string;
+  }) {
+    return this.request<AssistantChatResponse>('/chat/message', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  escalateSupport(body: SupportEscalationInput) {
+    return this.request<SupportEscalationResponse>('/chat/escalate', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   }
 
   // ── Steps ─────────────────────────────────────────────────────────────────

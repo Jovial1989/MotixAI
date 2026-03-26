@@ -249,6 +249,32 @@ export interface BillingSummaryResponse {
   paymentMethodLast4: string | null;
 }
 
+export interface AssistantChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AssistantChatResponse {
+  reply: string;
+  escalationSuggested: boolean;
+}
+
+export interface SupportEscalationInput {
+  name: string;
+  email: string;
+  message: string;
+  language?: string;
+  pagePath?: string;
+  pageTitle?: string;
+  transcript?: AssistantChatTurn[];
+}
+
+export interface SupportEscalationResponse {
+  ok: boolean;
+  id: string;
+  submittedAt: string;
+}
+
 export interface ResetPasswordInput {
   resetToken: string;
   newPassword: string;

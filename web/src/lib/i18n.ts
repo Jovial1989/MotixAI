@@ -631,6 +631,32 @@ export interface Translations {
     cardLabel: string;
   };
 
+  assistant: {
+    label: string;
+    open: string;
+    close: string;
+    title: string;
+    sub: string;
+    inputPlaceholder: string;
+    send: string;
+    sending: string;
+    welcomeBody: string;
+    youLabel: string;
+    thinking: string;
+    humanPromptTitle: string;
+    humanPromptBody: string;
+    nameLabel: string;
+    emailLabel: string;
+    messageLabel: string;
+    submitRequest: string;
+    submittingRequest: string;
+    successTitle: string;
+    successBody: string;
+    responseError: string;
+    escalationError: string;
+    backToChat: string;
+  };
+
   // Nav auth dropdown
   navAuth: {
     dashboard: string;
@@ -1386,6 +1412,32 @@ const en: Translations = {
     priorityImageGeneration: 'Priority image generation',
     fullGuideHistory: 'Full guide history',
     cardLabel: 'Card',
+  },
+
+  assistant: {
+    label: 'AI assistant',
+    open: 'Open AI assistant',
+    close: 'Close assistant',
+    title: 'Ask Motixi',
+    sub: 'Product help, billing, and support in one place.',
+    inputPlaceholder: 'Ask about guides, billing, vehicles, or settings…',
+    send: 'Send',
+    sending: 'Sending…',
+    welcomeBody: 'Hi, I’m the Motixi AI assistant. I can help with guides, billing, vehicles, language settings, and navigating the product.',
+    youLabel: 'You',
+    thinking: 'Thinking…',
+    humanPromptTitle: 'Talk to a person',
+    humanPromptBody: 'Leave your details and we’ll contact you shortly.',
+    nameLabel: 'Name',
+    emailLabel: 'Email',
+    messageLabel: 'Message',
+    submitRequest: 'Send request',
+    submittingRequest: 'Sending request…',
+    successTitle: 'Request sent',
+    successBody: 'We’ll contact you shortly.',
+    responseError: 'I couldn’t answer that right now. Please try again or ask for human support.',
+    escalationError: 'We couldn’t send your request right now. Please try again.',
+    backToChat: 'Back to chat',
   },
 
   navAuth: {
@@ -2165,6 +2217,32 @@ const uk: Translations = {
     cardLabel: 'Картка',
   },
 
+  assistant: {
+    label: 'ШІ помічник',
+    open: 'Відкрити ШІ помічника',
+    close: 'Закрити помічника',
+    title: 'Запитати Motixi',
+    sub: 'Допомога з продуктом, оплатою та підтримкою в одному вікні.',
+    inputPlaceholder: 'Запитайте про інструкції, оплату, транспорт або налаштування…',
+    send: 'Надіслати',
+    sending: 'Надсилаємо…',
+    welcomeBody: 'Вітаю, я ШІ помічник Motixi. Я можу допомогти з інструкціями, оплатою, транспортом, мовою інтерфейсу та навігацією в продукті.',
+    youLabel: 'Ви',
+    thinking: 'Думаю…',
+    humanPromptTitle: 'Зв’язатися з людиною',
+    humanPromptBody: 'Залиште ваші дані, і ми зв’яжемося з вами найближчим часом.',
+    nameLabel: 'Ім’я',
+    emailLabel: 'Електронна пошта',
+    messageLabel: 'Повідомлення',
+    submitRequest: 'Надіслати запит',
+    submittingRequest: 'Надсилаємо запит…',
+    successTitle: 'Запит надіслано',
+    successBody: 'Ми зв’яжемося з вами найближчим часом.',
+    responseError: 'Зараз не вдалося підготувати відповідь. Спробуйте ще раз або зверніться до людини.',
+    escalationError: 'Зараз не вдалося надіслати запит. Спробуйте ще раз.',
+    backToChat: 'Назад до чату',
+  },
+
   navAuth: {
     dashboard: 'Панель',
     profile: 'Профіль',
@@ -2940,6 +3018,32 @@ const bg: Translations = {
     priorityImageGeneration: 'Приоритетно генериране на изображения',
     fullGuideHistory: 'Пълна история на ръководствата',
     cardLabel: 'Карта',
+  },
+
+  assistant: {
+    label: 'ИИ асистент',
+    open: 'Отвори ИИ асистента',
+    close: 'Затвори асистента',
+    title: 'Попитай Motixi',
+    sub: 'Помощ за продукта, плащанията и поддръжката на едно място.',
+    inputPlaceholder: 'Попитайте за ръководства, плащания, превозни средства или настройки…',
+    send: 'Изпрати',
+    sending: 'Изпращане…',
+    welcomeBody: 'Здравейте, аз съм ИИ асистентът на Motixi. Мога да помогна с ръководства, плащания, превозни средства, езикови настройки и навигация в продукта.',
+    youLabel: 'Вие',
+    thinking: 'Мисля…',
+    humanPromptTitle: 'Свържете се с човек',
+    humanPromptBody: 'Оставете данните си и ще се свържем с вас съвсем скоро.',
+    nameLabel: 'Име',
+    emailLabel: 'Имейл',
+    messageLabel: 'Съобщение',
+    submitRequest: 'Изпрати заявка',
+    submittingRequest: 'Изпращане на заявката…',
+    successTitle: 'Заявката е изпратена',
+    successBody: 'Ще се свържем с вас съвсем скоро.',
+    responseError: 'В момента не успях да подготвя отговор. Опитайте отново или поискайте човек.',
+    escalationError: 'В момента не успяхме да изпратим заявката. Опитайте отново.',
+    backToChat: 'Назад към чата',
   },
 
   navAuth: {

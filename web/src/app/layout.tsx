@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import LocaleProvider from './_locale-provider';
 import LocaleGate from './_locale-gate';
+import AiAssistant from './_ai-assistant';
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -30,7 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <LocaleProvider>
           <LocaleGate>
-            {children}
+            <>
+              {children}
+              <AiAssistant />
+            </>
           </LocaleGate>
         </LocaleProvider>
       </body>

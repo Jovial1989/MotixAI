@@ -11,6 +11,7 @@ import { handleSteps } from "./routes/steps.ts";
 import { handleVehicles } from "./routes/vehicles.ts";
 import { handleUser } from "./routes/user.ts";
 import { handleBilling, handleBillingWebhook } from "./routes/billing.ts";
+import { handleChat } from "./routes/chat.ts";
 
 Deno.serve(async (req: Request): Promise<Response> => {
   // CORS preflight
@@ -32,6 +33,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Auth routes — no auth required
     if (path.startsWith("/auth")) {
       return handleAuth(req, method, path.replace("/auth", ""));
+    }
+
+    // Public support assistant routes
+    if (path.startsWith("/chat")) {
+      return handleChat(req, method, path.replace("/chat", ""));
     }
 
     // Billing webhook — no auth required (uses Stripe signature verification)
